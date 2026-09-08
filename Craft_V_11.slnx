@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/copilot-instructions.md" />
+    <File Path=".github/copilot-memory.md" />
+  </Folder>
+  <Folder Name="/Source/" />
+  <Folder Name="/Source/Core/">
+    <Project Path="Source/Core/Craft.Extensions/Craft.Extensions.csproj" />
+  </Folder>
+  <Folder Name="/Tests/" />
+  <Folder Name="/Tests/Core/">
+    <Project Path="Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj" />
+  </Folder>
+</Solution>

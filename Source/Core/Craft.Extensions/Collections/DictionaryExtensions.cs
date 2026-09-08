@@ -58,6 +58,7 @@ public static class DictionaryExtensions
         public IDictionary<TKey, TValue> Merge(IDictionary<TKey, TValue> source, bool overwriteExisting = true)
         {
             ArgumentNullException.ThrowIfNull(source);
+            ArgumentNullException.ThrowIfNull(dictionary);
 
             foreach (KeyValuePair<TKey, TValue> kvp in source)
                 if (overwriteExisting || !dictionary.ContainsKey(kvp.Key))

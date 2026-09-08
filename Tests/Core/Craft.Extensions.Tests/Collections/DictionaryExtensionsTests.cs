@@ -4,16 +4,16 @@ namespace Craft.Extensions.Tests.Collections;
 
 public class DictionaryExtensionsTests
 {
-
     [Fact]
     public void GetOrAdd_WithExistingKey_DoesNotInvokeFactory()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
-        var wasInvoked = false;
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
+        bool wasInvoked = false;
 
         // Act
-        var result = dict.GetOrAdd("key1", _ =>
+        int result = dict.GetOrAdd("key1", _ =>
         {
             wasInvoked = true;
             return 42;
@@ -28,24 +28,26 @@ public class DictionaryExtensionsTests
     public void GetOrAdd_WithExistingKey_ReturnsExistingValue()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.GetOrAdd("key1", _ => 42);
+        int result = dict.GetOrAdd("key1", _ => 42);
 
         // Assert
         Assert.Equal(10, result);
-        Assert.Single(dict);
+        _ = Assert.Single(dict);
     }
 
     [Fact]
     public void GetOrAdd_WithNonExistingKey_AddsAndReturnsNewValue()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.GetOrAdd("key2", _ => 42);
+        int result = dict.GetOrAdd("key2", _ => 42);
 
         // Assert
         Assert.Equal(42, result);
@@ -57,10 +59,11 @@ public class DictionaryExtensionsTests
     public void GetOrAdd_WithDefaultValue_AddsDefaultWhenKeyNotFound()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.GetOrAdd("key2", 42);
+        int result = dict.GetOrAdd("key2", 42);
 
         // Assert
         Assert.Equal(42, result);
@@ -71,21 +74,23 @@ public class DictionaryExtensionsTests
     public void AddOrUpdate_WithExistingKey_UpdatesValue()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
         dict.AddOrUpdate("key1", 20);
 
         // Assert
         Assert.Equal(20, dict["key1"]);
-        Assert.Single(dict);
+        _ = Assert.Single(dict);
     }
 
     [Fact]
     public void AddOrUpdate_WithNonExistingKey_AddsValue()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
         dict.AddOrUpdate("key2", 20);
@@ -99,11 +104,13 @@ public class DictionaryExtensionsTests
     public void Merge_WithOverwrite_OverwritesExistingKeys()
     {
         // Arrange
-        var target = new Dictionary<string, int> { ["key1"] = 10, ["key2"] = 20 };
-        var source = new Dictionary<string, int> { ["key2"] = 25, ["key3"] = 30 };
+        Dictionary<string, int> target = new()
+        { ["key1"] = 10, ["key2"] = 20 };
+        Dictionary<string, int> source = new()
+        { ["key2"] = 25, ["key3"] = 30 };
 
         // Act
-        var result = target.Merge(source, overwriteExisting: true);
+        IDictionary<string, int> result = target.Merge(source, overwriteExisting: true);
 
         // Assert
         Assert.Same(target, result);
@@ -117,11 +124,13 @@ public class DictionaryExtensionsTests
     public void Merge_WithoutOverwrite_DoesNotOverwriteExistingKeys()
     {
         // Arrange
-        var target = new Dictionary<string, int> { ["key1"] = 10, ["key2"] = 20 };
-        var source = new Dictionary<string, int> { ["key2"] = 25, ["key3"] = 30 };
+        Dictionary<string, int> target = new()
+        { ["key1"] = 10, ["key2"] = 20 };
+        Dictionary<string, int> source = new()
+        { ["key2"] = 25, ["key3"] = 30 };
 
         // Act
-        var result = target.Merge(source, overwriteExisting: false);
+        IDictionary<string, int> result = target.Merge(source, overwriteExisting: false);
 
         // Assert
         Assert.Equal(3, result.Count);
@@ -134,7 +143,7 @@ public class DictionaryExtensionsTests
     public void ToQueryString_WithValidDictionary_ReturnsCorrectQueryString()
     {
         // Arrange
-        var dict = new Dictionary<string, string>
+        Dictionary<string, string> dict = new()
         {
             ["age"] = "30",
             ["city"] = "New York",
@@ -142,7 +151,7 @@ public class DictionaryExtensionsTests
         };
 
         // Act
-        var result = dict.ToQueryString();
+        string result = dict.ToQueryString();
 
         // Assert
         Assert.Equal("age=30&city=New%20York&name=John%20Doe", result);
@@ -152,13 +161,13 @@ public class DictionaryExtensionsTests
     public void ToQueryString_WithNullValue_UsesEmptyValue()
     {
         // Arrange
-        var dict = new Dictionary<string, string?>
+        Dictionary<string, string?> dict = new()
         {
             ["name"] = null
         };
 
         // Act
-        var result = dict.ToQueryString();
+        string result = dict.ToQueryString();
 
         // Assert
         Assert.Equal("name=", result);
@@ -168,13 +177,13 @@ public class DictionaryExtensionsTests
     public void ToQueryString_WithFormattableValue_UsesInvariantCulture()
     {
         // Arrange
-        var dict = new Dictionary<string, CultureAwareFormattable>
+        Dictionary<string, CultureAwareFormattable> dict = new()
         {
             ["value"] = new("current-culture", "invariant-culture")
         };
 
         // Act
-        var result = dict.ToQueryString();
+        string result = dict.ToQueryString();
 
         // Assert
         Assert.Equal("value=invariant-culture", result);
@@ -184,10 +193,10 @@ public class DictionaryExtensionsTests
     public void ToQueryString_WithEmptyDictionary_ReturnsEmptyString()
     {
         // Arrange
-        var dict = new Dictionary<string, string>();
+        Dictionary<string, string> dict = [];
 
         // Act
-        var result = dict.ToQueryString();
+        string result = dict.ToQueryString();
 
         // Assert
         Assert.Equal(string.Empty, result);
@@ -197,14 +206,15 @@ public class DictionaryExtensionsTests
     public void TryRemove_WithExistingKey_RemovesAndReturnsTrue()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10, ["key2"] = 20 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10, ["key2"] = 20 };
 
         // Act
-        var result = dict.TryRemove("key1");
+        bool result = dict.TryRemove("key1");
 
         // Assert
         Assert.True(result);
-        Assert.Single(dict);
+        _ = Assert.Single(dict);
         Assert.False(dict.ContainsKey("key1"));
     }
 
@@ -212,24 +222,26 @@ public class DictionaryExtensionsTests
     public void TryRemove_WithNonExistingKey_ReturnsFalse()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.TryRemove("key2");
+        bool result = dict.TryRemove("key2");
 
         // Assert
         Assert.False(result);
-        Assert.Single(dict);
+        _ = Assert.Single(dict);
     }
 
     [Fact]
     public void TryRemove_WithOutParameter_ReturnsValueWhenExists()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.TryRemove("key1", out var value);
+        bool result = dict.TryRemove("key1", out int value);
 
         // Assert
         Assert.True(result);
@@ -241,25 +253,27 @@ public class DictionaryExtensionsTests
     public void TryRemove_WithOutParameter_ReturnsDefaultWhenNotExists()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> dict = new()
+        { ["key1"] = 10 };
 
         // Act
-        var result = dict.TryRemove("key2", out var value);
+        bool result = dict.TryRemove("key2", out int value);
 
         // Assert
         Assert.False(result);
         Assert.Equal(0, value);
-        Assert.Single(dict);
+        _ = Assert.Single(dict);
     }
 
     [Fact]
     public void Clone_CreatesShallowCopy()
     {
         // Arrange
-        var original = new Dictionary<string, int> { ["key1"] = 10, ["key2"] = 20 };
+        Dictionary<string, int> original = new()
+        { ["key1"] = 10, ["key2"] = 20 };
 
         // Act
-        var clone = original.Clone();
+        Dictionary<string, int> clone = original.Clone();
 
         // Assert
         Assert.NotSame(original, clone);
@@ -272,29 +286,30 @@ public class DictionaryExtensionsTests
     public void Clone_ModifyingCloneDoesNotAffectOriginal()
     {
         // Arrange
-        var original = new Dictionary<string, int> { ["key1"] = 10 };
+        Dictionary<string, int> original = new()
+        { ["key1"] = 10 };
 
         // Act
-        var clone = original.Clone();
+        Dictionary<string, int> clone = original.Clone();
         clone["key1"] = 20;
         clone["key2"] = 30;
 
         // Assert
         Assert.Equal(10, original["key1"]);
-        Assert.Single(original);
+        _ = Assert.Single(original);
     }
 
     [Fact]
     public void Clone_WithCustomComparer_PreservesComparerBehavior()
     {
         // Arrange
-        var original = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        Dictionary<string, int> original = new(StringComparer.OrdinalIgnoreCase)
         {
             ["key1"] = 10
         };
 
         // Act
-        var clone = original.Clone();
+        Dictionary<string, int> clone = original.Clone();
 
         // Assert
         Assert.True(clone.ContainsKey("KEY1"));
@@ -304,10 +319,11 @@ public class DictionaryExtensionsTests
     public void Invert_SwapsKeysAndValues()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["one"] = 1, ["two"] = 2, ["three"] = 3 };
+        Dictionary<string, int> dict = new()
+        { ["one"] = 1, ["two"] = 2, ["three"] = 3 };
 
         // Act
-        var inverted = dict.Invert();
+        Dictionary<int, string> inverted = dict.Invert();
 
         // Assert
         Assert.Equal(3, inverted.Count);
@@ -320,10 +336,11 @@ public class DictionaryExtensionsTests
     public void Invert_WithDuplicateValues_KeepsLastOccurrence()
     {
         // Arrange
-        var dict = new Dictionary<string, int> { ["one"] = 1, ["uno"] = 1, ["two"] = 2 };
+        Dictionary<string, int> dict = new()
+        { ["one"] = 1, ["uno"] = 1, ["two"] = 2 };
 
         // Act
-        var inverted = dict.Invert();
+        Dictionary<int, string> inverted = dict.Invert();
 
         // Assert
         Assert.Equal(2, inverted.Count);
@@ -331,30 +348,30 @@ public class DictionaryExtensionsTests
         Assert.Equal("two", inverted[2]);
     }
 
-    [Fact(Skip = "Null receiver behavior for C# 14 extension members is not reliably assertable in the current toolchain.")]
+    [Fact]
     public void Merge_ThrowsOnNullTarget()
     {
         // Arrange
         Dictionary<string, int>? target = null;
-        var source = new Dictionary<string, int>();
+        Dictionary<string, int> source = [];
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => target!.Merge(source));
+        _ = Assert.Throws<ArgumentNullException>(() => target!.Merge(source));
     }
 
     [Fact]
     public void Merge_ThrowsOnNullSource()
     {
         // Arrange
-        var target = new Dictionary<string, int>();
+        Dictionary<string, int> target = [];
         Dictionary<string, int>? source = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => target.Merge(source!));
+        _ = Assert.Throws<ArgumentNullException>(() => target.Merge(source!));
     }
 }
 
-file readonly record struct CultureAwareFormattable(string CurrentCultureValue, string InvariantCultureValue) : IFormattable
+readonly file record struct CultureAwareFormattable(string CurrentCultureValue, string InvariantCultureValue) : IFormattable
 {
     public string ToString(string? format, IFormatProvider? formatProvider) =>
         ReferenceEquals(formatProvider, CultureInfo.InvariantCulture)

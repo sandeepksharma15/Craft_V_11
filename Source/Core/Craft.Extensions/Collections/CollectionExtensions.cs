@@ -1,4 +1,5 @@
 ﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
+
 namespace System.Collections.Generic;
 #pragma warning restore IDE0130 // Namespace does not match folder structure
 
@@ -10,9 +11,7 @@ public static class CollectionExtensions
         /// Determines whether the specified collection is null or empty.
         /// </summary>
         public bool IsNullOrEmpty()
-        {
-            return source is null || source.Count == 0;
-        }
+            => source is null || source.Count == 0;
 
         /// <summary>
         /// Adds the specified item to the collection if it does not already exist in the collection.

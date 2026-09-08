@@ -1,4 +1,4 @@
-﻿namespace Craft.Extensions.Tests.Collections;
+namespace Craft.Extensions.Tests.Collections;
 
 public class EnumerableExtensionsTests
 {
@@ -9,7 +9,7 @@ public class EnumerableExtensionsTests
         IEnumerable<TestItem>? items = null;
 
         // Act
-        var result = items.GetListDataForSelect("Id", "Name");
+        Dictionary<string, string> result = items.GetListDataForSelect("Id", "Name");
 
         // Assert
         Assert.NotNull(result);
@@ -20,14 +20,14 @@ public class EnumerableExtensionsTests
     public void GetListDataForSelect_UsesProperties_WhenFieldsAreValid()
     {
         // Arrange
-        var items = new[]
-        {
+        TestItem[] items =
+        [
             new TestItem { Id = 1, Name = "A" },
             new TestItem { Id = 2, Name = "B" }
-        };
+        ];
 
         // Act
-        var result = items.GetListDataForSelect("Id", "Name");
+        Dictionary<string, string> result = items.GetListDataForSelect("Id", "Name");
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -39,16 +39,16 @@ public class EnumerableExtensionsTests
     public void GetListDataForSelect_HandlesNullPropertyValues()
     {
         // Arrange
-        var items = new[]
-        {
+        TestItem[] items =
+        [
             new TestItem { Id = 1, Name = null }
-        };
+        ];
 
         // Act
-        var result = items.GetListDataForSelect("Id", "Name");
+        Dictionary<string, string> result = items.GetListDataForSelect("Id", "Name");
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Equal(string.Empty, result["1"]);
     }
 
@@ -56,17 +56,17 @@ public class EnumerableExtensionsTests
     public void GetListDataForSelect_UsesToString_WhenFieldsAreNull()
     {
         // Arrange
-        var items = new[]
-        {
+        TestItem[] items =
+        [
             new TestItem { Id = 1, Name = "A" }
-        };
+        ];
 
         // Act
-        var result = items.GetListDataForSelect(null!, null!);
-        var expectedKey = items[0].ToString();
+        Dictionary<string, string> result = items.GetListDataForSelect(null!, null!);
+        string expectedKey = items[0].ToString();
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Equal(expectedKey, result.Keys.First());
         Assert.Equal(expectedKey, result.Values.First());
     }
@@ -78,10 +78,10 @@ public class EnumerableExtensionsTests
         TestItem?[] items = [null];
 
         // Act
-        var result = items.GetListDataForSelect(null!, null!);
+        Dictionary<string, string> result = items.GetListDataForSelect(null!, null!);
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Equal(string.Empty, result.Keys.First());
         Assert.Equal(string.Empty, result.Values.First());
     }
@@ -93,10 +93,10 @@ public class EnumerableExtensionsTests
         TestItem?[] items = [null];
 
         // Act
-        var result = items.GetListDataForSelect("Id", "Name");
+        Dictionary<string, string> result = items.GetListDataForSelect("Id", "Name");
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Equal(string.Empty, result.Keys.First());
         Assert.Equal(string.Empty, result.Values.First());
     }
@@ -105,16 +105,16 @@ public class EnumerableExtensionsTests
     public void GetListDataForSelect_HandlesMissingProperty()
     {
         // Arrange
-        var items = new[]
-        {
+        TestItem[] items =
+        [
             new TestItem { Id = 1, Name = "A" }
-        };
+        ];
 
         // Act
-        var result = items.GetListDataForSelect("NonExistent", "Name");
+        Dictionary<string, string> result = items.GetListDataForSelect("NonExistent", "Name");
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Equal(string.Empty, result.Keys.First());
         Assert.Equal("A", result.Values.First());
     }
@@ -123,21 +123,21 @@ public class EnumerableExtensionsTests
     public void GetListDataForSelect_ThrowsOnDuplicateKeys()
     {
         // Arrange
-        var items = new[]
-        {
+        TestItem[] items =
+        [
             new TestItem { Id = 1, Name = "A" },
             new TestItem { Id = 1, Name = "B" }
-        };
+        ];
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => items.GetListDataForSelect("Id", "Name"));
+        _ = Assert.Throws<ArgumentException>(() => items.GetListDataForSelect("Id", "Name"));
     }
 
     [Fact]
     public void IsIn_ReturnsTrue_IfItemIsInCollection()
     {
         // Arrange
-        var collection = new[] { 1, 2, 3 };
+        int[] collection = [1, 2, 3];
 
         // Act & Assert
         Assert.True(2.IsIn(collection));
@@ -147,7 +147,7 @@ public class EnumerableExtensionsTests
     public void IsIn_ReturnsFalse_IfItemIsNotInCollection()
     {
         // Arrange
-        var collection = new[] { 1, 2, 3 };
+        int[] collection = [1, 2, 3];
 
         // Act & Assert
         Assert.False(4.IsIn(collection));
@@ -157,19 +157,20 @@ public class EnumerableExtensionsTests
     public void IsIn_WorksWithReferenceTypes()
     {
         // Arrange
-        var a = new TestItem { Id = 1, Name = "A" };
-        var b = new TestItem { Id = 2, Name = "B" };
-        var collection = new[] { a, b };
+        TestItem a = new() { Id = 1, Name = "A" };
+        TestItem b = new() { Id = 2, Name = "B" };
+        TestItem[] collection = [a, b];
 
         // Act & Assert
         Assert.True(a.IsIn(collection));
-        Assert.False(new TestItem { Id = 1, Name = "A" }.IsIn(collection)); // different reference
+        Assert.False(new TestItem { Id = 1, Name = "A" }.IsIn(collection));
     }
 
-    private class TestItem
+    private sealed class TestItem
     {
         public int Id { get; set; }
         public string? Name { get; set; }
+
         public override string ToString() => $"TestItem:{Id}:{Name}";
     }
 }

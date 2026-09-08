@@ -16,6 +16,7 @@
 ## Architecture Decisions
 
 <!-- Non-obvious technical decisions made during development. Include brief rationale. -->
+- 2026-09-08: Collection-related extensions are split by target type (`ICollection<T>`, `IEnumerable<T>`, membership-on-item) and queryable extensions live in the LINQ area to keep files cohesive and discoverable.
 
 ## Patterns & Conventions
 

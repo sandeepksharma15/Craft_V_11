@@ -1,4 +1,4 @@
-﻿namespace Craft.Extensions.Tests.Collections;
+namespace Craft.Extensions.Tests.Collections;
 
 public class ListExtensionsTests
 {
@@ -10,7 +10,7 @@ public class ListExtensionsTests
         int[] list = [1, 2, 3];
 
         // Act
-        var result = item.IsIn(list);
+        bool result = item.IsIn(list);
 
         // Assert
         Assert.False(result);
@@ -24,7 +24,7 @@ public class ListExtensionsTests
         string[] list = ["cat", "dog", "elephant"];
 
         // Act
-        var result = item.IsIn(list);
+        bool result = item.IsIn(list);
 
         // Assert
         Assert.False(result);
@@ -38,7 +38,7 @@ public class ListExtensionsTests
         int[] list = [1, 2, 3];
 
         // Act
-        var result = item.IsIn(list);
+        bool result = item.IsIn(list);
 
         // Assert
         Assert.True(result);
@@ -52,7 +52,7 @@ public class ListExtensionsTests
         string[] list = ["cat", "dog", "elephant"];
 
         // Act
-        var result = item.IsIn(list);
+        bool result = item.IsIn(list);
 
         // Assert
         Assert.True(result);

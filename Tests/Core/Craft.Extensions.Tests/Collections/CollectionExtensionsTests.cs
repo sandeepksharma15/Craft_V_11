@@ -67,7 +67,7 @@ public class CollectionExtensionsTests
         List<int>? list = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(1));
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(1));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class CollectionExtensionsTests
         List<int> list = [1, 2];
 
         // Act
-        var added = list.AddIfNotContains([2, 3, 4]).ToList();
+        List<int> added = list.AddIfNotContains([2, 3, 4]).ToList();
 
         // Assert
         Assert.Contains(3, list);
@@ -93,7 +93,7 @@ public class CollectionExtensionsTests
         List<int>? list = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains([1]));
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains([1]));
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class CollectionExtensionsTests
         IEnumerable<int>? items = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(items!));
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(items!));
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public class CollectionExtensionsTests
         List<int>? list = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(x => true, () => 1));
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(x => true, () => 1));
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class CollectionExtensionsTests
         Func<int, bool>? predicate = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(predicate!, () => 2));
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(predicate!, () => 2));
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class CollectionExtensionsTests
         Func<int>? factory = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(x => true, factory!));
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(x => true, factory!));
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class CollectionExtensionsTests
         List<int>? list = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list!.RemoveAll([1]));
+        _ = Assert.Throws<ArgumentNullException>(() => list!.RemoveAll([1]));
     }
 
     [Fact]
@@ -215,7 +215,7 @@ public class CollectionExtensionsTests
         IEnumerable<int>? items = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => list.RemoveAll(items!));
+        _ = Assert.Throws<ArgumentNullException>(() => list.RemoveAll(items!));
     }
 
     [Fact]

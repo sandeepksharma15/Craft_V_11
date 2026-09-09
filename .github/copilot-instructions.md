@@ -23,6 +23,7 @@
 * Use dependency injection with explicit lifetime scoping (Transient/Scoped/Singleton).
 * Use established project patterns before introducing new ones. Architecture patterns like Repository, Specification, Factory, Strategy, Builder, or MediatR are **not mandatory**—introduce them only when they provide a clear benefit.
 * Do not add unnecessary abstractions, projects, NuGet packages, or infrastructure without justification.
+* Prefer the newer C# extension member syntax (`extension<T>(...)`) for extension methods going forward when the language/features support it.
 
 ## 3. Configuration & Security
 

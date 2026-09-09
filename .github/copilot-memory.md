@@ -12,6 +12,7 @@
 ## Preferences
 
 <!-- Explicit user preferences for code style, tooling, or workflow beyond what .editorconfig covers. -->
+- 2026-09-09: Prefer the newer C# extension member syntax (`extension<T>(...)`) for extension methods when supported by the language and applicable to the target type.
 
 ## Architecture Decisions
 

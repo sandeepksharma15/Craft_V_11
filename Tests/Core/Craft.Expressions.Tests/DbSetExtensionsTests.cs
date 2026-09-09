@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Craft.Expressions.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Expressions.Tests;
@@ -32,7 +33,7 @@ public class DbSetExtensionsTests
     {
         DbSet<QueryFilterEntity> dbSet = null!;
 
-        Assert.Throws<ArgumentNullException>(() => dbSet.GetQueryFilter());
+        _ = Assert.Throws<ArgumentNullException>(() => dbSet.GetQueryFilter());
     }
 
     [Fact]
@@ -41,10 +42,9 @@ public class DbSetExtensionsTests
         using NoQueryFilterDbContext context = CreateNoQueryFilterContext();
         SeedEntities(context);
 
-        List<QueryFilterEntity> result = context.Entities
+        List<QueryFilterEntity> result = [.. context.Entities
             .RemoveFromQueryFilter(entity => entity.IsActive)
-            .OrderBy(entity => entity.Id)
-            .ToList();
+            .OrderBy(entity => entity.Id)];
 
         Assert.Equal(2, result.Count);
     }
@@ -55,10 +55,9 @@ public class DbSetExtensionsTests
         using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
         SeedEntities(context);
 
-        List<QueryFilterEntity> result = context.Entities
+        List<QueryFilterEntity> result = [.. context.Entities
             .RemoveFromQueryFilter(entity => entity.IsActive == true)
-            .OrderBy(entity => entity.Id)
-            .ToList();
+            .OrderBy(entity => entity.Id)];
 
         Assert.Equal(2, result.Count);
     }
@@ -73,12 +72,11 @@ public class DbSetExtensionsTests
             new QueryFilterEntity { Id = 2, IsActive = false, IsDeleted = false },
             new QueryFilterEntity { Id = 3, IsActive = true, IsDeleted = true }
         ]);
-        context.SaveChanges();
+        _ = context.SaveChanges();
 
-        List<QueryFilterEntity> result = context.Entities
+        List<QueryFilterEntity> result = [.. context.Entities
             .RemoveFromQueryFilter(entity => entity.IsActive == true)
-            .OrderBy(entity => entity.Id)
-            .ToList();
+            .OrderBy(entity => entity.Id)];
 
         Assert.Equal([1, 2], result.Select(entity => entity.Id).ToList());
     }
@@ -89,7 +87,7 @@ public class DbSetExtensionsTests
         DbSet<QueryFilterEntity> dbSet = null!;
         Expression<Func<QueryFilterEntity, bool>> condition = entity => entity.IsActive;
 
-        Assert.Throws<ArgumentNullException>(() => dbSet.RemoveFromQueryFilter(condition));
+        _ = Assert.Throws<ArgumentNullException>(() => dbSet.RemoveFromQueryFilter(condition));
     }
 
     [Fact]
@@ -98,7 +96,7 @@ public class DbSetExtensionsTests
         using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
         Expression<Func<QueryFilterEntity, bool>> condition = null!;
 
-        Assert.Throws<ArgumentNullException>(() => context.Entities.RemoveFromQueryFilter(condition));
+        _ = Assert.Throws<ArgumentNullException>(() => context.Entities.RemoveFromQueryFilter(condition));
     }
 
     private static NoQueryFilterDbContext CreateNoQueryFilterContext()
@@ -135,7 +133,7 @@ public class DbSetExtensionsTests
             new QueryFilterEntity { Id = 1, IsActive = true },
             new QueryFilterEntity { Id = 2, IsActive = false }
         ]);
-        context.SaveChanges();
+        _ = context.SaveChanges();
     }
 
     private static void SeedEntities(SingleQueryFilterDbContext context)
@@ -145,7 +143,7 @@ public class DbSetExtensionsTests
             new QueryFilterEntity { Id = 1, IsActive = true },
             new QueryFilterEntity { Id = 2, IsActive = false }
         ]);
-        context.SaveChanges();
+        _ = context.SaveChanges();
     }
 
     private sealed class QueryFilterEntity
@@ -166,7 +164,7 @@ public class DbSetExtensionsTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive);
+            _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive);
         }
     }
 
@@ -176,7 +174,7 @@ public class DbSetExtensionsTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
+            _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
         }
     }
 }

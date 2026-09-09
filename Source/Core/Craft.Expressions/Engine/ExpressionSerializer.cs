@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
+using Craft.Expressions.Exceptions;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Engine;
 
 /// <summary>
 /// Provides serialization and deserialization of LINQ expression trees to and from string representations.

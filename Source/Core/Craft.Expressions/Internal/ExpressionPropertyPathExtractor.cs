@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Internal;
 
 internal static class ExpressionPropertyPathExtractor
 {
@@ -9,7 +9,7 @@ internal static class ExpressionPropertyPathExtractor
         ArgumentNullException.ThrowIfNull(expression);
 
         List<string> parts = [];
-        var current = expression;
+        Expression? current = expression;
 
         while (current is not null)
         {
@@ -25,7 +25,7 @@ internal static class ExpressionPropertyPathExtractor
                     break;
 
                 case MethodCallExpression methodCall when IsNullConditionalAccess(methodCall):
-                    var memberArgument = GetMemberFromNullConditional(methodCall);
+                    MemberExpression? memberArgument = GetMemberFromNullConditional(methodCall);
                     if (memberArgument is null)
                     {
                         current = null;

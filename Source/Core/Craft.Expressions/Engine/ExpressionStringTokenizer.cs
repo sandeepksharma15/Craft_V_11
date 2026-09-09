@@ -1,6 +1,9 @@
 ﻿using System.Text;
+using Craft.Expressions.Constants;
+using Craft.Expressions.Exceptions;
+using Craft.Expressions.Tokens;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Engine;
 
 /// <summary>
 /// Tokenizes an expression string into a sequence of tokens.

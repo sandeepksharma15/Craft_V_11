@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Extensions;
 
 namespace Craft.Expressions.Tests;
 
@@ -10,7 +11,7 @@ public class PredicateExpressionExtensionsTests
         Expression<Func<int, bool>> original = x => x > 5;
         Expression<Func<int, bool>> condition = value => value < 10;
 
-        var result = original.RemoveCondition(condition);
+        Expression<Func<int, bool>>? result = original.RemoveCondition(condition);
 
         Assert.NotNull(result);
         Assert.Equal(original.Compile()(6), result!.Compile()(6));
@@ -32,7 +33,7 @@ public class PredicateExpressionExtensionsTests
         Expression<Func<int, bool>> original = x => x > 5 && x < 10;
         Expression<Func<int, bool>> condition = value => value < 10;
 
-        var result = original.RemoveCondition(condition);
+        Expression<Func<int, bool>>? result = original.RemoveCondition(condition);
 
         Assert.NotNull(result);
         Assert.True(result!.Compile()(6));
@@ -45,7 +46,7 @@ public class PredicateExpressionExtensionsTests
     {
         Expression<Func<int, bool>> original = x => x > 5 && x < 10 && x != 7;
 
-        var result = original.RemoveConditions(value => value < 10, number => number != 7);
+        Expression<Func<int, bool>>? result = original.RemoveConditions(value => value < 10, number => number != 7);
 
         Assert.NotNull(result);
         Assert.True(result!.Compile()(6));
@@ -58,8 +59,8 @@ public class PredicateExpressionExtensionsTests
     {
         Expression<Func<int, bool>> original = x => x > 5;
 
-        var empty = original.RemoveConditions();
-        var nullArray = original.RemoveConditions(null!);
+        Expression<Func<int, bool>>? empty = original.RemoveConditions();
+        Expression<Func<int, bool>>? nullArray = original.RemoveConditions(null!);
 
         Assert.Same(original, empty);
         Assert.Same(original, nullArray);
@@ -72,8 +73,8 @@ public class PredicateExpressionExtensionsTests
         Expression<Func<int, bool>> oldCondition = value => value < 10;
         Expression<Func<int, bool>> newCondition = candidate => candidate < 20;
 
-        var result = original.ReplaceCondition(oldCondition, newCondition);
-        var compiled = result.Compile();
+        Expression<Func<int, bool>> result = original.ReplaceCondition(oldCondition, newCondition);
+        Func<int, bool> compiled = result.Compile();
 
         Assert.True(compiled(15));
         Assert.False(compiled(25));
@@ -85,7 +86,7 @@ public class PredicateExpressionExtensionsTests
     {
         Expression<Func<int, bool>> original = x => x > 5 && x < 10;
 
-        var result = original.ReplaceCondition(value => value != 0, candidate => candidate < 20);
+        Expression<Func<int, bool>> result = original.ReplaceCondition(value => value != 0, candidate => candidate < 20);
 
         Assert.True(result.IsSemanticallyEquivalentTo(original));
     }

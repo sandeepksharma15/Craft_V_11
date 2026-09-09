@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Rewriting;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Extensions;
 
 public static class PredicateCompositionExtensions
 {
@@ -14,9 +15,9 @@ public static class PredicateCompositionExtensions
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(other);
 
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var left = ExpressionParameterRebinder.Rebind(expression.Body, expression.Parameters[0], parameter);
-            var right = ExpressionParameterRebinder.Rebind(other.Body, other.Parameters[0], parameter);
+            ParameterExpression parameter = Expression.Parameter(typeof(T), "x");
+            Expression left = ExpressionParameterRebinder.Rebind(expression.Body, expression.Parameters[0], parameter);
+            Expression right = ExpressionParameterRebinder.Rebind(other.Body, other.Parameters[0], parameter);
 
             return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(left, right), parameter);
         }
@@ -29,9 +30,9 @@ public static class PredicateCompositionExtensions
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(other);
 
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var left = ExpressionParameterRebinder.Rebind(expression.Body, expression.Parameters[0], parameter);
-            var right = ExpressionParameterRebinder.Rebind(other.Body, other.Parameters[0], parameter);
+            ParameterExpression parameter = Expression.Parameter(typeof(T), "x");
+            Expression left = ExpressionParameterRebinder.Rebind(expression.Body, expression.Parameters[0], parameter);
+            Expression right = ExpressionParameterRebinder.Rebind(other.Body, other.Parameters[0], parameter);
 
             return Expression.Lambda<Func<T, bool>>(Expression.OrElse(left, right), parameter);
         }

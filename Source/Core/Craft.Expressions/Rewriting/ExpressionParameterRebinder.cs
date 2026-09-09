@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Rewriting;
 
 internal static class ExpressionParameterRebinder
 {

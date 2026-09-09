@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Comparison;
 
 /// <summary>
 /// Provides semantic equality comparison for expression trees by canonicalizing equivalent forms.
@@ -11,10 +11,7 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
     public bool Equals(Expression? x, Expression? y)
     {
-        if (ReferenceEquals(x, y))
-            return true;
-
-        return x is not null && y is not null && ExpressionStructuralComparer.AreEqual(Canonicalize(x), Canonicalize(y));
+        return ReferenceEquals(x, y) || x is not null && y is not null && ExpressionStructuralComparer.AreEqual(Canonicalize(x), Canonicalize(y));
     }
 
     public int GetHashCode(Expression obj)
@@ -74,8 +71,8 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            var scope = new Dictionary<ParameterExpression, ParameterExpression>(node.Parameters.Count);
-            var parameters = new ParameterExpression[node.Parameters.Count];
+            Dictionary<ParameterExpression, ParameterExpression> scope = new(node.Parameters.Count);
+            ParameterExpression[] parameters = new ParameterExpression[node.Parameters.Count];
 
             for (var i = 0; i < node.Parameters.Count; i++)
             {
@@ -130,10 +127,7 @@ internal static class ExpressionStructuralComparer
 {
     public static bool AreEqual(Expression x, Expression y)
     {
-        if (ReferenceEquals(x, y))
-            return true;
-
-        return x.NodeType == y.NodeType && x.Type == y.Type && (x, y) switch
+        return ReferenceEquals(x, y) || x.NodeType == y.NodeType && x.Type == y.Type && (x, y) switch
         {
             (BinaryExpression left, BinaryExpression right) => AreBinaryExpressionsEqual(left, right),
             (ConstantExpression left, ConstantExpression right) => Equals(left.Value, right.Value),

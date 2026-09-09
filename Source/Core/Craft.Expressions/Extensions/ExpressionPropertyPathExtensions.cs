@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Internal;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Extensions;
 
 public static class ExpressionPropertyPathExtensions
 {
@@ -22,8 +23,8 @@ public static class ExpressionPropertyPathExtensions
         {
             ArgumentNullException.ThrowIfNull(expression);
 
-            var path = ExpressionPropertyPathExtractor.GetFullPropertyPath(expression.Body);
-            var lastDotIndex = path.LastIndexOf('.');
+            string path = ExpressionPropertyPathExtractor.GetFullPropertyPath(expression.Body);
+            int lastDotIndex = path.LastIndexOf('.');
             return lastDotIndex >= 0 ? path[(lastDotIndex + 1)..] : path;
         }
     }

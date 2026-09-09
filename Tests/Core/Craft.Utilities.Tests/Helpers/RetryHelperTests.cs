@@ -155,7 +155,7 @@ public class RetryHelperTests
         var expectedValue = 42;
 
         // Act
-        var result = await RetryHelper.RetryAsync(() => Task.FromResult(expectedValue));
+        var result = await RetryHelper.RetryAsync(() => Task.FromResult(expectedValue), cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -175,7 +175,7 @@ public class RetryHelperTests
             if (attemptCount < 2)
                 throw new InvalidOperationException("First attempt fails");
             return Task.FromResult(expectedValue);
-        }, maxAttempts: 3, delayMs: 10);
+        }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -194,7 +194,7 @@ public class RetryHelperTests
             {
                 attemptCount++;
                 throw new InvalidOperationException("Operation failed");
-            }, maxAttempts: 3, delayMs: 10));
+            }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(3, attemptCount);
         Assert.Contains("Operation failed after 3 attempts", exception.Message);
@@ -204,7 +204,7 @@ public class RetryHelperTests
     public async Task RetryAsync_CancellationRequested_ThrowsOperationCanceledException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act & Assert
@@ -216,7 +216,7 @@ public class RetryHelperTests
     public async Task RetryAsync_CancellationRequestedDuringRetry_ThrowsOperationCanceledException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         var attemptCount = 0;
 
         // Act & Assert
@@ -237,7 +237,7 @@ public class RetryHelperTests
     {
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await RetryHelper.RetryAsync<int>(null!, maxAttempts: 3, delayMs: 1000));
+            await RetryHelper.RetryAsync<int>(null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -255,7 +255,7 @@ public class RetryHelperTests
         {
             executed = true;
             return Task.CompletedTask;
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(executed);
@@ -274,7 +274,7 @@ public class RetryHelperTests
             if (attemptCount < 2)
                 throw new InvalidOperationException("First attempt fails");
             return Task.CompletedTask;
-        }, maxAttempts: 3, delayMs: 10);
+        }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(2, attemptCount);
@@ -292,7 +292,7 @@ public class RetryHelperTests
             {
                 attemptCount++;
                 throw new InvalidOperationException("Operation failed");
-            }, maxAttempts: 3, delayMs: 10));
+            }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(3, attemptCount);
         Assert.Contains("Operation failed after 3 attempts", exception.Message);
@@ -302,7 +302,7 @@ public class RetryHelperTests
     public async Task RetryAsync_Void_CancellationRequested_ThrowsOperationCanceledException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act & Assert
@@ -403,7 +403,7 @@ public class RetryHelperTests
 
         // Act
         var result = await RetryHelper.RetryOnExceptionAsync<int, InvalidOperationException>(
-            () => Task.FromResult(expectedValue));
+            () => Task.FromResult(expectedValue), cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -423,7 +423,7 @@ public class RetryHelperTests
             if (attemptCount < 2)
                 throw new InvalidOperationException("First attempt fails");
             return Task.FromResult(expectedValue);
-        }, maxAttempts: 3, delayMs: 10);
+        }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -442,7 +442,7 @@ public class RetryHelperTests
             {
                 attemptCount++;
                 throw new ArgumentException("Different exception");
-            }, maxAttempts: 3, delayMs: 10));
+            }, maxAttempts: 3, delayMs: 10, cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(1, attemptCount);
     }
@@ -451,7 +451,7 @@ public class RetryHelperTests
     public async Task RetryOnExceptionAsync_CancellationRequested_ThrowsOperationCanceledException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act & Assert
@@ -467,7 +467,7 @@ public class RetryHelperTests
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await RetryHelper.RetryOnExceptionAsync<int, InvalidOperationException>(
-                null!, maxAttempts: 3, delayMs: 1000));
+                null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -614,7 +614,7 @@ public class RetryHelperTests
         var expectedValue = 42;
 
         // Act
-        var result = await RetryHelper.RetryWithExponentialBackoffAsync(() => Task.FromResult(expectedValue));
+        var result = await RetryHelper.RetryWithExponentialBackoffAsync(() => Task.FromResult(expectedValue), cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -634,7 +634,7 @@ public class RetryHelperTests
             if (attemptCount < 2)
                 throw new InvalidOperationException("First attempt fails");
             return Task.FromResult(expectedValue);
-        }, maxAttempts: 3, initialDelayMs: 10);
+        }, maxAttempts: 3, initialDelayMs: 10, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(expectedValue, result);
@@ -653,7 +653,7 @@ public class RetryHelperTests
             {
                 attemptCount++;
                 throw new InvalidOperationException("Operation failed");
-            }, maxAttempts: 3, initialDelayMs: 10));
+            }, maxAttempts: 3, initialDelayMs: 10, cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(3, attemptCount);
         Assert.Contains("Operation failed after 3 attempts", exception.Message);
@@ -663,7 +663,7 @@ public class RetryHelperTests
     public async Task RetryWithExponentialBackoffAsync_CancellationRequested_ThrowsOperationCanceledException()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act & Assert
@@ -694,7 +694,7 @@ public class RetryHelperTests
                     lastTime = currentTime;
                 }
                 throw new InvalidOperationException("Operation failed");
-            }, maxAttempts: 4, initialDelayMs: 100, maxDelayMs: 10000));
+            }, maxAttempts: 4, initialDelayMs: 100, maxDelayMs: 10000, cancellationToken: TestContext.Current.CancellationToken));
 
         // Assert delays are increasing (allowing for some timing variance)
         Assert.Equal(4, attemptCount);
@@ -724,7 +724,7 @@ public class RetryHelperTests
                     lastTime = currentTime;
                 }
                 throw new InvalidOperationException("Operation failed");
-            }, maxAttempts: 10, initialDelayMs: 100, maxDelayMs: 200));
+            }, maxAttempts: 10, initialDelayMs: 100, maxDelayMs: 200, cancellationToken: TestContext.Current.CancellationToken));
 
         // Assert all delays respect the max delay cap (with tolerance for timing variance)
         Assert.Equal(10, attemptCount);
@@ -739,7 +739,8 @@ public class RetryHelperTests
             await RetryHelper.RetryWithExponentialBackoffAsync(() => Task.FromResult(42),
                 maxAttempts: 3,
                 initialDelayMs: 1000,
-                maxDelayMs: 500));
+                maxDelayMs: 500,
+                cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -748,7 +749,7 @@ public class RetryHelperTests
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await RetryHelper.RetryWithExponentialBackoffAsync<int>(
-                null!, maxAttempts: 3, initialDelayMs: 1000));
+                null!, maxAttempts: 3, initialDelayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion

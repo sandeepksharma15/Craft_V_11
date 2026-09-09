@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Extensions;
 
 namespace Craft.Expressions.Tests;
 
@@ -57,7 +58,7 @@ public class ExpressionPropertyPathExtensionsTests
     {
         Expression<Func<TestEntity, object>> expression = null!;
 
-        Assert.Throws<ArgumentNullException>(() => expression.GetFullPropertyPath());
+        _ = Assert.Throws<ArgumentNullException>(expression.GetFullPropertyPath);
     }
 
     [Fact]

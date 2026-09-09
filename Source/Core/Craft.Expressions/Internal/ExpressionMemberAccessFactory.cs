@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Internal;
 
 internal static class ExpressionMemberAccessFactory
 {
@@ -13,7 +13,7 @@ internal static class ExpressionMemberAccessFactory
         MemberInfo member = FindMember(type, memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
             ?? throw new ArgumentException($"Property or field '{memberName}' not found on type '{type.FullName}'.", nameof(memberName));
 
-        var isStatic = IsStatic(member);
+        bool isStatic = IsStatic(member);
         ParameterExpression? parameter = isStatic ? null : Expression.Parameter(type, "x");
         Expression memberAccess = CreateMemberAccess(member, parameter);
 

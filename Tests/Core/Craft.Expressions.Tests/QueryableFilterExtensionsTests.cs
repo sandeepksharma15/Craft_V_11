@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+using Craft.Expressions.Linq;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Expressions.Tests;
@@ -44,7 +44,7 @@ public class QueryableFilterExtensionsTests
         await using FilteredQueryDbContext context = CreateFilteredQueryContext();
         IQueryable<FilteredQueryEntity>? queryable = null;
 
-        Assert.Throws<ArgumentNullException>(() => queryable!.ApplyQueryFilter(context.Entities));
+        _ = Assert.Throws<ArgumentNullException>(() => queryable!.ApplyQueryFilter(context.Entities));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class QueryableFilterExtensionsTests
         await SeedFilteredQueryContextAsync(context, cancellationToken);
         DbSet<FilteredQueryEntity> dbSet = null!;
 
-        Assert.Throws<ArgumentNullException>(() => context.Entities.ApplyQueryFilter(dbSet));
+        _ = Assert.Throws<ArgumentNullException>(() => context.Entities.ApplyQueryFilter(dbSet));
     }
 
     private static FilteredQueryDbContext CreateFilteredQueryContext()
@@ -83,7 +83,7 @@ public class QueryableFilterExtensionsTests
             new FilteredQueryEntity { Id = 1, IsActive = true, Name = "One" },
             new FilteredQueryEntity { Id = 2, IsActive = false, Name = "Two" }
         ], cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        _ = await context.SaveChangesAsync(cancellationToken);
     }
 
     private static async Task SeedUnfilteredQueryContextAsync(UnfilteredQueryDbContext context, CancellationToken cancellationToken)
@@ -93,7 +93,7 @@ public class QueryableFilterExtensionsTests
             new FilteredQueryEntity { Id = 1, IsActive = true, Name = "One" },
             new FilteredQueryEntity { Id = 2, IsActive = false, Name = "Two" }
         ], cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        _ = await context.SaveChangesAsync(cancellationToken);
     }
 
     private sealed class FilteredQueryDbContext(DbContextOptions<FilteredQueryDbContext> options) : DbContext(options)
@@ -102,7 +102,7 @@ public class QueryableFilterExtensionsTests
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<FilteredQueryEntity>().HasQueryFilter(entity => entity.IsActive);
+            _ = modelBuilder.Entity<FilteredQueryEntity>().HasQueryFilter(entity => entity.IsActive);
         }
     }
 

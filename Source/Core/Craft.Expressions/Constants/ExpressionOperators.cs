@@ -1,4 +1,4 @@
-namespace Craft.Expressions;
+namespace Craft.Expressions.Constants;
 
 /// <summary>
 /// Defines constant values for expression operators.

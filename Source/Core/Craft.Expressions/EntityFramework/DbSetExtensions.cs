@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Query;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.EntityFramework;
 
 public static class DbSetExtensions
 {

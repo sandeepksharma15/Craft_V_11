@@ -1,4 +1,4 @@
-namespace Craft.Expressions;
+namespace Craft.Expressions.Exceptions;
 
 /// <summary>
 /// Exception thrown when an expression string cannot be tokenized.

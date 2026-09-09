@@ -1,4 +1,4 @@
-namespace Craft.Expressions;
+namespace Craft.Expressions.Exceptions;
 
 /// <summary>
 /// Exception thrown when an expression cannot be evaluated against a type.

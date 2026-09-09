@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Helpers;
 
 public sealed record FilterCriteria
 {
@@ -58,7 +58,7 @@ public sealed record FilterCriteria
             compareWith = (int)compareWith;
         }
 
-        if (Nullable.GetUnderlyingType(type!) != null)
+        if (type is not null && Nullable.GetUnderlyingType(type) is not null)
             type = GetNonNullableType(type);
 
         return new FilterCriteria(type!, name, compareWith, comparisonType);

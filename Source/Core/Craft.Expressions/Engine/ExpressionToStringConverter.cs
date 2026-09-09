@@ -1,6 +1,7 @@
 ﻿using System.Linq.Expressions;
+using Craft.Expressions.Constants;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Engine;
 
 /// <summary>
 /// Converts LINQ expression trees to their string representations.

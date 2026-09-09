@@ -1,7 +1,8 @@
 using System.Linq.Expressions;
+using Craft.Expressions.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Linq;
 
 public static class QueryableFilterExtensions
 {

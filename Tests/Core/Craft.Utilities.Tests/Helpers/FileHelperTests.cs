@@ -116,7 +116,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(filePath, content);
 
         // Act
-        var size = await FileHelper.GetFileSizeAsync(filePath);
+        var size = await FileHelper.GetFileSizeAsync(filePath, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(new FileInfo(filePath).Length, size);
@@ -126,7 +126,7 @@ public class FileHelperTests : IDisposable
     public async Task GetFileSizeAsync_ThrowsArgumentException_WhenPathIsNull()
     {
         // Arrange & Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileSizeAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileSizeAsync(null!, TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -199,7 +199,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(filePath, "Hello World!");
 
         // Act
-        var hash = await FileHelper.GetFileHashAsync(filePath);
+        var hash = await FileHelper.GetFileHashAsync(filePath, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(hash);
@@ -210,7 +210,7 @@ public class FileHelperTests : IDisposable
     public async Task GetFileHashAsync_ThrowsArgumentException_WhenPathIsNull()
     {
         // Arrange & Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileHashAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileHashAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -515,7 +515,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(source, "content");
 
         // Act
-        await FileHelper.CopyFileAsync(source, destination);
+        await FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(File.Exists(destination));
@@ -526,7 +526,7 @@ public class FileHelperTests : IDisposable
     public async Task CopyFileAsync_ThrowsArgumentException_WhenSourceIsNull()
     {
         // Arrange & Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync(null!, "dest"));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync(null!, "dest", cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -611,7 +611,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(filePath, "content");
 
         // Act
-        var result = await FileHelper.DeleteFileAsync(filePath);
+        var result = await FileHelper.DeleteFileAsync(filePath, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -625,7 +625,7 @@ public class FileHelperTests : IDisposable
         var filePath = Path.Combine(_testDirectory, "nonexistent.txt");
 
         // Act
-        var result = await FileHelper.DeleteFileAsync(filePath);
+        var result = await FileHelper.DeleteFileAsync(filePath, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -761,7 +761,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(file2, content);
 
         // Act
-        var result = await FileHelper.CompareFilesAsync(file1, file2);
+        var result = await FileHelper.CompareFilesAsync(file1, file2, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -777,7 +777,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(file2, "Content 2");
 
         // Act
-        var result = await FileHelper.CompareFilesAsync(file1, file2);
+        var result = await FileHelper.CompareFilesAsync(file1, file2, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);

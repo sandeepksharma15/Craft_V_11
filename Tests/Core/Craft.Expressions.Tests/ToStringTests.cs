@@ -1,3 +1,6 @@
+using Craft.Expressions.Ast;
+using Craft.Expressions.Tokens;
+
 namespace Craft.Expressions.Tests;
 
 public class ToStringTests
@@ -6,9 +9,9 @@ public class ToStringTests
     public void BinaryAstNode_ToStringReturnsFormattedExpression()
     {
         // Arrange
-        var left = new ConstantAstNode(5);
-        var right = new ConstantAstNode(10);
-        var node = new BinaryAstNode(">", left, right);
+        ConstantAstNode left = new(5);
+        ConstantAstNode right = new(10);
+        BinaryAstNode node = new(">", left, right);
 
         // Act
         var result = node.ToString();
@@ -21,8 +24,8 @@ public class ToStringTests
     public void UnaryAstNode_ToStringReturnsFormattedExpression()
     {
         // Arrange
-        var operand = new ConstantAstNode(true);
-        var node = new UnaryAstNode("!", operand);
+        ConstantAstNode operand = new(true);
+        UnaryAstNode node = new("!", operand);
 
         // Act
         var result = node.ToString();
@@ -35,10 +38,10 @@ public class ToStringTests
     public void ConstantAstNode_ToStringReturnsValue()
     {
         // Arrange
-        var stringNode = new ConstantAstNode("test");
-        var numberNode = new ConstantAstNode(42);
-        var boolNode = new ConstantAstNode(true);
-        var nullNode = new ConstantAstNode(null!);
+        ConstantAstNode stringNode = new("test");
+        ConstantAstNode numberNode = new(42);
+        ConstantAstNode boolNode = new(true);
+        ConstantAstNode nullNode = new(null!);
 
         // Act & Assert
         Assert.Equal("test", stringNode.ToString());
@@ -51,8 +54,8 @@ public class ToStringTests
     public void MemberAstNode_ToStringReturnsDottedPath()
     {
         // Arrange
-        var simpleMember = new MemberAstNode(["Name"]);
-        var nestedMember = new MemberAstNode(["Company", "Address", "City"]);
+        MemberAstNode simpleMember = new(["Name"]);
+        MemberAstNode nestedMember = new(["Company", "Address", "City"]);
 
         // Act & Assert
         Assert.Equal("Name", simpleMember.ToString());
@@ -63,9 +66,9 @@ public class ToStringTests
     public void MethodCallAstNode_ToStringReturnsMethodCall()
     {
         // Arrange
-        var target = new MemberAstNode(["Name"]);
-        var arg = new ConstantAstNode("John");
-        var node = new MethodCallAstNode(target, "Contains", [arg]);
+        MemberAstNode target = new(["Name"]);
+        ConstantAstNode arg = new("John");
+        MethodCallAstNode node = new(target, "Contains", [arg]);
 
         // Act
         var result = node.ToString();
@@ -78,10 +81,10 @@ public class ToStringTests
     public void MethodCallAstNode_ToStringHandlesMultipleArguments()
     {
         // Arrange
-        var target = new MemberAstNode(["Text"]);
-        var arg1 = new ConstantAstNode("old");
-        var arg2 = new ConstantAstNode("new");
-        var node = new MethodCallAstNode(target, "Replace", [arg1, arg2]);
+        MemberAstNode target = new(["Text"]);
+        ConstantAstNode arg1 = new("old");
+        ConstantAstNode arg2 = new("new");
+        MethodCallAstNode node = new(target, "Replace", [arg1, arg2]);
 
         // Act
         var result = node.ToString();
@@ -94,7 +97,7 @@ public class ToStringTests
     public void Token_ToStringReturnsFormattedString()
     {
         // Arrange
-        var token = new Token(TokenType.Identifier, "Name", 0);
+        Token token = new(TokenType.Identifier, "Name", 0);
 
         // Act
         var result = token.ToString();
@@ -109,9 +112,9 @@ public class ToStringTests
     public void ComplexExpression_ToStringShowsStructure()
     {
         // Arrange
-        var left = new BinaryAstNode(">", new MemberAstNode(["Age"]), new ConstantAstNode(18));
-        var right = new BinaryAstNode("==", new MemberAstNode(["IsActive"]), new ConstantAstNode(true));
-        var root = new BinaryAstNode("&&", left, right);
+        BinaryAstNode left = new(">", new MemberAstNode(["Age"]), new ConstantAstNode(18));
+        BinaryAstNode right = new("==", new MemberAstNode(["IsActive"]), new ConstantAstNode(true));
+        BinaryAstNode root = new("&&", left, right);
 
         // Act
         var result = root.ToString();

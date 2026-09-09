@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Ast;
 
 /// <summary>
 /// Represents a method call AST node with a target, method name, and arguments.

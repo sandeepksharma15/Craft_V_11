@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Ast;
 
 /// <summary>
 /// Represents a member access AST node (property or field access).

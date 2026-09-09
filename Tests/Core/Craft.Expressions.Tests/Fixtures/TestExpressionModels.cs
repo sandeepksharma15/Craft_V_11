@@ -1,4 +1,4 @@
-namespace Craft.Testing.Fixtures;
+namespace Craft.Expressions.Tests.Fixtures;
 
 public sealed class Company
 {

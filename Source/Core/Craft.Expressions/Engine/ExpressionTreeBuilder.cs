@@ -1,8 +1,11 @@
 ﻿using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using Craft.Expressions.Ast;
+using Craft.Expressions.Constants;
+using Craft.Expressions.Exceptions;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Engine;
 
 /// <summary>
 /// Builds LINQ expression trees from abstract syntax tree (AST) nodes.

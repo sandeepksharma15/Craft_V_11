@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Ast;
 
 /// <summary>
 /// Represents a constant value AST node (string, number, boolean, or null).

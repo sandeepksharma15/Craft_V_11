@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
+using Craft.Expressions.Rewriting;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Extensions;
 
 public static class ExpressionParameterExtensions
 {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Craft.Expressions;
+namespace Craft.Expressions.Helpers;
 
 public enum ComparisonType
 {

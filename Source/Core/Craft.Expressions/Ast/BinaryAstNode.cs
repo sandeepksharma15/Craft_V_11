@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Ast;
 
 /// <summary>
 /// Represents a binary operation AST node with a left operand, right operand, and an operator.

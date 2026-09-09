@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Ast;
 
 /// <summary>
 /// Represents a unary operation AST node with a single operand and an operator.

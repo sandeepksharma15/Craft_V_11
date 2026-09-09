@@ -20,7 +20,7 @@ public class UrlValidatorsTests
     public void IsValidUrl_ValidatesUrlCorrectly(string url, bool expected)
     {
         // Arrange & Act
-        var result = UrlValidations.IsValidUrl(url);
+        bool result = UrlValidations.IsValidUrl(url);
 
         // Assert
         Assert.Equal(expected, result);
@@ -30,7 +30,7 @@ public class UrlValidatorsTests
     public void IsValidUrl_WithNull_ReturnsFalse()
     {
         // Arrange & Act
-        var result = UrlValidations.IsValidUrl(null!);
+        bool result = UrlValidations.IsValidUrl(null!);
 
         // Assert
         Assert.False(result);
@@ -40,10 +40,10 @@ public class UrlValidatorsTests
     public async Task IsUrlReachableAsync_WithValidUrl_ReturnsTrue()
     {
         // Arrange
-        var url = "https://www.google.com";
+        string url = "https://www.google.com";
 
         // Act
-        var result = await UrlValidations.IsUrlReachableAsync(url);
+        bool result = await UrlValidations.IsUrlReachableAsync(url, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -53,10 +53,10 @@ public class UrlValidatorsTests
     public async Task IsUrlReachableAsync_WithInvalidUrl_ReturnsFalse()
     {
         // Arrange
-        var url = "https://this-domain-definitely-does-not-exist-12345.com";
+        string url = "https://this-domain-definitely-does-not-exist-12345.com";
 
         // Act
-        var result = await UrlValidations.IsUrlReachableAsync(url);
+        bool result = await UrlValidations.IsUrlReachableAsync(url, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -66,12 +66,12 @@ public class UrlValidatorsTests
     public async Task IsUrlReachableAsync_WithCancellationToken_ReturnsFalse()
     {
         // Arrange
-        var url = "https://www.google.com";
-        using var cts = new CancellationTokenSource();
+        string url = "https://www.google.com";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act
-        var result = await UrlValidations.IsUrlReachableAsync(url, cts.Token);
+        bool result = await UrlValidations.IsUrlReachableAsync(url, cts.Token);
 
         // Assert
         // The method catches OperationCanceledException and returns false
@@ -82,10 +82,10 @@ public class UrlValidatorsTests
     public async Task IsUrlExistingAsync_WithValidUrl_ReturnsTrue()
     {
         // Arrange
-        var url = "https://www.google.com";
+        string url = "https://www.google.com";
 
         // Act
-        var result = await UrlValidations.IsUrlExistingAsync(url);
+        bool result = await UrlValidations.IsUrlExistingAsync(url, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -95,10 +95,10 @@ public class UrlValidatorsTests
     public async Task IsUrlExistingAsync_WithInvalidUrl_ReturnsFalse()
     {
         // Arrange
-        var url = "https://this-domain-definitely-does-not-exist-12345.com";
+        string url = "https://this-domain-definitely-does-not-exist-12345.com";
 
         // Act
-        var result = await UrlValidations.IsUrlExistingAsync(url);
+        bool result = await UrlValidations.IsUrlExistingAsync(url, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -108,12 +108,12 @@ public class UrlValidatorsTests
     public async Task IsUrlExistingAsync_WithCancellationToken_ReturnsFalse()
     {
         // Arrange
-        var url = "https://www.google.com";
-        using var cts = new CancellationTokenSource();
+        string url = "https://www.google.com";
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act
-        var result = await UrlValidations.IsUrlExistingAsync(url, cts.Token);
+        bool result = await UrlValidations.IsUrlExistingAsync(url, cts.Token);
 
         // Assert
         // The method catches OperationCanceledException and returns false
@@ -124,7 +124,7 @@ public class UrlValidatorsTests
     public async Task RemoveInvalidUrls_WithNullList_ReturnsEmptyList()
     {
         // Arrange & Act
-        var result = await UrlValidations.RemoveInvalidUrls(null);
+        var result = await UrlValidations.RemoveInvalidUrls(null, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -138,7 +138,7 @@ public class UrlValidatorsTests
         var urls = new List<string?>();
 
         // Act
-        var result = await UrlValidations.RemoveInvalidUrls(urls);
+        var result = await UrlValidations.RemoveInvalidUrls(urls, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -159,7 +159,7 @@ public class UrlValidatorsTests
         };
 
         // Act
-        var result = await UrlValidations.RemoveInvalidUrls(urls);
+        var result = await UrlValidations.RemoveInvalidUrls(urls, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -172,7 +172,7 @@ public class UrlValidatorsTests
     {
         // Arrange
         var urls = new List<string?> { "https://www.google.com", "https://github.com" };
-        using var cts = new CancellationTokenSource();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
         // Act
@@ -192,7 +192,7 @@ public class UrlValidatorsTests
     public void IsValidUrl_WithComplexUrls_ReturnsTrue(string url)
     {
         // Arrange & Act
-        var result = UrlValidations.IsValidUrl(url);
+        bool result = UrlValidations.IsValidUrl(url);
 
         // Assert
         Assert.True(result);
@@ -206,7 +206,7 @@ public class UrlValidatorsTests
     public void IsValidUrl_WithNonHttpSchemes_ReturnsFalse(string url)
     {
         // Arrange & Act
-        var result = UrlValidations.IsValidUrl(url);
+        bool result = UrlValidations.IsValidUrl(url);
 
         // Assert
         Assert.False(result);

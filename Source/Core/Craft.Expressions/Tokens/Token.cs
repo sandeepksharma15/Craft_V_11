@@ -1,4 +1,4 @@
-﻿namespace Craft.Expressions;
+﻿namespace Craft.Expressions.Tokens;
 
 /// <summary>
 /// Represents a token in an expression string.

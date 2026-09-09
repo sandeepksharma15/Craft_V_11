@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
-using Craft.Testing.Fixtures;
+using Craft.Expressions.Engine;
+using Craft.Expressions.Tests.Fixtures;
 
 namespace Craft.Expressions.Tests;
 

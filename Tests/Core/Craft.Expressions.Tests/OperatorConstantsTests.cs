@@ -1,3 +1,6 @@
+using Craft.Expressions.Constants;
+using Craft.Expressions.Engine;
+
 namespace Craft.Expressions.Tests;
 
 public class OperatorConstantsTests
@@ -37,7 +40,7 @@ public class OperatorConstantsTests
     public void Parser_UsesOperatorConstants()
     {
         // Arrange
-        var serializer = new ExpressionSerializer<TestClass>();
+        ExpressionSerializer<TestClass> serializer = new();
 
         // Act - Should work with all operators
         var andExpression = serializer.Deserialize("Age > 18 && IsActive == true");

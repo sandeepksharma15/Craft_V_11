@@ -1,3 +1,6 @@
+using Craft.Expressions.Engine;
+using Craft.Expressions.Exceptions;
+
 namespace Craft.Expressions.Tests;
 
 public class ExpressionSecurityTests
@@ -15,28 +18,28 @@ public class ExpressionSecurityTests
     public void Deserialize_ThrowsArgumentException_WhenInputIsNull()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => Serializer.Deserialize(null!));
+        _ = Assert.Throws<ArgumentNullException>(() => Serializer.Deserialize(null!));
     }
 
     [Fact]
     public void Deserialize_ThrowsArgumentException_WhenInputIsEmpty()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => Serializer.Deserialize(string.Empty));
+        _ = Assert.Throws<ArgumentException>(() => Serializer.Deserialize(string.Empty));
     }
 
     [Fact]
     public void Deserialize_ThrowsArgumentException_WhenInputIsWhitespace()
     {
         // Act & Assert
-        Assert.Throws<ArgumentException>(() => Serializer.Deserialize("   "));
+        _ = Assert.Throws<ArgumentException>(() => Serializer.Deserialize("   "));
     }
 
     [Fact]
     public void Deserialize_ThrowsArgumentException_WhenExpressionExceedsMaxLength()
     {
         // Arrange
-        var longExpression = new string('a', ExpressionSerializer<TestClass>.MaxExpressionLength + 1);
+        string longExpression = new('a', ExpressionSerializer<TestClass>.MaxExpressionLength + 1);
 
         // Act & Assert
         var ex = Assert.Throws<ArgumentException>(() => Serializer.Deserialize(longExpression));
@@ -47,9 +50,9 @@ public class ExpressionSecurityTests
     public void Deserialize_Succeeds_WhenExpressionIsAtMaxLength()
     {
         // Arrange - Create valid expression at max length
-        var baseExpression = "Age == 42";
-        var padding = new string(' ', ExpressionSerializer<TestClass>.MaxExpressionLength - baseExpression.Length);
-        var maxLengthExpression = baseExpression + padding;
+        string baseExpression = "Age == 42";
+        string padding = new(' ', ExpressionSerializer<TestClass>.MaxExpressionLength - baseExpression.Length);
+        string maxLengthExpression = baseExpression + padding;
 
         // Act - Should not throw
         var result = Serializer.Deserialize(maxLengthExpression);
@@ -62,8 +65,8 @@ public class ExpressionSecurityTests
     public void Deserialize_ThrowsExpressionParseException_WhenDepthExceedsMaximum()
     {
         // Arrange - Create deeply nested expression
-        var depth = 101; // More than max depth of 100
-        var expression = string.Concat(Enumerable.Repeat("(", depth)) +
+        int depth = 101; // More than max depth of 100
+        string expression = string.Concat(Enumerable.Repeat("(", depth)) +
                         "Age == 42" +
                         string.Concat(Enumerable.Repeat(")", depth));
 
@@ -76,8 +79,8 @@ public class ExpressionSecurityTests
     public void Deserialize_Succeeds_WithDeeplyNestedButValidExpression()
     {
         // Arrange - Create nested expression within limit
-        var depth = 50; // Well within max depth of 100
-        var expression = string.Concat(Enumerable.Repeat("(", depth)) +
+        int depth = 50; // Well within max depth of 100
+        string expression = string.Concat(Enumerable.Repeat("(", depth)) +
                         "Age == 42" +
                         string.Concat(Enumerable.Repeat(")", depth));
 
@@ -94,6 +97,6 @@ public class ExpressionSecurityTests
     public void Serialize_ThrowsArgumentNullException_WhenExpressionIsNull()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => Serializer.Serialize(null!));
+        _ = Assert.Throws<ArgumentNullException>(() => Serializer.Serialize(null!));
     }
 }

@@ -6,10 +6,13 @@
   </Folder>
   <Folder Name="/Source/" />
   <Folder Name="/Source/Core/">
+    <Project Path="Source/Core/Craft.Expressions/Craft.Expressions.csproj" />
     <Project Path="Source/Core/Craft.Extensions/Craft.Extensions.csproj" />
+    <Project Path="Source/Core/Craft.Utilities/Craft.Utilities.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
   <Folder Name="/Tests/Core/">
     <Project Path="Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj" />
+    <Project Path="Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj" />
   </Folder>
 </Solution>

@@ -10,12 +10,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="coverlet.collector" Version="10.0.1">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="11.0.0-rc.1.26425.128" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
-		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
 		<PackageReference Include="xunit.v3" Version="4.0.0" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
 			<PrivateAssets>all</PrivateAssets>
@@ -24,20 +22,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\Source\Core\Craft.Utilities\Craft.Utilities.csproj" />
+		<ProjectReference Include="..\..\..\Source\Core\Craft.Expressions\Craft.Expressions.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="Xunit" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="TestData\Test.docx">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="TestData\Test.pdf">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 
 </Project>

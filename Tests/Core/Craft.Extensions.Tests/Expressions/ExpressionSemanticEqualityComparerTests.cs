@@ -158,4 +158,28 @@ public class ExpressionSemanticEqualityComparerTests
         // Act & Assert
         Assert.True(comparer.Equals(expr1, expr2));
     }
+
+    [Fact]
+    public void Equals_ReturnsTrue_ForEquivalentLambdas_WithDifferentParameterNames()
+    {
+        // Arrange
+        Expression<Func<int, bool>> expr1 = value => value > 5;
+        Expression<Func<int, bool>> expr2 = number => number > 5;
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        // Act & Assert
+        Assert.True(comparer.Equals(expr1, expr2));
+    }
+
+    [Fact]
+    public void GetHashCode_IsConsistent_ForEquivalentLambdas_WithDifferentParameterNames()
+    {
+        // Arrange
+        Expression<Func<int, bool>> expr1 = value => value > 5;
+        Expression<Func<int, bool>> expr2 = number => number > 5;
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        // Act & Assert
+        Assert.Equal(comparer.GetHashCode(expr1), comparer.GetHashCode(expr2));
+    }
 }

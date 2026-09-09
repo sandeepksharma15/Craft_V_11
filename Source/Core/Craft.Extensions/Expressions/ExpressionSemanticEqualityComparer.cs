@@ -3,206 +3,195 @@
 namespace Craft.Extensions.Expressions;
 
 /// <summary>
-/// Provides semantic equality comparison for expression trees, normalizing binary expressions
-/// to handle commutative and logical equivalence for "==" and "!=".
+/// Provides semantic equality comparison for expression trees by canonicalizing equivalent forms.
 /// </summary>
 public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expression>
 {
+    public static ExpressionSemanticEqualityComparer Instance { get; } = new();
+
     public bool Equals(Expression? x, Expression? y)
     {
-        if (ReferenceEquals(x, y)) return true;
-        if (x is null || y is null) return false;
+        if (ReferenceEquals(x, y))
+            return true;
 
-        x = Normalize(x);
-        y = Normalize(y);
+        if (x is null || y is null)
+            return false;
 
-        return ExpressionComparer.AreEqual(x, y);
+        return ExpressionStructuralComparer.AreEqual(Canonicalize(x), Canonicalize(y));
     }
 
     public int GetHashCode(Expression obj)
     {
-        var normalized = Normalize(obj);
-        return normalized.ToString().GetHashCode(); // Improve if needed
+        ArgumentNullException.ThrowIfNull(obj);
+        return StringComparer.Ordinal.GetHashCode(Canonicalize(obj).ToString());
     }
 
-    private static Expression Normalize(Expression expr)
-        => new ExpressionNormalizer().Visit(expr)!;
+    private static Expression Canonicalize(Expression expression)
+        => new ExpressionCanonicalizer().Visit(expression)
+           ?? throw new InvalidOperationException("Expression canonicalization produced a null result.");
 
-    /// <summary>
-    /// Normalizes expressions to canonical forms (e.g., x == true => x)
-    /// </summary>
-    private sealed class ExpressionNormalizer : ExpressionVisitor
+    private sealed class ExpressionCanonicalizer : ExpressionVisitor
     {
-        protected override Expression VisitUnary(UnaryExpression node)
-        {
-            var operand = Visit(node.Operand);
-            return Expression.MakeUnary(node.NodeType, operand, node.Type, node.Method);
-        }
+        private readonly Stack<Dictionary<ParameterExpression, ParameterExpression>> _scopes = [];
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            var left = Visit(node.Left);
-            var right = Visit(node.Right);
+            var left = Visit(node.Left)!;
+            var right = Visit(node.Right)!;
 
-            // Simplify `x == true` => x
             if (node.NodeType == ExpressionType.Equal)
             {
-                if (IsBooleanConstant(right, true)) return left;
-                if (IsBooleanConstant(left, true)) return right;
+                if (IsBooleanConstant(right, true))
+                    return left;
+
+                if (IsBooleanConstant(left, true))
+                    return right;
+
+                if (IsBooleanConstant(right, false))
+                    return Expression.Not(left);
+
+                if (IsBooleanConstant(left, false))
+                    return Expression.Not(right);
             }
 
-            // Simplify `x == false` => !x
-            if (node.NodeType == ExpressionType.Equal)
-            {
-                if (IsBooleanConstant(right, false)) return Expression.Not(left);
-                if (IsBooleanConstant(left, false)) return Expression.Not(right);
-            }
-
-            // Simplify `x != false` => x
             if (node.NodeType == ExpressionType.NotEqual)
             {
-                if (IsBooleanConstant(right, false)) return left;
-                if (IsBooleanConstant(left, false)) return right;
+                if (IsBooleanConstant(right, false))
+                    return left;
+
+                if (IsBooleanConstant(left, false))
+                    return right;
+
+                if (IsBooleanConstant(right, true))
+                    return Expression.Not(left);
+
+                if (IsBooleanConstant(left, true))
+                    return Expression.Not(right);
             }
 
-            // Simplify `x != true` => !x
-            if (node.NodeType == ExpressionType.NotEqual)
-            {
-                if (IsBooleanConstant(right, true)) return Expression.Not(left);
-                if (IsBooleanConstant(left, true)) return Expression.Not(right);
-            }
-
-            // Reorder for commutative binary expressions
-            if (IsCommutative(node.NodeType))
-            {
-                if (string.Compare(left.ToString(), right.ToString(), StringComparison.Ordinal) > 0)
-                    (left, right) = (right, left);
-            }
+            if (IsCommutative(node.NodeType) && string.CompareOrdinal(left.ToString(), right.ToString()) > 0)
+                (left, right) = (right, left);
 
             return Expression.MakeBinary(node.NodeType, left, right, node.IsLiftedToNull, node.Method, node.Conversion);
         }
 
-        private static bool IsBooleanConstant(Expression expr, bool value)
-            => expr is ConstantExpression ce && ce.Type == typeof(bool) && (bool)ce.Value! == value;
-
-        private static bool IsCommutative(ExpressionType nodeType)
-            => nodeType is ExpressionType.Equal or ExpressionType.NotEqual
-               or ExpressionType.And or ExpressionType.Or
-               or ExpressionType.Add or ExpressionType.Multiply;
-    }
-}
-
-internal static class ExpressionComparer
-{
-    public static bool AreEqual(Expression x, Expression y) 
-        => new Impl().Equals(x, y);
-
-    private class Impl : ExpressionVisitor
-    {
-        private Expression? _y;
-
-        public bool Equals(Expression? x, Expression? y)
+        protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            _y = y;
-            return Visit(x) != null;
-        }
+            var scope = new Dictionary<ParameterExpression, ParameterExpression>(node.Parameters.Count);
+            var parameters = new ParameterExpression[node.Parameters.Count];
 
-        public override Expression? Visit(Expression? node)
-        {
-            return node == null || _y == null
-                ? node == _y ? node : null
-                : node.NodeType != _y.NodeType || node.Type != _y.Type ? null : base.Visit(node);
-        }
-
-        protected override Expression VisitBinary(BinaryExpression node)
-        {
-            var other = (BinaryExpression)_y!;
-
-            if (node.Method != other.Method || node.IsLifted != other.IsLifted || node.IsLiftedToNull != other.IsLiftedToNull)
-                return null!;
-
-            // Handle commutative
-            if (IsCommutative(node.NodeType))
+            for (var i = 0; i < node.Parameters.Count; i++)
             {
-                var leftRight = Equals(node.Left, other.Left) && Equals(node.Right, other.Right);
-                var rightLeft = Equals(node.Left, other.Right) && Equals(node.Right, other.Left);
-                return leftRight || rightLeft ? node : null!;
+                var original = node.Parameters[i];
+                var canonical = Expression.Parameter(original.Type, $"p{i}");
+                scope[original] = canonical;
+                parameters[i] = canonical;
             }
 
-            return Equals(node.Left, other.Left) && Equals(node.Right, other.Right) ? node : null!;
-        }
+            _scopes.Push(scope);
 
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            var other = (MemberExpression)_y!;
-            return node.Member == other.Member && Equals(node.Expression, other.Expression) ? node : null!;
-        }
-
-        protected override Expression VisitConstant(ConstantExpression node)
-        {
-            var other = (ConstantExpression)_y!;
-            return Equals(node.Value, other.Value) ? node : null!;
+            try
+            {
+                var body = Visit(node.Body)!;
+                return Expression.Lambda<T>(body, node.Name, node.TailCall, parameters);
+            }
+            finally
+            {
+                _scopes.Pop();
+            }
         }
 
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            var other = (ParameterExpression)_y!;
-            return node.Name == other.Name && node.Type == other.Type ? node : null!;
-        }
-
-        protected override Expression VisitUnary(UnaryExpression node)
-        {
-            var other = (UnaryExpression)_y!;
-            return node.Method == other.Method && Equals(node.Operand, other.Operand) ? node : null!;
-        }
-
-        protected override Expression VisitLambda<T>(Expression<T> node)
-        {
-            var other = (LambdaExpression)_y!;
-
-            if (node.Parameters.Count != other.Parameters.Count)
-                return null!;
-
-            for (int i = 0; i < node.Parameters.Count; i++)
+            foreach (var scope in _scopes)
             {
-                if (!Equals(node.Parameters[i], other.Parameters[i]))
-                    return null!;
-            }
-
-            return Equals(node.Body, other.Body) ? node : null!;
-        }
-
-        protected override Expression VisitMethodCall(MethodCallExpression node)
-        {
-            if (_y is not MethodCallExpression other)
-                return null!;
-
-            if (node.Method != other.Method)
-                return null!;
-
-            if (!Equals(node.Object, other.Object))
-                return null!;
-
-            if (node.Arguments.Count != other.Arguments.Count)
-                return null!;
-
-            for (int i = 0; i < node.Arguments.Count; i++)
-            {
-                if (!Equals(node.Arguments[i], other.Arguments[i]))
-                    return null!;
+                if (scope.TryGetValue(node, out var canonical))
+                    return canonical;
             }
 
             return node;
         }
 
+        private static bool IsBooleanConstant(Expression expression, bool value)
+            => expression is ConstantExpression { Value: bool constantValue }
+               && expression.Type == typeof(bool)
+               && constantValue == value;
+
         private static bool IsCommutative(ExpressionType nodeType)
-        {
-            return nodeType is ExpressionType.Equal or
-                   ExpressionType.NotEqual or
-                   ExpressionType.Add or
-                   ExpressionType.Multiply or
-                   ExpressionType.And or
-                   ExpressionType.Or;
-        }
+            => nodeType is ExpressionType.Equal
+                or ExpressionType.NotEqual
+                or ExpressionType.And
+                or ExpressionType.AndAlso
+                or ExpressionType.Or
+                or ExpressionType.OrElse
+                or ExpressionType.Add
+                or ExpressionType.Multiply;
     }
+}
+
+internal static class ExpressionStructuralComparer
+{
+    public static bool AreEqual(Expression x, Expression y)
+    {
+        if (ReferenceEquals(x, y))
+            return true;
+
+        if (x.NodeType != y.NodeType || x.Type != y.Type)
+            return false;
+
+        return (x, y) switch
+        {
+            (BinaryExpression left, BinaryExpression right) => AreBinaryExpressionsEqual(left, right),
+            (ConstantExpression left, ConstantExpression right) => Equals(left.Value, right.Value),
+            (LambdaExpression left, LambdaExpression right) => AreLambdaExpressionsEqual(left, right),
+            (MemberExpression left, MemberExpression right) => left.Member == right.Member && AreNullableExpressionsEqual(left.Expression, right.Expression),
+            (MethodCallExpression left, MethodCallExpression right) => AreMethodCallExpressionsEqual(left, right),
+            (ParameterExpression left, ParameterExpression right) => left.Type == right.Type && left.Name == right.Name,
+            (UnaryExpression left, UnaryExpression right) => left.Method == right.Method && AreEqual(left.Operand, right.Operand),
+            _ => string.Equals(x.ToString(), y.ToString(), StringComparison.Ordinal)
+        };
+    }
+
+    private static bool AreBinaryExpressionsEqual(BinaryExpression left, BinaryExpression right)
+        => left.Method == right.Method
+            && left.IsLifted == right.IsLifted
+            && left.IsLiftedToNull == right.IsLiftedToNull
+            && AreEqual(left.Left, right.Left)
+            && AreEqual(left.Right, right.Right)
+            && AreNullableExpressionsEqual(left.Conversion, right.Conversion);
+
+    private static bool AreLambdaExpressionsEqual(LambdaExpression left, LambdaExpression right)
+    {
+        if (left.Parameters.Count != right.Parameters.Count)
+            return false;
+
+        for (var i = 0; i < left.Parameters.Count; i++)
+        {
+            if (!AreEqual(left.Parameters[i], right.Parameters[i]))
+                return false;
+        }
+
+        return AreEqual(left.Body, right.Body);
+    }
+
+    private static bool AreMethodCallExpressionsEqual(MethodCallExpression left, MethodCallExpression right)
+    {
+        if (left.Method != right.Method
+            || !AreNullableExpressionsEqual(left.Object, right.Object)
+            || left.Arguments.Count != right.Arguments.Count)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < left.Arguments.Count; i++)
+        {
+            if (!AreEqual(left.Arguments[i], right.Arguments[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool AreNullableExpressionsEqual(Expression? left, Expression? right)
+        => left is null || right is null ? left is null && right is null : AreEqual(left, right);
 }

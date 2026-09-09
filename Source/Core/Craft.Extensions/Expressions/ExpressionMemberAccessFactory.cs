@@ -3,19 +3,19 @@ using System.Reflection;
 
 namespace Craft.Extensions.Expressions;
 
-internal static class ExpressionMemberAccessFactory
+public static class ExpressionMemberAccessFactory
 {
     public static LambdaExpression CreateMemberExpression(Type? type, string? memberName)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
 
-        var member = FindMember(type, memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+        MemberInfo member = FindMember(type, memberName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
             ?? throw new ArgumentException($"Property or field '{memberName}' not found on type '{type.FullName}'.", nameof(memberName));
 
         var isStatic = IsStatic(member);
         ParameterExpression? parameter = isStatic ? null : Expression.Parameter(type, "x");
-        var memberAccess = CreateMemberAccess(member, parameter);
+        Expression memberAccess = CreateMemberAccess(member, parameter);
 
         return Expression.Lambda(memberAccess, parameter is null ? [] : [parameter]);
     }
@@ -24,19 +24,19 @@ internal static class ExpressionMemberAccessFactory
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(propertyOrFieldName);
 
-        var type = typeof(T);
-        var member = FindMember(type, propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+        Type type = typeof(T);
+        MemberInfo member = FindMember(type, propertyOrFieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             ?? throw new ArgumentException($"Property or field '{propertyOrFieldName}' not found on type '{type.FullName}'.", nameof(propertyOrFieldName));
 
-        var memberType = GetMemberType(member);
+        Type memberType = GetMemberType(member);
         if (!typeof(TResult).IsAssignableFrom(memberType))
         {
             throw new InvalidOperationException(
                 $"Member '{propertyOrFieldName}' type '{memberType}' cannot be assigned to '{typeof(TResult)}'.");
         }
 
-        var parameter = Expression.Parameter(type, "x");
-        var memberAccess = CreateMemberAccess(member, parameter);
+        ParameterExpression parameter = Expression.Parameter(type, "x");
+        Expression memberAccess = CreateMemberAccess(member, parameter);
 
         return Expression.Lambda<Func<T, TResult>>(memberAccess, parameter);
     }
@@ -46,20 +46,17 @@ internal static class ExpressionMemberAccessFactory
         ArgumentNullException.ThrowIfNull(type);
         ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
 
-        var member = FindMember(type, memberName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+        MemberInfo member = FindMember(type, memberName, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
             ?? throw new ArgumentException($"Static property or field '{memberName}' not found on type '{type.FullName}'.", nameof(memberName));
 
         if (!IsStatic(member))
             throw new ArgumentException($"Member '{memberName}' on type '{type.FullName}' is not static.", nameof(memberName));
 
-        var memberType = GetMemberType(member);
-        if (!typeof(TResult).IsAssignableFrom(memberType))
-        {
-            throw new InvalidOperationException(
-                $"Member '{memberName}' type '{memberType}' cannot be assigned to '{typeof(TResult)}'.");
-        }
-
-        return Expression.Lambda<Func<TResult>>(CreateMemberAccess(member, null));
+        Type memberType = GetMemberType(member);
+        return !typeof(TResult).IsAssignableFrom(memberType)
+            ? throw new InvalidOperationException(
+                $"Member '{memberName}' type '{memberType}' cannot be assigned to '{typeof(TResult)}'.")
+            : Expression.Lambda<Func<TResult>>(CreateMemberAccess(member, null));
     }
 
     private static MemberInfo? FindMember(Type type, string memberName, BindingFlags bindingFlags)

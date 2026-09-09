@@ -14,10 +14,7 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
         if (ReferenceEquals(x, y))
             return true;
 
-        if (x is null || y is null)
-            return false;
-
-        return ExpressionStructuralComparer.AreEqual(Canonicalize(x), Canonicalize(y));
+        return x is not null && y is not null && ExpressionStructuralComparer.AreEqual(Canonicalize(x), Canonicalize(y));
     }
 
     public int GetHashCode(Expression obj)
@@ -36,8 +33,8 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            var left = Visit(node.Left)!;
-            var right = Visit(node.Right)!;
+            Expression left = Visit(node.Left)!;
+            Expression right = Visit(node.Right)!;
 
             if (node.NodeType == ExpressionType.Equal)
             {
@@ -82,8 +79,8 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
             for (var i = 0; i < node.Parameters.Count; i++)
             {
-                var original = node.Parameters[i];
-                var canonical = Expression.Parameter(original.Type, $"p{i}");
+                ParameterExpression original = node.Parameters[i];
+                ParameterExpression canonical = Expression.Parameter(original.Type, $"p{i}");
                 scope[original] = canonical;
                 parameters[i] = canonical;
             }
@@ -92,20 +89,20 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
             try
             {
-                var body = Visit(node.Body)!;
+                Expression body = Visit(node.Body)!;
                 return Expression.Lambda<T>(body, node.Name, node.TailCall, parameters);
             }
             finally
             {
-                _scopes.Pop();
+                _ = _scopes.Pop();
             }
         }
 
         protected override Expression VisitParameter(ParameterExpression node)
         {
-            foreach (var scope in _scopes)
+            foreach (Dictionary<ParameterExpression, ParameterExpression> scope in _scopes)
             {
-                if (scope.TryGetValue(node, out var canonical))
+                if (scope.TryGetValue(node, out ParameterExpression? canonical))
                     return canonical;
             }
 
@@ -129,17 +126,14 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
     }
 }
 
-internal static class ExpressionStructuralComparer
+public static class ExpressionStructuralComparer
 {
     public static bool AreEqual(Expression x, Expression y)
     {
         if (ReferenceEquals(x, y))
             return true;
 
-        if (x.NodeType != y.NodeType || x.Type != y.Type)
-            return false;
-
-        return (x, y) switch
+        return x.NodeType == y.NodeType && x.Type == y.Type && (x, y) switch
         {
             (BinaryExpression left, BinaryExpression right) => AreBinaryExpressionsEqual(left, right),
             (ConstantExpression left, ConstantExpression right) => Equals(left.Value, right.Value),

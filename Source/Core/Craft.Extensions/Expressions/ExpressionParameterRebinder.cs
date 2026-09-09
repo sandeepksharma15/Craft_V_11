@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace Craft.Extensions.Expressions;
 
-internal static class ExpressionParameterRebinder
+public static class ExpressionParameterRebinder
 {
     public static Expression Replace(Expression expression, ParameterExpression oldParameter, Expression newExpression)
     {
@@ -10,22 +10,15 @@ internal static class ExpressionParameterRebinder
         ArgumentNullException.ThrowIfNull(oldParameter);
         ArgumentNullException.ThrowIfNull(newExpression);
 
-        if (oldParameter.Type != newExpression.Type)
-            throw new ArgumentException("The type of the new expression must match the type of the old parameter.", nameof(newExpression));
-
-        if (expression is LambdaExpression lambda && lambda.Parameters.Contains(oldParameter))
-            throw new ArgumentException("Use the lambda overload when replacing a declared lambda parameter.", nameof(oldParameter));
-
-        return ReplaceCore(expression, new Dictionary<ParameterExpression, Expression>
-        {
-            [oldParameter] = newExpression
-        });
+        return oldParameter.Type != newExpression.Type
+            ? throw new ArgumentException("The type of the new expression must match the type of the old parameter.", nameof(newExpression))
+            : expression is LambdaExpression lambda && lambda.Parameters.Contains(oldParameter)
+                ? throw new ArgumentException("Use the lambda overload when replacing a declared lambda parameter.", nameof(oldParameter))
+                : ReplaceCore(expression, new Dictionary<ParameterExpression, Expression> { [oldParameter] = newExpression });
     }
 
-    public static Expression<TDelegate> ReplaceParameter<TDelegate>(
-        Expression<TDelegate> expression,
-        ParameterExpression oldParameter,
-        ParameterExpression newParameter) where TDelegate : Delegate
+    public static Expression<TDelegate> ReplaceParameter<TDelegate>(Expression<TDelegate> expression,
+        ParameterExpression oldParameter, ParameterExpression newParameter) where TDelegate : Delegate
     {
         ArgumentNullException.ThrowIfNull(expression);
         ArgumentNullException.ThrowIfNull(oldParameter);
@@ -34,12 +27,12 @@ internal static class ExpressionParameterRebinder
         if (oldParameter.Type != newParameter.Type)
             throw new ArgumentException("The type of the new parameter must match the type of the old parameter.", nameof(newParameter));
 
-        var parameters = new ParameterExpression[expression.Parameters.Count];
-        var found = false;
+        ParameterExpression[] parameters = new ParameterExpression[expression.Parameters.Count];
+        bool found = false;
 
-        for (var i = 0; i < expression.Parameters.Count; i++)
+        for (int i = 0; i < expression.Parameters.Count; i++)
         {
-            var parameter = expression.Parameters[i];
+            ParameterExpression parameter = expression.Parameters[i];
             if (ReferenceEquals(parameter, oldParameter))
             {
                 parameters[i] = newParameter;
@@ -50,7 +43,7 @@ internal static class ExpressionParameterRebinder
             parameters[i] = parameter;
         }
 
-        var body = ReplaceCore(expression.Body, new Dictionary<ParameterExpression, Expression>
+        Expression body = ReplaceCore(expression.Body, new Dictionary<ParameterExpression, Expression>
         {
             [oldParameter] = newParameter
         });
@@ -66,13 +59,12 @@ internal static class ExpressionParameterRebinder
         ArgumentNullException.ThrowIfNull(sourceParameter);
         ArgumentNullException.ThrowIfNull(targetParameter);
 
-        if (sourceParameter.Type != targetParameter.Type)
-            throw new ArgumentException("The target parameter type must match the source parameter type.", nameof(targetParameter));
-
-        return ReplaceCore(expression, new Dictionary<ParameterExpression, Expression>
-        {
-            [sourceParameter] = targetParameter
-        });
+        return sourceParameter.Type != targetParameter.Type
+            ? throw new ArgumentException("The target parameter type must match the source parameter type.", nameof(targetParameter))
+            : ReplaceCore(expression, new Dictionary<ParameterExpression, Expression>
+            {
+                [sourceParameter] = targetParameter
+            });
     }
 
     private static Expression ReplaceCore(Expression expression, IReadOnlyDictionary<ParameterExpression, Expression> replacements)
@@ -81,25 +73,25 @@ internal static class ExpressionParameterRebinder
     private sealed class ParameterReplacingExpressionVisitor(IReadOnlyDictionary<ParameterExpression, Expression> replacements) : ExpressionVisitor
     {
         protected override Expression VisitParameter(ParameterExpression node)
-            => replacements.TryGetValue(node, out var replacement) ? replacement : node;
+            => replacements.TryGetValue(node, out Expression? replacement) ? replacement : node;
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
             Dictionary<ParameterExpression, Expression>? scopedReplacements = null;
 
-            foreach (var parameter in node.Parameters)
+            foreach (ParameterExpression parameter in node.Parameters)
             {
                 if (!replacements.ContainsKey(parameter))
                     continue;
 
-                scopedReplacements ??= new Dictionary<ParameterExpression, Expression>(replacements);
-                scopedReplacements.Remove(parameter);
+                scopedReplacements ??= [with(replacements)];
+                _ = scopedReplacements.Remove(parameter);
             }
 
             if (scopedReplacements is null)
                 return base.VisitLambda(node);
 
-            var body = new ParameterReplacingExpressionVisitor(scopedReplacements).Visit(node.Body)!;
+            Expression body = new ParameterReplacingExpressionVisitor(scopedReplacements).Visit(node.Body)!;
             return node.Update(body, node.Parameters);
         }
     }

@@ -14,11 +14,11 @@ public static class PredicateExpressionExtensions
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(condition);
 
-            var alignedCondition = AlignConditionBody(condition, expression.Parameters[0]);
+            Expression alignedCondition = AlignConditionBody(condition, expression.Parameters[0]);
             if (expression.Body.IsSemanticallyEquivalentTo(alignedCondition))
                 return null;
 
-            var modifiedBody = new ConditionRemovingVisitor(alignedCondition).Visit(expression.Body)!;
+            Expression modifiedBody = new ConditionRemovingVisitor(alignedCondition).Visit(expression.Body)!;
             return Expression.Lambda<Func<T, bool>>(modifiedBody, expression.Parameters);
         }
 
@@ -32,13 +32,13 @@ public static class PredicateExpressionExtensions
             if (conditions is null || conditions.Length == 0)
                 return expression;
 
-            var body = expression.Body;
+            Expression body = expression.Body;
 
-            foreach (var condition in conditions)
+            foreach (Expression<Func<T, bool>> condition in conditions)
             {
                 ArgumentNullException.ThrowIfNull(condition);
 
-                var alignedCondition = AlignConditionBody(condition, expression.Parameters[0]);
+                Expression alignedCondition = AlignConditionBody(condition, expression.Parameters[0]);
                 if (body.IsSemanticallyEquivalentTo(alignedCondition))
                     return null;
 
@@ -51,17 +51,15 @@ public static class PredicateExpressionExtensions
         /// <summary>
         /// Replaces a specific condition within the current predicate expression.
         /// </summary>
-        public Expression<Func<T, bool>> ReplaceCondition(
-            Expression<Func<T, bool>> oldCondition,
-            Expression<Func<T, bool>> newCondition)
+        public Expression<Func<T, bool>> ReplaceCondition(Expression<Func<T, bool>> oldCondition, Expression<Func<T, bool>> newCondition)
         {
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(oldCondition);
             ArgumentNullException.ThrowIfNull(newCondition);
 
-            var alignedOldCondition = AlignConditionBody(oldCondition, expression.Parameters[0]);
-            var alignedNewCondition = AlignConditionBody(newCondition, expression.Parameters[0]);
-            var modifiedBody = new ConditionReplacingVisitor(alignedOldCondition, alignedNewCondition).Visit(expression.Body)!;
+            Expression alignedOldCondition = AlignConditionBody(oldCondition, expression.Parameters[0]);
+            Expression alignedNewCondition = AlignConditionBody(newCondition, expression.Parameters[0]);
+            Expression modifiedBody = new ConditionReplacingVisitor(alignedOldCondition, alignedNewCondition).Visit(expression.Body)!;
 
             return Expression.Lambda<Func<T, bool>>(modifiedBody, expression.Parameters);
         }
@@ -77,8 +75,8 @@ public static class PredicateExpressionExtensions
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(other);
 
-            var left = expression.CanReduce ? expression.Reduce() : expression;
-            var right = other.CanReduce ? other.Reduce() : other;
+            Expression left = expression.CanReduce ? expression.Reduce() : expression;
+            Expression right = other.CanReduce ? other.Reduce() : other;
 
             return new ExpressionSemanticEqualityComparer().Equals(left, right);
         }

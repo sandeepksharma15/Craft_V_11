@@ -46,11 +46,11 @@ public sealed record FilterCriteria
     {
         ArgumentNullException.ThrowIfNull(propName, nameof(propName));
 
-        MemberInfo prop = propName.GetPropertyInfo<T>()
+        MemberInfo prop = GetPropertyInfo(propName)
             ?? throw new ArgumentException($"You must pass a lambda of the form: '() => {{Class}}.{{Property}}'", nameof(propName));
 
         string name = prop.Name;
-        Type? type = prop.GetMemberUnderlyingType();
+        Type? type = GetMemberUnderlyingType(prop);
 
         if (type?.IsEnum == true)
         {
@@ -59,8 +59,34 @@ public sealed record FilterCriteria
         }
 
         if (Nullable.GetUnderlyingType(type!) != null)
-            type = type?.GetNonNullableType();
+            type = GetNonNullableType(type);
 
         return new FilterCriteria(type!, name, compareWith, comparisonType);
     }
+
+    private static PropertyInfo GetPropertyInfo<T>(Expression<Func<T, object>> expression)
+    {
+        ArgumentNullException.ThrowIfNull(expression);
+
+        Expression body = expression.Body is UnaryExpression
+        {
+            NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked
+        } unary ? unary.Operand : expression.Body;
+
+        return body is MemberExpression { Member: PropertyInfo property } ? property : throw new ArgumentException(
+            "Expression must be a property access.",
+            nameof(expression));
+    }
+
+    private static Type? GetMemberUnderlyingType(MemberInfo member)
+        => member.MemberType switch
+        {
+            MemberTypes.Field => ((FieldInfo)member).FieldType,
+            MemberTypes.Property => ((PropertyInfo)member).PropertyType,
+            MemberTypes.Event => ((EventInfo)member).EventHandlerType,
+            _ => throw new ArgumentException("MemberInfo must be of type FieldInfo, PropertyInfo or EventInfo", nameof(member))
+        };
+
+    private static Type GetNonNullableType(Type type)
+        => Nullable.GetUnderlyingType(type) ?? type;
 }

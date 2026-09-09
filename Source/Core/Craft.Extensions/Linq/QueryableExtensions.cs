@@ -72,19 +72,6 @@ public static class QueryableExtensions
         }
 
         /// <summary>
-        /// Applies a query filter to the specified source when a filter is defined for the corresponding <see cref="DbSet{T}"/>.
-        /// </summary>
-        public IQueryable<T> ApplyQueryFilter(DbSet<T> dbSet)
-        {
-            ArgumentNullException.ThrowIfNull(queryable);
-            ArgumentNullException.ThrowIfNull(dbSet);
-
-            Expression<Func<T, bool>>? filter = dbSet.GetQueryFilter();
-
-            return filter is null ? queryable : queryable.Where(filter);
-        }
-
-        /// <summary>
         /// Conditionally includes a related entity in the query based on the specified condition.
         /// </summary>
         public IQueryable<T> IncludeIf<TProperty>(bool condition, Expression<Func<T, TProperty>> navigationPropertyPath)

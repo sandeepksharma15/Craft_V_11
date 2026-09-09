@@ -133,39 +133,6 @@ public class EnumerableExtensionsTests
         _ = Assert.Throws<ArgumentException>(() => items.GetListDataForSelect("Id", "Name"));
     }
 
-    [Fact]
-    public void IsIn_ReturnsTrue_IfItemIsInCollection()
-    {
-        // Arrange
-        int[] collection = [1, 2, 3];
-
-        // Act & Assert
-        Assert.True(2.IsIn(collection));
-    }
-
-    [Fact]
-    public void IsIn_ReturnsFalse_IfItemIsNotInCollection()
-    {
-        // Arrange
-        int[] collection = [1, 2, 3];
-
-        // Act & Assert
-        Assert.False(4.IsIn(collection));
-    }
-
-    [Fact]
-    public void IsIn_WorksWithReferenceTypes()
-    {
-        // Arrange
-        TestItem a = new() { Id = 1, Name = "A" };
-        TestItem b = new() { Id = 2, Name = "B" };
-        TestItem[] collection = [a, b];
-
-        // Act & Assert
-        Assert.True(a.IsIn(collection));
-        Assert.False(new TestItem { Id = 1, Name = "A" }.IsIn(collection));
-    }
-
     private sealed class TestItem
     {
         public int Id { get; set; }

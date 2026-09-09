@@ -77,7 +77,7 @@ public class CollectionExtensionsTests
         List<int> list = [1, 2];
 
         // Act
-        List<int> added = list.AddIfNotContains([2, 3, 4]).ToList();
+        List<int> added = [.. list.AddIfNotContains([2, 3, 4])];
 
         // Assert
         Assert.Contains(3, list);
@@ -114,7 +114,7 @@ public class CollectionExtensionsTests
         List<int> list = [1, 2];
 
         // Act
-        var added = list.AddIfNotContains([1, 2]);
+        IEnumerable<int> added = list.AddIfNotContains([1, 2]);
 
         // Assert
         Assert.Empty(added);

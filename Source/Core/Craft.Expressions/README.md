@@ -8,6 +8,32 @@
 dotnet add package Craft.Expressions
 ```
 
+## Automatic namespace imports
+
+When referenced as a package, `Craft.Expressions` adds transitive global usings for:
+
+- `Craft.Expressions.Engine`
+- `Craft.Expressions.Extensions`
+- `Craft.Expressions.Linq`
+- `Craft.Expressions.EntityFramework`
+- `Craft.Expressions.Comparison`
+
+To opt out in a consuming project:
+
+```xml
+<PropertyGroup>
+  <CraftExpressionsDisableAutoUsings>true</CraftExpressionsDisableAutoUsings>
+</PropertyGroup>
+```
+
+Or disable auto-usings across Craft packages:
+
+```xml
+<PropertyGroup>
+  <CraftDisableAutoUsings>true</CraftDisableAutoUsings>
+</PropertyGroup>
+```
+
 ## Core functionality
 
 - Deserialize filter text into `Expression<Func<T, bool>>`

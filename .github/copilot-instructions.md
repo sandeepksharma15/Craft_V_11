@@ -26,6 +26,7 @@
 * Prefer the newer C# extension member syntax (`extension<T>(...)`) for extension methods going forward when the language/features support it.
 * Keep **Craft.Extensions** and **Craft.Utilities** as independent top-level libraries with no project dependency on each other, even though both are widely reused across the solution.
 * Standardize tokenizer punctuation/operator token values to use `ExpressionOperators` constants for consistency when applicable.
+* Ensure discoverable APIs across libraries, making functionality available automatically when a package reference is added to avoid remembering many namespaces.
 
 ## 3. Configuration & Security
 
@@ -71,7 +72,6 @@
 * Use `[Theory]` with `[InlineData]` or `[MemberData]` for parameterized test coverage.
 * Use `WebApplicationFactory<TEntryPoint>` for ASP.NET Core integration tests.
 * Validate boundary conditions, edge cases, and failure modes—not just happy paths.
-* In test projects, prefer reusing existing shared fixture model classes (for example in TestExpressionModels) instead of creating new private test classes in individual test files; keep nomenclature consistent across projects.
 
 ## 8. Validation
 

@@ -25,6 +25,7 @@
 * Do not add unnecessary abstractions, projects, NuGet packages, or infrastructure without justification.
 * Prefer the newer C# extension member syntax (`extension<T>(...)`) for extension methods going forward when the language/features support it.
 * Keep **Craft.Extensions** and **Craft.Utilities** as independent top-level libraries with no project dependency on each other, even though both are widely reused across the solution.
+* Standardize tokenizer punctuation/operator token values to use `ExpressionOperators` constants for consistency when applicable.
 
 ## 3. Configuration & Security
 

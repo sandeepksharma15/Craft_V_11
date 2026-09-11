@@ -56,19 +56,19 @@ internal class ExpressionStringTokenizer
             switch (c)
             {
                 case '.':
-                    yield return new Token(TokenType.Dot, ".", pos++);
+                    yield return new Token(TokenType.Dot, ExpressionOperators.Dot, pos++);
                     break;
 
                 case ',':
-                    yield return new Token(TokenType.Comma, ",", pos++);
+                    yield return new Token(TokenType.Comma, ExpressionOperators.Comma, pos++);
                     break;
 
                 case '(':
-                    yield return new Token(TokenType.OpenParen, "(", pos++);
+                    yield return new Token(TokenType.OpenParen, ExpressionOperators.OpenParen, pos++);
                     break;
 
                 case ')':
-                    yield return new Token(TokenType.CloseParen, ")", pos++);
+                    yield return new Token(TokenType.CloseParen, ExpressionOperators.CloseParen, pos++);
                     break;
 
                 case '!':

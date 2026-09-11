@@ -41,6 +41,7 @@ public static class PredicateExpressionExtensions
                 ArgumentNullException.ThrowIfNull(condition);
 
                 Expression alignedCondition = AlignConditionBody(condition, expression.Parameters[0]);
+
                 if (body.IsSemanticallyEquivalentTo(alignedCondition))
                     return null;
 

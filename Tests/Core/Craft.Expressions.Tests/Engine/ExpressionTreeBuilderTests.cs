@@ -13,13 +13,30 @@ public class ExpressionTreeBuilderTests
         public int Age { get; set; }
         public bool IsActive { get; set; }
         public TestClass? Child { get; set; }
+        public int ScoreField;
+    }
+
+    private class MethodHost
+    {
+        public string Echo(string value) => value;
+        public string TakesObject(object value) => value.ToString() ?? string.Empty;
+        public double DoubleInput(double value) => value;
+        public int NeedsInt(int value) => value;
+        public string Ambiguous(string? value) => value ?? string.Empty;
+        public string Ambiguous(Uri? value) => value?.ToString() ?? string.Empty;
+    }
+
+    private class MethodTargetContainer
+    {
+        public MethodHost Target { get; set; } = new();
     }
 
     private static ParameterExpression Param => Expression.Parameter(typeof(TestClass), "x");
     private static ExpressionTreeBuilder<TestClass> Builder => new();
+    private static ParameterExpression MethodParam => Expression.Parameter(typeof(MethodTargetContainer), "x");
+    private static ExpressionTreeBuilder<MethodTargetContainer> MethodBuilder => new();
 
     [Fact]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2032:Type assertions based on 'assignable from' are confusingly named", Justification = "<Pending>")]
     public void Build_MemberAstNode_ReturnsMemberExpression()
     {
         // Arrange
@@ -29,12 +46,11 @@ public class ExpressionTreeBuilderTests
         var expr = Builder.Build(node, Param);
 
         // Assert
-        var typed = Assert.IsAssignableFrom<MemberExpression>(expr);
+        var typed = Assert.IsType<MemberExpression>(expr, exactMatch: false);
         Assert.Equal("Name", (typed).Member.Name);
     }
 
     [Fact]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2032:Type assertions based on 'assignable from' are confusingly named", Justification = "<Pending>")]
     public void Build_MemberAstNode_Nested_ReturnsMemberExpression()
     {
         // Arrange
@@ -44,7 +60,7 @@ public class ExpressionTreeBuilderTests
         var expr = Builder.Build(node, Param);
 
         // Assert
-        var typed = Assert.IsAssignableFrom<MemberExpression>(expr);
+        var typed = Assert.IsType<MemberExpression>(expr, exactMatch: false);
         Assert.Equal("Name", (typed).Member.Name);
     }
 
@@ -81,6 +97,35 @@ public class ExpressionTreeBuilderTests
 
         // Assert
         Assert.Equal(3.14, ((ConstantExpression)expr).Value);
+    }
+
+    [Fact]
+    public void Build_ConstantAstNode_ThousandsDouble_UsesInvariantCulture()
+    {
+        // Arrange
+        var node = new ConstantAstNode("1,234.5");
+
+        // Act
+        var expr = Builder.Build(node, Param);
+
+        // Assert
+        var constant = Assert.IsType<ConstantExpression>(expr);
+        Assert.Equal(1234.5, constant.Value);
+    }
+
+    [Fact]
+    public void Build_ConstantAstNode_NonStringValue_PreservesOriginalType()
+    {
+        // Arrange
+        var node = new ConstantAstNode(7m);
+
+        // Act
+        var expr = Builder.Build(node, Param);
+
+        // Assert
+        var constant = Assert.IsType<ConstantExpression>(expr);
+        Assert.Equal(typeof(decimal), constant.Type);
+        Assert.Equal(7m, constant.Value);
     }
 
     [Fact]
@@ -148,7 +193,6 @@ public class ExpressionTreeBuilderTests
     }
 
     [Fact]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2032:Type assertions based on 'assignable from' are confusingly named", Justification = "<Pending>")]
     public void Build_MethodCallAstNode_SingleArg()
     {
         // Arrange
@@ -160,12 +204,11 @@ public class ExpressionTreeBuilderTests
         var expr = Builder.Build(node, Param);
 
         // Assert
-        var typed = Assert.IsAssignableFrom<MethodCallExpression>(expr);
+        var typed = Assert.IsType<MethodCallExpression>(expr, exactMatch: false);
         Assert.Equal("Contains", (typed).Method.Name);
     }
 
     [Fact]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2032:Type assertions based on 'assignable from' are confusingly named", Justification = "<Pending>")]
     public void Build_MethodCallAstNode_MultipleArgs()
     {
         // Arrange
@@ -177,12 +220,11 @@ public class ExpressionTreeBuilderTests
         var expr = Builder.Build(node, Param);
 
         // Assert
-        var typed = Assert.IsAssignableFrom<MethodCallExpression>(expr);
+        var typed = Assert.IsType<MethodCallExpression>(expr, exactMatch: false);
         Assert.Equal("Replace", (typed).Method.Name);
     }
 
     [Fact]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2032:Type assertions based on 'assignable from' are confusingly named", Justification = "<Pending>")]
     public void Build_MethodCallAstNode_NoArgs()
     {
         // Arrange
@@ -193,7 +235,7 @@ public class ExpressionTreeBuilderTests
         var expr = Builder.Build(node, Param);
 
         // Assert
-        var typed = Assert.IsAssignableFrom<MethodCallExpression>(expr);
+        var typed = Assert.IsType<MethodCallExpression>(expr, exactMatch: false);
         Assert.Equal("ToLower", (typed).Method.Name);
     }
 
@@ -206,6 +248,96 @@ public class ExpressionTreeBuilderTests
 
         // Act & Assert
         Assert.Throws<ExpressionEvaluationException>(() => Builder.Build(node, Param));
+    }
+
+    [Fact]
+    public void Build_MemberAstNode_Field_ReturnsMemberExpression()
+    {
+        // Arrange
+        var node = new MemberAstNode(["ScoreField"]);
+
+        // Act
+        var expr = Builder.Build(node, Param);
+
+        // Assert
+        var typed = Assert.IsType<MemberExpression>(expr, exactMatch: false);
+        Assert.Equal("ScoreField", typed.Member.Name);
+    }
+
+    [Fact]
+    public void Build_MemberAstNode_CaseInsensitivePath_ReturnsMemberExpression()
+    {
+        // Arrange
+        var node = new MemberAstNode(["name"]);
+
+        // Act
+        var expr = Builder.Build(node, Param);
+
+        // Assert
+        var typed = Assert.IsType<MemberExpression>(expr, exactMatch: false);
+        Assert.Equal("Name", typed.Member.Name);
+    }
+
+    [Fact]
+    public void Build_MethodCallAstNode_AssignableArgument_SelectsCompatibleOverload()
+    {
+        // Arrange
+        var target = new MemberAstNode(["Target"]);
+        var node = new MethodCallAstNode(target, "TakesObject", [new ConstantAstNode("abc")]);
+
+        // Act
+        var expr = MethodBuilder.Build(node, MethodParam);
+
+        // Assert
+        var methodCall = Assert.IsType<MethodCallExpression>(expr, exactMatch: false);
+        Assert.Equal("TakesObject", methodCall.Method.Name);
+        Assert.Equal(typeof(object), methodCall.Method.GetParameters()[0].ParameterType);
+    }
+
+    [Fact]
+    public void Build_MethodCallAstNode_NumericConversion_InsertsConvertExpression()
+    {
+        // Arrange
+        var target = new MemberAstNode(["Target"]);
+        var node = new MethodCallAstNode(target, "DoubleInput", [new ConstantAstNode("42")]);
+
+        // Act
+        var expr = MethodBuilder.Build(node, MethodParam);
+
+        // Assert
+        var methodCall = Assert.IsType<MethodCallExpression>(expr, exactMatch: false);
+        Assert.Equal("DoubleInput", methodCall.Method.Name);
+        var convert = Assert.IsType<UnaryExpression>(methodCall.Arguments[0]);
+        Assert.Equal(ExpressionType.Convert, convert.NodeType);
+        Assert.Equal(typeof(double), convert.Type);
+    }
+
+    [Fact]
+    public void Build_MethodCallAstNode_NoCompatibleOverload_Throws()
+    {
+        // Arrange
+        var target = new MemberAstNode(["Target"]);
+        var node = new MethodCallAstNode(target, "NeedsInt", [new ConstantAstNode("true")]);
+
+        // Act
+        var ex = Assert.Throws<ExpressionEvaluationException>(() => MethodBuilder.Build(node, MethodParam));
+
+        // Assert
+        Assert.Contains("No compatible overload", ex.Message);
+    }
+
+    [Fact]
+    public void Build_MethodCallAstNode_AmbiguousOverload_Throws()
+    {
+        // Arrange
+        var target = new MemberAstNode(["Target"]);
+        var node = new MethodCallAstNode(target, "Ambiguous", [new ConstantAstNode(null!)]);
+
+        // Act
+        var ex = Assert.Throws<ExpressionEvaluationException>(() => MethodBuilder.Build(node, MethodParam));
+
+        // Assert
+        Assert.Contains("ambiguous", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

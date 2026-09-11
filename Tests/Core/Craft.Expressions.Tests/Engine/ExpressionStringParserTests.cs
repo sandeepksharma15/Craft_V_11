@@ -264,4 +264,43 @@ public class ExpressionStringParserTests
         // Act & Assert
         Assert.Throws<ExpressionParseException>(() => Parse(expr));
     }
+
+    [Fact]
+    public void Parse_Throws_When_DotIsNotFollowedByIdentifier()
+    {
+        // Arrange
+        var expr = "Name.";
+
+        // Act
+        var ex = Assert.Throws<ExpressionParseException>(() => Parse(expr));
+
+        // Assert
+        Assert.Contains("Expected identifier after '.'", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_Throws_When_MethodCallHasNoClosingParen()
+    {
+        // Arrange
+        var expr = "Name.Contains(\"oh\"";
+
+        // Act
+        var ex = Assert.Throws<ExpressionParseException>(() => Parse(expr));
+
+        // Assert
+        Assert.Contains("Expected ')'", ex.Message);
+    }
+
+    [Fact]
+    public void Parse_Throws_When_MemberAccessFollowsMethodCallWithoutInvocation()
+    {
+        // Arrange
+        var expr = "Name.Trim().Length";
+
+        // Act
+        var ex = Assert.Throws<ExpressionParseException>(() => Parse(expr));
+
+        // Assert
+        Assert.Contains("Expected method call after expression target", ex.Message);
+    }
 }

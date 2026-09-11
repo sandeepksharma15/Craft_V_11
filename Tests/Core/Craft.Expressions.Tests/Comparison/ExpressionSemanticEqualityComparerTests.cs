@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using Craft.Expressions.Comparison;
 
 namespace Craft.Expressions.Tests.Comparison;
@@ -102,6 +103,34 @@ public class ExpressionSemanticEqualityComparerTests
     }
 
     [Fact]
+    public void StructuralComparer_LambdaEquality_ReturnsFalse_WhenParameterCountsDiffer()
+    {
+        Expression<Func<int, bool>> oneParameter = value => value > 5;
+        Expression<Func<int, int, bool>> twoParameters = (left, right) => left > right;
+
+        Assert.False(InvokeAreLambdaExpressionsEqual(oneParameter, twoParameters));
+    }
+
+    [Fact]
+    public void StructuralComparer_LambdaEquality_ReturnsFalse_WhenParametersDiffer()
+    {
+        Expression<Func<int, bool>> expr1 = value => value > 5;
+        Expression<Func<int, bool>> expr2 = number => number > 5;
+
+        Assert.False(InvokeAreLambdaExpressionsEqual(expr1, expr2));
+    }
+
+    [Fact]
+    public void Equals_ReturnsFalse_ForLambdas_WithDifferentBodies()
+    {
+        Expression<Func<int, bool>> expr1 = value => value > 5;
+        Expression<Func<int, bool>> expr2 = value => value > 6;
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.False(comparer.Equals(expr1, expr2));
+    }
+
+    [Fact]
     public void GetHashCode_IsConsistent_ForCommutativeEquality()
     {
         ParameterExpression a = Expression.Parameter(typeof(int), "a");
@@ -201,6 +230,43 @@ public class ExpressionSemanticEqualityComparerTests
     }
 
     [Fact]
+    public void Equals_ReturnsTrue_ForNotEqualWithBooleanFalseOnRight_ForComplexOperand()
+    {
+        ParameterExpression left = Expression.Parameter(typeof(bool), "left");
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression combined = Expression.AndAlso(left, right);
+        BinaryExpression expr = Expression.NotEqual(combined, Expression.Constant(false));
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.True(comparer.Equals(expr, combined));
+        Assert.Equal(comparer.GetHashCode(expr), comparer.GetHashCode(combined));
+    }
+
+    [Fact]
+    public void Canonicalize_ReturnsRightOperand_ForNotEqualWithBooleanFalseOnLeft()
+    {
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression expr = Expression.NotEqual(Expression.Constant(false), right);
+
+        Expression canonical = InvokeCanonicalize(expr);
+
+        Assert.Equal(right.ToString(), canonical.ToString());
+    }
+
+    [Fact]
+    public void Equals_ReturnsTrue_ForNotEqualWithBooleanFalseOnLeft_ForComplexOperand()
+    {
+        ParameterExpression left = Expression.Parameter(typeof(bool), "left");
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression combined = Expression.OrElse(left, right);
+        BinaryExpression expr = Expression.NotEqual(Expression.Constant(false), combined);
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.True(comparer.Equals(expr, combined));
+        Assert.Equal(comparer.GetHashCode(expr), comparer.GetHashCode(combined));
+    }
+
+    [Fact]
     public void Equals_ReturnsTrue_ForNotEqualComparedToBooleanTrue()
     {
         ParameterExpression flag = Expression.Parameter(typeof(bool), "flag");
@@ -211,6 +277,57 @@ public class ExpressionSemanticEqualityComparerTests
 
         Assert.True(comparer.Equals(expr1, expected));
         Assert.True(comparer.Equals(expr2, expected));
+    }
+
+    [Fact]
+    public void Equals_ReturnsTrue_ForNotEqualWithBooleanTrueOnRight_ForComplexOperand()
+    {
+        ParameterExpression left = Expression.Parameter(typeof(bool), "left");
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression combined = Expression.AndAlso(left, right);
+        BinaryExpression expr = Expression.NotEqual(combined, Expression.Constant(true));
+        UnaryExpression expected = Expression.Not(combined);
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.True(comparer.Equals(expr, expected));
+        Assert.Equal(comparer.GetHashCode(expr), comparer.GetHashCode(expected));
+    }
+
+    [Fact]
+    public void Canonicalize_ReturnsNotRightOperand_ForNotEqualWithBooleanTrueOnLeft()
+    {
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression expr = Expression.NotEqual(Expression.Constant(true), right);
+
+        Expression canonical = InvokeCanonicalize(expr);
+
+        Assert.Equal(ExpressionType.Not, canonical.NodeType);
+        Assert.Equal(Expression.Not(right).ToString(), canonical.ToString());
+    }
+
+    [Fact]
+    public void Equals_ReturnsTrue_ForNotEqualWithBooleanTrueOnLeft_ForComplexOperand()
+    {
+        ParameterExpression left = Expression.Parameter(typeof(bool), "left");
+        ParameterExpression right = Expression.Parameter(typeof(bool), "right");
+        BinaryExpression combined = Expression.OrElse(left, right);
+        BinaryExpression expr = Expression.NotEqual(Expression.Constant(true), combined);
+        UnaryExpression expected = Expression.Not(combined);
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.True(comparer.Equals(expr, expected));
+        Assert.Equal(comparer.GetHashCode(expr), comparer.GetHashCode(expected));
+    }
+
+    [Fact]
+    public void Equals_ReturnsTrue_ForNotEqualWithoutBooleanConstants_PreservesOriginalComparison()
+    {
+        ParameterExpression left = Expression.Parameter(typeof(int), "left");
+        ParameterExpression right = Expression.Parameter(typeof(int), "right");
+        BinaryExpression expr = Expression.NotEqual(left, right);
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.True(comparer.Equals(expr, expr));
     }
 
     [Fact]
@@ -302,6 +419,26 @@ public class ExpressionSemanticEqualityComparerTests
     }
 
     [Fact]
+    public void Equals_ReturnsFalse_ForMethodCalls_WithDifferentMethods()
+    {
+        MethodCallExpression expr1 = Expression.Call(Expression.Constant("hello"), nameof(string.Contains), Type.EmptyTypes, Expression.Constant("ell"));
+        MethodCallExpression expr2 = Expression.Call(Expression.Constant("hello"), nameof(string.StartsWith), Type.EmptyTypes, Expression.Constant("ell"));
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.False(comparer.Equals(expr1, expr2));
+    }
+
+    [Fact]
+    public void Equals_ReturnsFalse_ForMethodCalls_WithDifferentObjects()
+    {
+        MethodCallExpression expr1 = Expression.Call(Expression.Constant("hello"), nameof(string.Contains), Type.EmptyTypes, Expression.Constant("ell"));
+        MethodCallExpression expr2 = Expression.Call(Expression.Constant("world"), nameof(string.Contains), Type.EmptyTypes, Expression.Constant("ell"));
+        var comparer = new ExpressionSemanticEqualityComparer();
+
+        Assert.False(comparer.Equals(expr1, expr2));
+    }
+
+    [Fact]
     public void Equals_ReturnsFalse_ForDifferentMethodCallArguments()
     {
         MethodCallExpression expr1 = Expression.Call(Expression.Constant("hello"), nameof(string.Contains), Type.EmptyTypes, Expression.Constant("ell"));
@@ -321,5 +458,24 @@ public class ExpressionSemanticEqualityComparerTests
 
         Assert.True(comparer.Equals(expr1, expr2));
         Assert.False(comparer.Equals(expr1, expr3));
+    }
+
+    private static bool InvokeAreLambdaExpressionsEqual(LambdaExpression left, LambdaExpression right)
+    {
+        MethodInfo method = typeof(ExpressionStructuralComparer).GetMethod("AreLambdaExpressionsEqual", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Could not find method AreLambdaExpressionsEqual.");
+
+        object? result = method.Invoke(null, [left, right]);
+        return result as bool?
+               ?? throw new InvalidOperationException("Method AreLambdaExpressionsEqual did not return a boolean value.");
+    }
+
+    private static Expression InvokeCanonicalize(Expression expression)
+    {
+        MethodInfo method = typeof(ExpressionSemanticEqualityComparer).GetMethod("Canonicalize", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("Could not find method Canonicalize.");
+
+        return method.Invoke(null, [expression]) as Expression
+               ?? throw new InvalidOperationException("Method Canonicalize returned null.");
     }
 }

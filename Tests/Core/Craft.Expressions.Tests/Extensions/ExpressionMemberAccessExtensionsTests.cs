@@ -1,6 +1,6 @@
 using Craft.Expressions.Extensions;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Extensions;
 
 public class ExpressionMemberAccessExtensionsTests
 {

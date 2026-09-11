@@ -1,7 +1,7 @@
 using Craft.Expressions.Linq;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Linq;
 
 public class QueryableFilterExtensionsTests
 {

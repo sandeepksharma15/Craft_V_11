@@ -71,7 +71,7 @@ public sealed class ExpressionSemanticEqualityComparer : IEqualityComparer<Expre
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            Dictionary<ParameterExpression, ParameterExpression> scope = new(node.Parameters.Count);
+            Dictionary<ParameterExpression, ParameterExpression> scope = [with(node.Parameters.Count)];
             ParameterExpression[] parameters = new ParameterExpression[node.Parameters.Count];
 
             for (var i = 0; i < node.Parameters.Count; i++)

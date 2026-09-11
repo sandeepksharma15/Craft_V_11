@@ -1,20 +1,21 @@
 using System.Linq.Expressions;
 using Craft.Expressions.Extensions;
+using Craft.Expressions.Tests.Fixtures;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Extensions;
 
 public class PredicateCompositionExtensionsTests
 {
     [Fact]
     public void And_ReturnsCombinedExpression()
     {
-        Expression<Func<MyClass, bool>> expr1 = x => x.AnotherProperty > 10;
-        Expression<Func<MyClass, bool>> expr2 = x => x.PropertyName == "Test";
+        Expression<Func<TestEntity, bool>> expr1 = x => x.Name.Length > 3;
+        Expression<Func<TestEntity, bool>> expr2 = x => x.Name == "Test";
 
         var andExpression = expr1.And(expr2);
         var compiled = andExpression.Compile();
-        var obj1 = new MyClass { AnotherProperty = 20, PropertyName = "Test" };
-        var obj2 = new MyClass { AnotherProperty = 5, PropertyName = "Test" };
+        var obj1 = new TestEntity { Name = "Test" };
+        var obj2 = new TestEntity { Name = "Hi" };
 
         Assert.NotNull(andExpression);
         Assert.True(compiled(obj1));
@@ -25,25 +26,19 @@ public class PredicateCompositionExtensionsTests
     [Fact]
     public void Or_ReturnsCombinedExpression()
     {
-        Expression<Func<MyClass, bool>> expr1 = x => x.AnotherProperty > 10;
-        Expression<Func<MyClass, bool>> expr2 = x => x.PropertyName == "Test";
+        Expression<Func<TestEntity, bool>> expr1 = x => x.Name.Length > 3;
+        Expression<Func<TestEntity, bool>> expr2 = x => x.Name == "Test";
 
         var orExpression = expr1.Or(expr2);
         var compiled = orExpression.Compile();
-        var obj1 = new MyClass { AnotherProperty = 20, PropertyName = "No" };
-        var obj2 = new MyClass { AnotherProperty = 5, PropertyName = "Test" };
-        var obj3 = new MyClass { AnotherProperty = 5, PropertyName = "No" };
+        var obj1 = new TestEntity { Name = "Hello" };
+        var obj2 = new TestEntity { Name = "Test" };
+        var obj3 = new TestEntity { Name = "No" };
 
         Assert.NotNull(orExpression);
         Assert.True(compiled(obj1));
         Assert.True(compiled(obj2));
         Assert.False(compiled(obj3));
         Assert.DoesNotContain("Invoke", orExpression.Body.ToString(), StringComparison.Ordinal);
-    }
-
-    private sealed class MyClass
-    {
-        public int AnotherProperty { get; set; }
-        public string? PropertyName { get; set; }
     }
 }

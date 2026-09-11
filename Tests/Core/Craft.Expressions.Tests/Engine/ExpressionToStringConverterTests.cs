@@ -2,7 +2,7 @@
 using Craft.Expressions.Engine;
 using Craft.Expressions.Tests.Fixtures;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Engine;
 
 /// <summary>
 /// Unit tests for ExpressionToStringConverter covering all supported expression types and edge cases.

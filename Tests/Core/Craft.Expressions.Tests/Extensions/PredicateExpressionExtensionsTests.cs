@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Craft.Expressions.Extensions;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Extensions;
 
 public class PredicateExpressionExtensionsTests
 {

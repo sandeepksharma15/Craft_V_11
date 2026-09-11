@@ -3,7 +3,7 @@ using Craft.Expressions.Ast;
 using Craft.Expressions.Engine;
 using Craft.Expressions.Exceptions;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Engine;
 
 public class ExpressionTreeBuilderTests
 {

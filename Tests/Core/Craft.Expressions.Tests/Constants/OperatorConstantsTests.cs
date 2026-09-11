@@ -1,7 +1,7 @@
 using Craft.Expressions.Constants;
 using Craft.Expressions.Engine;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Constants;
 
 public class OperatorConstantsTests
 {

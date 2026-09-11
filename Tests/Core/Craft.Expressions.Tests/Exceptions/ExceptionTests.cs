@@ -1,7 +1,7 @@
 using Craft.Expressions.Engine;
 using Craft.Expressions.Exceptions;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Exceptions;
 
 public class ExceptionTests
 {

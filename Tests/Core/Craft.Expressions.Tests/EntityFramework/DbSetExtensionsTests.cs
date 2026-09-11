@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Craft.Expressions.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.EntityFramework;
 
 public class DbSetExtensionsTests
 {

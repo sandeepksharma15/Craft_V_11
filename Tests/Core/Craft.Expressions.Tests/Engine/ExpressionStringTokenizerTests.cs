@@ -2,7 +2,7 @@
 using Craft.Expressions.Exceptions;
 using Craft.Expressions.Tokens;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Engine;
 
 public class ExpressionStringTokenizerTests
 {

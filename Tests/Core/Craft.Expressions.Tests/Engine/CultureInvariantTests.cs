@@ -1,7 +1,7 @@
 using System.Globalization;
 using Craft.Expressions.Engine;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Engine;
 
 public class CultureInvariantTests
 {

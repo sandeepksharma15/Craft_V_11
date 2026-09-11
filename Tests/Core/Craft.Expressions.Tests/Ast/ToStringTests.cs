@@ -1,7 +1,7 @@
 using Craft.Expressions.Ast;
 using Craft.Expressions.Tokens;
 
-namespace Craft.Expressions.Tests;
+namespace Craft.Expressions.Tests.Ast;
 
 public class ToStringTests
 {

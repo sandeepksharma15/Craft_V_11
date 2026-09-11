@@ -154,28 +154,23 @@ internal static class ExpressionStructuralComparer
             return false;
 
         for (var i = 0; i < left.Parameters.Count; i++)
-        {
             if (!AreEqual(left.Parameters[i], right.Parameters[i]))
                 return false;
-        }
 
         return AreEqual(left.Body, right.Body);
     }
 
     private static bool AreMethodCallExpressionsEqual(MethodCallExpression left, MethodCallExpression right)
     {
-        if (left.Method != right.Method
-            || !AreNullableExpressionsEqual(left.Object, right.Object)
+        if (left.Method != right.Method || !AreNullableExpressionsEqual(left.Object, right.Object)
             || left.Arguments.Count != right.Arguments.Count)
         {
             return false;
         }
 
         for (var i = 0; i < left.Arguments.Count; i++)
-        {
             if (!AreEqual(left.Arguments[i], right.Arguments[i]))
                 return false;
-        }
 
         return true;
     }

@@ -35,10 +35,12 @@ public static class DbSetExtensions
         ArgumentNullException.ThrowIfNull(condition);
 
         Expression<Func<T, bool>>? queryFilter = dbSet.GetQueryFilter();
+
         if (queryFilter is null)
             return dbSet.IgnoreQueryFilters();
 
         Expression<Func<T, bool>>? newQueryFilter = queryFilter.RemoveCondition(condition);
+
         return newQueryFilter is null
             ? dbSet.IgnoreQueryFilters()
             : dbSet.IgnoreQueryFilters().Where(newQueryFilter);

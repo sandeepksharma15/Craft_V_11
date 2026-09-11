@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Globalization;
 using Craft.Expressions.Constants;
 
 namespace Craft.Expressions.Engine;
@@ -40,11 +41,12 @@ internal static class ExpressionToStringConverter
     {
         return value switch
         {
-            string s => $"\"{s}\"",
+            string s => $"\"{s.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal)}\"",
             char c => $"'{c}'",
             bool b => b ? "true" : "false",
             null => "null",
-            _ => value?.ToString()!
+            IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty,
+            _ => value?.ToString() ?? string.Empty
         };
     }
 

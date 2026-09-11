@@ -166,13 +166,12 @@ internal class ExpressionStringParser
             }
         }
 
-        // Identifier: member access or method call
+        // Identifier: member access and chained method calls
         if (_current.Type == TokenType.Identifier)
         {
-            var memberPath = new List<string> { _current.Value };
+            AstNode node = new MemberAstNode([_current.Value]);
             MoveNext();
 
-            // Handle dotted member access
             while (_current.Type == TokenType.Dot)
             {
                 MoveNext();
@@ -180,42 +179,40 @@ internal class ExpressionStringParser
                 if (_current.Type != TokenType.Identifier)
                     throw new ExpressionParseException("Expected identifier after '.'", _current.Position, _current.Value);
 
-                memberPath.Add(_current.Value);
+                var segment = _current.Value;
                 MoveNext();
+
+                if (_current.Type == TokenType.OpenParen)
+                {
+                    MoveNext();
+
+                    var args = new List<AstNode>();
+                    if (_current.Type != TokenType.CloseParen)
+                        while (true)
+                        {
+                            args.Add(ParseExpression());
+
+                            if (_current.Type == TokenType.Comma)
+                                MoveNext();
+                            else
+                                break;
+                        }
+
+                    if (_current.Type != TokenType.CloseParen)
+                        throw new ExpressionParseException("Expected ')'", _current.Position, _current.Value);
+
+                    MoveNext();
+                    node = new MethodCallAstNode(node, segment, args);
+                    continue;
+                }
+
+                if (node is not MemberAstNode memberNode)
+                    throw new ExpressionParseException("Expected method call after expression target", _current.Position, _current.Value);
+
+                node = new MemberAstNode([.. memberNode.MemberPath, segment]);
             }
 
-            // Method call
-            if (_current.Type == TokenType.OpenParen)
-            {
-                MoveNext();
-
-                var args = new List<AstNode>();
-                if (_current.Type != TokenType.CloseParen)
-                    while (true)
-                    {
-                        args.Add(ParseExpression());
-
-                        if (_current.Type == TokenType.Comma)
-                            MoveNext();
-                        else
-                            break;
-                    }
-
-                if (_current.Type != TokenType.CloseParen)
-                    throw new ExpressionParseException("Expected ')'", _current.Position, _current.Value);
-
-                MoveNext();
-
-                var methodName = memberPath.Last();
-                AstNode? target = memberPath.Count == 1
-                    ? null
-                    : new MemberAstNode([.. memberPath.Take(memberPath.Count - 1)]);
-
-                return new MethodCallAstNode(target ?? new MemberAstNode([methodName]), methodName, args);
-            }
-
-            // Member access
-            return new MemberAstNode([.. memberPath]);
+            return node;
         }
 
         // String literal

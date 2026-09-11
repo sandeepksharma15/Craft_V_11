@@ -117,17 +117,83 @@ internal class ExpressionTreeBuilder<T>
             : throw new ExpressionEvaluationException("Method call must have a target", typeof(T), node.MethodName);
 
         var argExprs = node.Arguments.Select(arg => Build(arg, param)).ToArray();
-        var argTypes = argExprs.Select(a => a.Type).ToArray();
+        var candidates = target.Type
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+            .Where(m => m.Name == node.MethodName && m.GetParameters().Length == argExprs.Length)
+            .ToArray();
 
-        var method = target.Type.GetMethod(node.MethodName, argTypes) 
-            ?? target.Type.GetMethods().FirstOrDefault(m => m.Name == node.MethodName && m.GetParameters().Length == argExprs.Length) 
-                    ?? throw new ExpressionEvaluationException($"Method '{node.MethodName}' not found", target.Type, node.MethodName);
+        if (candidates.Length == 0)
+            throw new ExpressionEvaluationException($"Method '{node.MethodName}' not found", target.Type, node.MethodName);
+
+        var compatible = candidates
+            .Select(method => new
+            {
+                Method = method,
+                Parameters = method.GetParameters(),
+            })
+            .Where(candidate => candidate.Parameters
+                .Select((parameter, index) => GetCompatibilityScore(argExprs[index], parameter.ParameterType))
+                .All(score => score >= 0))
+            .Select(candidate => new
+            {
+                candidate.Method,
+                candidate.Parameters,
+                Score = candidate.Parameters
+                    .Select((parameter, index) => GetCompatibilityScore(argExprs[index], parameter.ParameterType))
+                    .Sum()
+            })
+            .ToArray();
+
+        if (compatible.Length == 0)
+            throw new ExpressionEvaluationException($"No compatible overload for method '{node.MethodName}' was found", target.Type, node.MethodName);
+
+        int maxScore = compatible.Max(candidate => candidate.Score);
+        var bestMatches = compatible.Where(candidate => candidate.Score == maxScore).ToArray();
+
+        if (bestMatches.Length != 1)
+            throw new ExpressionEvaluationException($"Method call '{node.MethodName}' is ambiguous", target.Type, node.MethodName);
+
+        var method = bestMatches[0].Method;
 
         // Convert arguments if needed
         var convertedArgs = method.GetParameters()
-            .Select((p, i) => Expression.Convert(argExprs[i], p.ParameterType))
+            .Select((parameter, index) => ConvertIfNeeded(argExprs[index], parameter.ParameterType))
             .ToArray();
 
         return Expression.Call(target, method, convertedArgs);
+    }
+
+    private static Expression ConvertIfNeeded(Expression argument, Type targetType)
+        => argument.Type == targetType ? argument : Expression.Convert(argument, targetType);
+
+    private static int GetCompatibilityScore(Expression argument, Type parameterType)
+    {
+        if (argument.Type == parameterType)
+            return 3;
+
+        if (parameterType.IsAssignableFrom(argument.Type))
+            return 2;
+
+        if (argument is ConstantExpression { Value: null })
+            return !parameterType.IsValueType || Nullable.GetUnderlyingType(parameterType) != null ? 1 : -1;
+
+        return IsNumericType(argument.Type) && IsNumericType(parameterType) ? 0 : -1;
+    }
+
+    private static bool IsNumericType(Type type)
+    {
+        Type effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+
+        return Type.GetTypeCode(effectiveType) is TypeCode.Byte
+            or TypeCode.SByte
+            or TypeCode.Int16
+            or TypeCode.UInt16
+            or TypeCode.Int32
+            or TypeCode.UInt32
+            or TypeCode.Int64
+            or TypeCode.UInt64
+            or TypeCode.Single
+            or TypeCode.Double
+            or TypeCode.Decimal;
     }
 }

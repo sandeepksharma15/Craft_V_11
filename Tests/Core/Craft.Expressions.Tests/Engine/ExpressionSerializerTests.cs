@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using System.Globalization;
 using Craft.Expressions.Engine;
 using Craft.Expressions.Exceptions;
 
@@ -11,6 +12,7 @@ public class ExpressionSerializerTests
         public string Name { get; set; } = string.Empty;
         public int Age { get; set; }
         public bool IsActive { get; set; }
+        public double Price { get; set; }
         public TestClass? Child { get; set; }
     }
 
@@ -166,5 +168,43 @@ public class ExpressionSerializerTests
 
         // Act & Assert
         Assert.Throws<ExpressionEvaluationException>(() => Serializer.Deserialize(exprString));
+    }
+
+    [Fact]
+    public void Deserialize_ChainedMethodCalls_Works()
+    {
+        // Arrange
+        var exprString = "Name.Trim().ToLower() == \"john\"";
+        var obj = new TestClass { Name = "  John  " };
+
+        // Act
+        var expr = Serializer.Deserialize(exprString);
+        var result = expr.Compile()(obj);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void Serialize_DoubleConstant_UsesInvariantCulture()
+    {
+        // Arrange
+        var currentCulture = CultureInfo.CurrentCulture;
+
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+            Expression<Func<TestClass, bool>> expr = x => x.Price > 10.5;
+
+            // Act
+            var result = Serializer.Serialize(expr);
+
+            // Assert
+            Assert.Equal("(Price > 10.5)", result);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = currentCulture;
+        }
     }
 }

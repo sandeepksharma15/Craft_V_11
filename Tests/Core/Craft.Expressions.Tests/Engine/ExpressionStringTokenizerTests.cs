@@ -86,6 +86,22 @@ public class ExpressionStringTokenizerTests
     }
 
     [Fact]
+    public void Tokenize_NumberLiteral_Negative_Int_And_Decimal()
+    {
+        // Arrange
+        var input = "-42 -3.14";
+
+        // Act
+        var tokens = ExpressionStringTokenizer.Tokenize(input).ToList();
+
+        // Assert
+        Assert.Equal(TokenType.NumberLiteral, tokens[0].Type);
+        Assert.Equal("-42", tokens[0].Value);
+        Assert.Equal(TokenType.NumberLiteral, tokens[1].Type);
+        Assert.Equal("-3.14", tokens[1].Value);
+    }
+
+    [Fact]
     public void Tokenize_Operators()
     {
         // Arrange
@@ -203,6 +219,16 @@ public class ExpressionStringTokenizerTests
     {
         // Arrange
         var input = "Name | \"John\"";
+
+        // Act & Assert
+        Assert.Throws<ExpressionTokenizationException>(() => ExpressionStringTokenizer.Tokenize(input).ToList());
+    }
+
+    [Fact]
+    public void Tokenize_Throws_On_Unterminated_StringLiteral()
+    {
+        // Arrange
+        var input = "\"unterminated";
 
         // Act & Assert
         Assert.Throws<ExpressionTokenizationException>(() => ExpressionStringTokenizer.Tokenize(input).ToList());

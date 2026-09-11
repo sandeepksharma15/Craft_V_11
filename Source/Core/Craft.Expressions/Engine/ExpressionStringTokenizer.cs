@@ -45,8 +45,8 @@ internal class ExpressionStringTokenizer
                 continue;
             }
 
-            // Number literal
-            if (char.IsDigit(c))
+            // Number literal (supports leading minus)
+            if (char.IsDigit(c) || c == '-' && pos + 1 < input.Length && char.IsDigit(input[pos + 1]))
             {
                 yield return TokenizeNumberLiteral(input, ref pos);
                 continue;
@@ -159,6 +159,7 @@ internal class ExpressionStringTokenizer
         pos++; // skip opening quote
 
         var sb = new StringBuilder();
+        bool closed = false;
 
         while (pos < input.Length)
             if (input[pos] == '\\' && pos + 1 < input.Length)
@@ -169,6 +170,7 @@ internal class ExpressionStringTokenizer
             else if (input[pos] == '"')
             {
                 pos++; // skip closing quote
+                closed = true;
                 break;
             }
             else
@@ -177,12 +179,19 @@ internal class ExpressionStringTokenizer
                 pos++;
             }
 
+        if (!closed)
+            throw new ExpressionTokenizationException("Unterminated string literal", start, '"');
+
         return new Token(TokenType.StringLiteral, sb.ToString(), start);
     }
 
     private static Token TokenizeNumberLiteral(string input, ref int pos)
     {
         int start = pos;
+
+        if (input[pos] == '-')
+            pos++;
+
         bool hasDot = false;
 
         while (pos < input.Length && (char.IsDigit(input[pos]) || !hasDot && input[pos] == '.'))

@@ -202,6 +202,26 @@ public class ExpressionStringParserTests
     }
 
     [Fact]
+    public void Parse_ChainedMethodCalls_ReturnsNestedMethodCallAstNodes()
+    {
+        // Arrange
+        var expr = "Name.Trim().ToLower()";
+
+        // Act
+        var ast = Parse(expr);
+
+        // Assert
+        var outer = Assert.IsType<MethodCallAstNode>(ast);
+        Assert.Equal("ToLower", outer.MethodName);
+
+        var inner = Assert.IsType<MethodCallAstNode>(outer.Target);
+        Assert.Equal("Trim", inner.MethodName);
+
+        var member = Assert.IsType<MemberAstNode>(inner.Target);
+        Assert.Equal(new[] { "Name" }, member.MemberPath);
+    }
+
+    [Fact]
     public void Parse_ComplexExpression()
     {
         // Arrange

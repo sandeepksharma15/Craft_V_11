@@ -71,6 +71,7 @@
 * Use `[Theory]` with `[InlineData]` or `[MemberData]` for parameterized test coverage.
 * Use `WebApplicationFactory<TEntryPoint>` for ASP.NET Core integration tests.
 * Validate boundary conditions, edge cases, and failure modes—not just happy paths.
+* In test projects, prefer reusing existing shared fixture model classes (for example in TestExpressionModels) instead of creating new private test classes in individual test files; keep nomenclature consistent across projects.
 
 ## 8. Validation
 

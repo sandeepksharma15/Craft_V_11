@@ -13,6 +13,7 @@
 
 <!-- Explicit user preferences for code style, tooling, or workflow beyond what .editorconfig covers. -->
 - 2026-09-09: Prefer the newer C# extension member syntax (`extension<T>(...)`) for extension methods when supported by the language and applicable to the target type.
+- 2026-09-11: In test projects, prefer reusing existing shared fixture classes (for example `TestExpressionModels`) over creating new private test classes; keep nomenclature consistent across projects.
 
 ## Architecture Decisions
 

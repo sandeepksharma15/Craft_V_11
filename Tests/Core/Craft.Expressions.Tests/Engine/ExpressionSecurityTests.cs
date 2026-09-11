@@ -7,13 +7,6 @@ public class ExpressionSecurityTests
 {
     private static ExpressionSerializer<TestClass> Serializer => new();
 
-    private class TestClass
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Age { get; set; }
-        public bool IsActive { get; set; }
-    }
-
     [Fact]
     public void Deserialize_ThrowsArgumentException_WhenInputIsNull()
     {

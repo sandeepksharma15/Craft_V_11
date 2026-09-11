@@ -146,35 +146,4 @@ public class DbSetExtensionsTests
         _ = context.SaveChanges();
     }
 
-    private sealed class QueryFilterEntity
-    {
-        public int Id { get; init; }
-        public bool IsActive { get; init; }
-        public bool IsDeleted { get; init; }
-    }
-
-    private sealed class NoQueryFilterDbContext(DbContextOptions<NoQueryFilterDbContext> options) : DbContext(options)
-    {
-        public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-    }
-
-    private sealed class SingleQueryFilterDbContext(DbContextOptions<SingleQueryFilterDbContext> options) : DbContext(options)
-    {
-        public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive);
-        }
-    }
-
-    private sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryFilterDbContext> options) : DbContext(options)
-    {
-        public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
-        }
-    }
 }

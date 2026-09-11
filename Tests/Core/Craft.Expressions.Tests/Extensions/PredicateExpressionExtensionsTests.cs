@@ -222,8 +222,8 @@ public class PredicateExpressionExtensionsTests
     [Fact]
     public void IsSemanticallyEquivalentTo_ReturnsTrueForEquivalentBooleanExpressions()
     {
-        Expression<Func<Entity, bool>> left = entity => entity.IsActive;
-        Expression<Func<Entity, bool>> right = item => item.IsActive == true;
+        Expression<Func<TestEntity, bool>> left = entity => entity.IsActive;
+        Expression<Func<TestEntity, bool>> right = item => item.IsActive == true;
 
         Assert.True(left.IsSemanticallyEquivalentTo(right));
     }
@@ -231,8 +231,8 @@ public class PredicateExpressionExtensionsTests
     [Fact]
     public void IsSemanticallyEquivalentTo_ReturnsTrueForEquivalentExpressionsWithDifferentParameterNames()
     {
-        Expression<Func<Entity, bool>> left = entity => entity.Id == 5 && entity.IsActive;
-        Expression<Func<Entity, bool>> right = record => record.IsActive && record.Id == 5;
+        Expression<Func<TestEntity, bool>> left = entity => entity.Id == 5 && entity.IsActive;
+        Expression<Func<TestEntity, bool>> right = record => record.IsActive && record.Id == 5;
 
         Assert.True(left.IsSemanticallyEquivalentTo(right));
     }
@@ -240,16 +240,10 @@ public class PredicateExpressionExtensionsTests
     [Fact]
     public void IsSemanticallyEquivalentTo_ReturnsFalseForDifferentExpressions()
     {
-        Expression<Func<Entity, bool>> left = entity => entity.IsActive;
-        Expression<Func<Entity, bool>> right = entity => entity.IsDeleted;
+        Expression<Func<TestEntity, bool>> left = entity => entity.IsActive;
+        Expression<Func<TestEntity, bool>> right = entity => entity.IsDeleted;
 
         Assert.False(left.IsSemanticallyEquivalentTo(right));
     }
 
-    private sealed class Entity
-    {
-        public int Id { get; set; }
-        public bool IsActive { get; set; }
-        public bool IsDeleted { get; set; }
-    }
 }

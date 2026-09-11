@@ -90,21 +90,4 @@ public class ExpressionPropertyPathExtractorTests
 
     public static string? NullConditionalProxy(string? value) => value;
 
-    private sealed class TestEntity
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public TestLocation Location { get; set; } = new();
-        public Dictionary<string, string> Attributes { get; set; } = [];
-    }
-
-    private sealed class TestLocation
-    {
-        public TestCountry Country { get; set; } = new();
-    }
-
-    private sealed class TestCountry
-    {
-        public string Code { get; set; } = string.Empty;
-    }
 }

@@ -7,15 +7,6 @@ namespace Craft.Expressions.Tests.Engine;
 
 public class ExpressionSerializerTests
 {
-    private class TestClass
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Age { get; set; }
-        public bool IsActive { get; set; }
-        public double Price { get; set; }
-        public TestClass? Child { get; set; }
-    }
-
     private static ExpressionSerializer<TestClass> Serializer => new();
 
     [Fact]

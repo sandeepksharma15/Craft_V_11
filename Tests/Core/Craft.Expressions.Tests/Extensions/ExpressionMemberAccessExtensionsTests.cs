@@ -195,13 +195,4 @@ public class ExpressionMemberAccessExtensionsTests
         Assert.Contains("cannot be assigned", exception.Message);
     }
 
-    private sealed class MyClass
-    {
-        public int AnotherProperty { get; set; }
-        public string? PropertyName { get; set; }
-        public static int StaticField;
-        private int _privateField;
-
-        public void SetPrivateField(int value) => _privateField = value;
-    }
 }

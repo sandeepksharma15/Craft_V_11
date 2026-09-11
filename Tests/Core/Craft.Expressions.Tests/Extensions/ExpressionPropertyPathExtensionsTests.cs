@@ -93,24 +93,4 @@ public class ExpressionPropertyPathExtensionsTests
         Assert.Equal("Location.Name", expression.GetFullPropertyPath());
     }
 
-    private sealed class TestEntity
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public TestLocation Location { get; set; } = new();
-    }
-
-    private sealed class TestLocation
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public TestCountry Country { get; set; } = new();
-    }
-
-    private sealed class TestCountry
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Code { get; set; } = string.Empty;
-    }
 }

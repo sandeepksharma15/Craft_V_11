@@ -7,12 +7,6 @@ public class ExceptionTests
 {
     private static ExpressionSerializer<TestClass> Serializer => new();
 
-    private class TestClass
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Age { get; set; }
-    }
-
     [Fact]
     public void ExpressionTokenizationException_ContainsPositionAndCharacter()
     {

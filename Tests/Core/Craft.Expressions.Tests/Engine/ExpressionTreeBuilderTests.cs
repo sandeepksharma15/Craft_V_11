@@ -7,30 +7,6 @@ namespace Craft.Expressions.Tests.Engine;
 
 public class ExpressionTreeBuilderTests
 {
-    private class TestClass
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Age { get; set; }
-        public bool IsActive { get; set; }
-        public TestClass? Child { get; set; }
-        public int ScoreField;
-    }
-
-    private class MethodHost
-    {
-        public string Echo(string value) => value;
-        public string TakesObject(object value) => value.ToString() ?? string.Empty;
-        public double DoubleInput(double value) => value;
-        public int NeedsInt(int value) => value;
-        public string Ambiguous(string? value) => value ?? string.Empty;
-        public string Ambiguous(Uri? value) => value?.ToString() ?? string.Empty;
-    }
-
-    private class MethodTargetContainer
-    {
-        public MethodHost Target { get; set; } = new();
-    }
-
     private static ParameterExpression Param => Expression.Parameter(typeof(TestClass), "x");
     private static ExpressionTreeBuilder<TestClass> Builder => new();
     private static ParameterExpression MethodParam => Expression.Parameter(typeof(MethodTargetContainer), "x");
@@ -370,5 +346,4 @@ public class ExpressionTreeBuilderTests
         Assert.Throws<NotSupportedException>(() => Builder.Build(node, Param));
     }
 
-    private class DummyAstNode : AstNode { }
 }

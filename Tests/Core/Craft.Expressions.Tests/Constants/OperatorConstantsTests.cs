@@ -53,9 +53,4 @@ public class OperatorConstantsTests
         Assert.NotNull(notExpression);
     }
 
-    private class TestClass
-    {
-        public int Age { get; set; }
-        public bool IsActive { get; set; }
-    }
 }

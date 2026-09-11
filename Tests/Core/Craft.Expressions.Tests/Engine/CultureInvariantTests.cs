@@ -7,13 +7,6 @@ public class CultureInvariantTests
 {
     private static ExpressionSerializer<TestClass> Serializer => new();
 
-    private class TestClass
-    {
-        public double Price { get; set; }
-        public decimal Amount { get; set; }
-        public int Count { get; set; }
-    }
-
     [Fact]
     public void Deserialize_ParsesDecimalWithPeriod_InAllCultures()
     {

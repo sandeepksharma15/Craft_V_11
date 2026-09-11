@@ -96,25 +96,4 @@ public class QueryableFilterExtensionsTests
         _ = await context.SaveChangesAsync(cancellationToken);
     }
 
-    private sealed class FilteredQueryDbContext(DbContextOptions<FilteredQueryDbContext> options) : DbContext(options)
-    {
-        public DbSet<FilteredQueryEntity> Entities => Set<FilteredQueryEntity>();
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            _ = modelBuilder.Entity<FilteredQueryEntity>().HasQueryFilter(entity => entity.IsActive);
-        }
-    }
-
-    private sealed class UnfilteredQueryDbContext(DbContextOptions<UnfilteredQueryDbContext> options) : DbContext(options)
-    {
-        public DbSet<FilteredQueryEntity> Entities => Set<FilteredQueryEntity>();
-    }
-
-    private sealed class FilteredQueryEntity
-    {
-        public int Id { get; init; }
-        public bool IsActive { get; init; }
-        public required string Name { get; init; }
-    }
 }

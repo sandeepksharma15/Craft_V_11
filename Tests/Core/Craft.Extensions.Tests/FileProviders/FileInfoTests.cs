@@ -259,8 +259,6 @@ public class FileInfoTests
     }
 
 
-}
-
     [Fact]
     public void GetFileSize_ShouldReturnLength()
     {
@@ -268,6 +266,8 @@ public class FileInfoTests
 
         Assert.Equal(1234, fileInfo.GetFileSize());
     }
+
+}
 
 internal sealed class CultureScope : IDisposable
 {

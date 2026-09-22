@@ -261,33 +261,6 @@ public class TypeTests
     [Fact]
     public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
     {
-        var method = typeof(TypeExtensions).GetMethod(
-            "GetLoadableTypes",
-            BindingFlags.NonPublic | BindingFlags.Static,
-            binder: null,
-            types: [typeof(IEnumerable<Assembly>)],
-            modifiers: null);
-
-        Assert.NotNull(method);
-
-        var exception = new ReflectionTypeLoadException(
-            [typeof(BaseClass), null],
-            [new TypeLoadException()]);
-
-        var assembly = new ThrowingAssembly(exception);
-        var result = (IEnumerable<Type>)method!.Invoke(null, [[assembly]])!;
-
-        Assert.Contains(typeof(BaseClass), result);
-    }
-
-    private sealed class ThrowingAssembly(ReflectionTypeLoadException exception) : Assembly
-    {
-        public override Type[] GetTypes() => throw exception;
-    }
-
-    [Fact]
-    public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
-    {
         var method = typeof(System.TypeExtensions).GetMethod(
             "GetLoadableTypes",
             BindingFlags.NonPublic | BindingFlags.Static,

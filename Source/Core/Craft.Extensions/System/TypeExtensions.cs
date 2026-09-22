@@ -9,13 +9,13 @@ public static class TypeExtensions
     extension(Type? type)
     {
         public IList<string> GetClassesWithAttribute<T>() where T : Attribute
-            => type is null ? [] : GetDerivedClasses(type, typeof(T), includeAttribute: true);
+            => type is null ? [] : GetDerivedClasses(type, typeof(T), includeAttribute: true, includeBaseType: true);
 
         public IList<string> GetClassesWithoutAttribute<T>() where T : Attribute
-            => type is null ? [] : GetDerivedClasses(type, typeof(T), includeAttribute: false);
+            => type is null ? [] : GetDerivedClasses(type, typeof(T), includeAttribute: false, includeBaseType: true);
 
         public IList<string> GetInheritedClasses()
-            => type is null ? [] : GetDerivedClasses(type, attributeType: null, includeAttribute: false);
+            => type is null ? [] : GetDerivedClasses(type, attributeType: null, includeAttribute: false, includeBaseType: false);
 
         public bool HasAttribute<T>() where T : Attribute
             => type?.GetCustomAttributes(typeof(T), inherit: true).Length > 0;
@@ -30,7 +30,8 @@ public static class TypeExtensions
             => type.IsNumericTypeCode();
 
         public bool IsIntegral()
-            => type.IsNumericTypeCode(TypeCode.Byte, TypeCode.SByte, TypeCode.UInt16, TypeCode.UInt32,
+            => type.IsNumericTypeCode(
+                TypeCode.Byte, TypeCode.SByte, TypeCode.UInt16, TypeCode.UInt32,
                 TypeCode.UInt64, TypeCode.Int16, TypeCode.Int32, TypeCode.Int64);
 
         public bool IsFloating()
@@ -74,8 +75,11 @@ public static class TypeExtensions
 
         public string? GetClassName()
             => type?.ToString().GetStringAfterLastDelimiter();
+    }
 
-        public Type? GetMemberUnderlyingType(MemberInfo? member)
+    extension(MemberInfo? member)
+    {
+        public Type? GetMemberUnderlyingType()
             => member?.MemberType switch
             {
                 MemberTypes.Field => ((FieldInfo)member).FieldType,
@@ -91,12 +95,13 @@ public static class TypeExtensions
     private static IList<string> GetDerivedClasses(
         Type baseType,
         Type? attributeType,
-        bool includeAttribute)
+        bool includeAttribute,
+        bool includeBaseType)
         => GetLoadableTypes()
             .Where(candidate =>
                 candidate.IsClass
                 && !candidate.IsAbstract
-                && candidate != baseType
+                && (includeBaseType || candidate != baseType)
                 && baseType.IsAssignableFrom(candidate)
                 && (attributeType is null
                     || (candidate.GetCustomAttributes(attributeType, inherit: true).Length > 0) == includeAttribute))

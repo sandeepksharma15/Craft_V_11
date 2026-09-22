@@ -17,42 +17,112 @@ public class ReflectionExtensionsTests
     [Fact]
     public void GetMemberByName_ReturnsDescriptor_ForNestedProperty()
     {
-        var descriptor = typeof(Simple).GetMemberByName("Nested.DoubleProp");
+        var descriptor = typeof(Simple).GetMemberByName("Nested.Deep.DoubleProp");
 
         Assert.NotNull(descriptor);
         Assert.Equal("DoubleProp", descriptor.Name);
     }
 
     [Fact]
-    public void GetMemberByName_ReturnsNull_WhenSimplePropertyNotFound()
+    public void GetMemberByName_ReturnsNull_WhenPropertyNotFound()
     {
         Assert.Null(typeof(Simple).GetMemberByName("NotExist"));
-    }
-
-    [Fact]
-    public void GetMemberByName_ReturnsNull_WhenNestedPropertyNotFound()
-    {
         Assert.Null(typeof(Simple).GetMemberByName("Nested.NotExist"));
-    }
-
-    [Fact]
-    public void GetMemberByName_ReturnsNull_WhenTopLevelMemberNotFound()
-    {
         Assert.Null(typeof(Simple).GetMemberByName("NotExist.Value"));
     }
 
     [Fact]
-    public void GetMemberByName_ThrowsOnNullType()
+    public void GetMemberByName_ThrowsOnInvalidArguments()
     {
         Assert.Throws<ArgumentNullException>(() => ReflectionExtensions.GetMemberByName(null!, "IntProp"));
-    }
-
-    [Fact]
-    public void GetMemberByName_ThrowsOnNullOrEmptyName()
-    {
         Assert.Throws<ArgumentNullException>(() => typeof(Simple).GetMemberByName(null!));
         Assert.Throws<ArgumentException>(() => typeof(Simple).GetMemberByName(""));
         Assert.Throws<ArgumentException>(() => typeof(Simple).GetMemberByName("   "));
+    }
+
+    [Fact]
+    public void GetAllProperties_ReturnsAllInstancePropertiesIncludingBase()
+    {
+        var properties = typeof(Derived).GetAllProperties();
+
+        Assert.Contains(properties, p => p.Name == "BaseProp");
+        Assert.Contains(properties, p => p.Name == "DerivedProp");
+        Assert.Contains(properties, p => p.Name == "PrivateBaseProp");
+        Assert.DoesNotContain(properties, p => p.Name == "StaticProp");
+    }
+
+    [Fact]
+    public void GetAllProperties_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => ReflectionExtensions.GetAllProperties(null));
+    }
+
+    [Fact]
+    public void GetPropertyInfo_ByTypeAndName_ReturnsProperty()
+    {
+        var property = typeof(Simple).GetPropertyInfo("IntProp");
+
+        Assert.Equal("IntProp", property.Name);
+    }
+
+    [Fact]
+    public void GetPropertyInfo_ByTypeAndName_FindsNonPublicAndStaticProperties()
+    {
+        Assert.Equal("PrivateProp", typeof(Simple).GetPropertyInfo("PrivateProp").Name);
+        Assert.Equal("StaticProp", typeof(Simple).GetPropertyInfo("StaticProp").Name);
+    }
+
+    [Fact]
+    public void GetPropertyInfo_ByTypeAndName_ThrowsWhenNotFoundOrInvalid()
+    {
+        Assert.Throws<ArgumentNullException>(() => ReflectionExtensions.GetPropertyInfo(null!, "IntProp"));
+        Assert.Throws<ArgumentNullException>(() => typeof(Simple).GetPropertyInfo(null!));
+        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo(""));
+        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo("   "));
+        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo("NotExist"));
+    }
+
+    [Fact]
+    public void GetPropertyInfo_FromExpression_ReturnsProperty()
+    {
+        Expression<Func<Simple, int>> expression = s => s.IntProp;
+
+        Assert.Equal("IntProp", expression.GetPropertyInfo().Name);
+    }
+
+    [Fact]
+    public void GetPropertyInfo_FromObjectExpression_ReturnsProperty()
+    {
+        Expression<Func<Simple, object>> expression = s => s.StringProp!;
+
+        Assert.Equal("StringProp", expression.GetPropertyInfo().Name);
+    }
+
+    [Fact]
+    public void GetPropertyInfo_FromLambdaExpression_ReturnsProperty()
+    {
+        LambdaExpression expression = (Expression<Func<Simple, int>>)(s => s.IntProp);
+
+        Assert.Equal("IntProp", expression.GetPropertyInfo().Name);
+    }
+
+    [Fact]
+    public void GetPropertyInfo_RejectsNonPropertyExpressions()
+    {
+        Expression<Func<Simple, int>> calculated = s => s.IntProp + 1;
+        Expression<Func<Simple, int>> method = s => s.GetHashCode();
+        Expression<Func<Simple, int>> field = s => s.Field;
+
+        Assert.Throws<ArgumentException>(() => calculated.GetPropertyInfo());
+        Assert.Throws<ArgumentException>(() => method.GetPropertyInfo());
+        Assert.Throws<ArgumentException>(() => field.GetPropertyInfo());
+    }
+
+    [Fact]
+    public void GetPropertyInfo_ThrowsOnNullExpression()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            ReflectionExtensions.GetPropertyInfo((LambdaExpression)null!));
     }
 
     [Fact]
@@ -64,187 +134,62 @@ public class ReflectionExtensionsTests
     }
 
     [Fact]
-    public void GetMemberType_ReturnsUnderlyingType()
+    public void GetMemberType_ReturnsPropertyType()
     {
         Expression<Func<Simple, int>> expression = s => s.IntProp;
+        Expression<Func<NullableHolder, int?>> nullableExpression = s => s.NullableInt;
 
         Assert.Equal(typeof(int), expression.GetMemberType());
+        Assert.Equal(typeof(int), nullableExpression.GetMemberType());
     }
 
     [Fact]
-    public void GetMemberType_ReturnsNonNullableType()
-    {
-        Expression<Func<NullableHolder, int?>> expression = s => s.NullableInt;
-
-        Assert.Equal(typeof(int), expression.GetMemberType());
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ByTypeAndName_ReturnsPropertyInfo()
-    {
-        var property = typeof(Simple).GetPropertyInfo("IntProp");
-
-        Assert.NotNull(property);
-        Assert.Equal("IntProp", property.Name);
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ByTypeAndName_ReturnsNonPublicProperty()
-    {
-        var property = typeof(Simple).GetPropertyInfo("PrivateProp");
-
-        Assert.NotNull(property);
-        Assert.Equal("PrivateProp", property.Name);
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ByTypeAndName_ThrowsIfNotFound()
-    {
-        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo("NotExist"));
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ByTypeAndName_ThrowsOnNulls()
-    {
-        Assert.Throws<ArgumentNullException>(() => ReflectionExtensions.GetPropertyInfo(null!, "IntProp"));
-        Assert.Throws<ArgumentNullException>(() => typeof(Simple).GetPropertyInfo(null!));
-        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo(""));
-        Assert.Throws<ArgumentException>(() => typeof(Simple).GetPropertyInfo("   "));
-    }
-
-    [Fact]
-    public void GetPropertyInfo_FromExpression_ReturnsPropertyInfo()
-    {
-        Expression<Func<Simple, int>> expression = s => s.IntProp;
-
-        var property = expression.GetPropertyInfo();
-
-        Assert.NotNull(property);
-        Assert.Equal("IntProp", property.Name);
-    }
-
-    [Fact]
-    public void GetPropertyInfo_FromObjectExpression_ReturnsPropertyInfo()
-    {
-        Expression<Func<Simple, object>> expression = s => s.StringProp!;
-
-        var property = expression.GetPropertyInfo();
-
-        Assert.NotNull(property);
-        Assert.Equal("StringProp", property.Name);
-    }
-
-    [Fact]
-    public void GetPropertyInfo_FromLambdaExpression_ReturnsPropertyInfo()
-    {
-        LambdaExpression expression = (Expression<Func<Simple, int>>)(s => s.IntProp);
-
-        var property = expression.GetPropertyInfo();
-
-        Assert.NotNull(property);
-        Assert.Equal("IntProp", property.Name);
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ThrowsOnInvalidExpression()
-    {
-        Expression<Func<Simple, int>> expression = s => s.IntProp + 1;
-
-        Assert.Throws<ArgumentException>(() => expression.GetPropertyInfo());
-    }
-
-    [Fact]
-    public void GetPropertyInfo_ThrowsOnMemberThatIsNotAProperty()
-    {
-        Expression<Func<Simple, int>> expression = s => s.GetHashCode();
-
-        Assert.Throws<InvalidCastException>(() => expression.GetPropertyInfo());
-    }
-
-    [Fact]
-    public void GetAllProperties_ReturnsAllIncludingBase()
-    {
-        var properties = typeof(Derived).GetAllProperties();
-
-        Assert.Contains(properties, p => p.Name == "BaseProp");
-        Assert.Contains(properties, p => p.Name == "DerivedProp");
-        Assert.Contains(properties, p => p.Name == "PrivateBaseProp");
-    }
-
-    [Fact]
-    public void GetAllProperties_ThrowsOnNull()
-    {
-        Assert.Throws<ArgumentNullException>(() => ReflectionExtensions.GetAllProperties(null));
-    }
-
-    [Fact]
-    public void SetPropertyValue_SetsPublicProperty()
+    public void SetPropertyValue_SetsPublicPrivateAndNullValues()
     {
         var obj = new Simple();
 
         obj.SetPropertyValue("IntProp", 42);
+        obj.SetPropertyValue("PrivateProp", 99);
+        obj.SetPropertyValue("StringProp", null);
 
         Assert.Equal(42, obj.IntProp);
-    }
-
-    [Fact]
-    public void SetPropertyValue_SetsPrivateProperty()
-    {
-        var obj = new Simple();
-
-        obj.SetPropertyValue("PrivateProp", 99);
-
         Assert.Equal(99, obj.GetPrivateProp());
+        Assert.Null(obj.StringProp);
     }
 
     [Fact]
-    public void SetPropertyValue_ThrowsIfNotFoundOrNotWritable()
+    public void SetPropertyValue_ThrowsWhenPropertyIsMissingReadOnlyOrInvalid()
     {
         var obj = new Simple();
 
+        Assert.Throws<ArgumentNullException>(() => obj.SetPropertyValue(null!, 1));
+        Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("", 1));
         Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("NotExist", 1));
         Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("ReadOnlyProp", 1));
+        Assert.Throws<NullReferenceException>(() =>
+            ((object)null!).SetPropertyValue("IntProp", 1));
     }
 
     [Fact]
-    public void SetPropertyValue_ThrowsOnNullObject()
-    {
-        object obj = null!;
-
-        Assert.Throws<NullReferenceException>(() => obj.SetPropertyValue("IntProp", 1));
-    }
-
-    [Fact]
-    public void GetPropertyValue_GetsPublicProperty()
+    public void GetPropertyValue_ReturnsPublicAndPrivateValues()
     {
         var obj = new Simple { IntProp = 123 };
-
-        Assert.Equal(123, obj.GetPropertyValue("IntProp"));
-    }
-
-    [Fact]
-    public void GetPropertyValue_GetsPrivateProperty()
-    {
-        var obj = new Simple();
         obj.SetPrivateProp(55);
 
+        Assert.Equal(123, obj.GetPropertyValue("IntProp"));
         Assert.Equal(55, obj.GetPropertyValue("PrivateProp"));
     }
 
     [Fact]
-    public void GetPropertyValue_ThrowsIfNotFound()
+    public void GetPropertyValue_ThrowsWhenPropertyIsMissingOrInvalid()
     {
         var obj = new Simple();
 
+        Assert.Throws<ArgumentNullException>(() => obj.GetPropertyValue(null!));
+        Assert.Throws<ArgumentException>(() => obj.GetPropertyValue(""));
         Assert.Throws<ArgumentException>(() => obj.GetPropertyValue("NotExist"));
-    }
-
-    [Fact]
-    public void GetPropertyValue_ThrowsOnNullObject()
-    {
-        object obj = null!;
-
-        Assert.Throws<NullReferenceException>(() => obj.GetPropertyValue("IntProp"));
+        Assert.Throws<NullReferenceException>(() =>
+            ((object)null!).GetPropertyValue("IntProp"));
     }
 
     [Fact]
@@ -265,29 +210,82 @@ public class ReflectionExtensionsTests
     }
 
     [Fact]
-    public void GetClone_PreservesSystemReferences()
+    public void GetClone_PreservesSystemAndValueTypeValues()
     {
+        var created = DateTime.UtcNow;
         var original = new CustomClone
         {
             Name = "A",
-            Created = DateTime.UtcNow
+            Created = created,
+            Uri = new Uri("https://example.com")
         };
 
         var clone = original.GetClone();
 
-        Assert.Equal(original.Created, clone.Created);
+        Assert.Equal(created, clone.Created);
+        Assert.Same(original.Uri, clone.Uri);
+        Assert.Same(original, original.GetCloneReferenceForTest());
     }
 
     [Fact]
-    public void GetClone_PreservesCycles()
+    public void GetClone_PreservesCyclesAndSharedReferences()
     {
-        var original = new CustomClone { Name = "Root" };
-        original.Child = original;
+        var shared = new CustomClone { Name = "Shared" };
+        var original = new CustomClone
+        {
+            Name = "Root",
+            Child = shared,
+            SecondChild = shared
+        };
+        shared.Child = original;
 
         var clone = original.GetClone();
 
         Assert.NotSame(original, clone);
-        Assert.Same(clone, clone.Child);
+        Assert.Same(clone, clone.Child?.Child);
+        Assert.Same(clone.Child, clone.SecondChild);
+    }
+
+    [Fact]
+    public void GetClone_PreservesRuntimeTypeForPolymorphicProperty()
+    {
+        var original = new CustomClone { Polymorphic = new SpecialClone { Name = "Special", Code = 7 } };
+
+        var clone = original.GetClone();
+
+        var special = Assert.IsType<SpecialClone>(clone.Polymorphic);
+        Assert.Equal(7, special.Code);
+    }
+
+    [Fact]
+    public void GetClone_SkipsReadOnlyProperties()
+    {
+        var original = new CustomClone { Name = "A" };
+
+        var clone = original.GetClone();
+
+        Assert.Equal(10, clone.ReadOnlyValue);
+    }
+
+    [Fact]
+    public void GetClone_SupportsPrivateParameterlessConstructors()
+    {
+        var original = new PrivateConstructorClone { Name = "A" };
+
+        var clone = original.GetClone();
+
+        Assert.NotSame(original, clone);
+        Assert.Equal("A", clone.Name);
+    }
+
+    [Fact]
+    public void GetClone_ReturnsValueTypesAndStringsUnchanged()
+    {
+        const int number = 42;
+        const string text = "hello";
+
+        Assert.Equal(number, number.GetClone());
+        Assert.Same(text, text.GetClone());
     }
 
     [Fact]
@@ -304,20 +302,20 @@ public class ReflectionExtensionsTests
         public string? StringProp { get; set; }
         public Nested? Nested { get; set; }
         public int ReadOnlyProp => 10;
+        public static int StaticProp { get; set; }
+        public int Field;
         private int PrivateProp { get; set; }
 
         public int GetPrivateProp() => PrivateProp;
         public void SetPrivateProp(int value) => PrivateProp = value;
     }
 
-    private class CustomClone
+    private class Nested
     {
-        public string? Name { get; set; }
-        public DateTime Created { get; set; }
-        public CustomClone? Child { get; set; }
+        public DeepNested? Deep { get; set; }
     }
 
-    private class Nested
+    private class DeepNested
     {
         public double DoubleProp { get; set; }
     }
@@ -331,17 +329,37 @@ public class ReflectionExtensionsTests
     {
         public int BaseProp { get; set; }
         private int PrivateBaseProp { get; set; }
-
-        public void SetPrivateBaseProp(int value) => PrivateBaseProp = value;
     }
 
     private class Derived : Base
     {
         public int DerivedProp { get; set; }
+    }
 
-        public Derived()
+    private class CustomClone
+    {
+        public string? Name { get; set; }
+        public DateTime Created { get; set; }
+        public Uri? Uri { get; set; }
+        public CustomClone? Child { get; set; }
+        public CustomClone? SecondChild { get; set; }
+        public object? Polymorphic { get; set; }
+        public int ReadOnlyValue => 10;
+
+        public CustomClone GetCloneReferenceForTest() => this;
+    }
+
+    private class SpecialClone : CustomClone
+    {
+        public int Code { get; set; }
+    }
+
+    private class PrivateConstructorClone
+    {
+        public string? Name { get; set; }
+
+        private PrivateConstructorClone()
         {
-            SetPrivateBaseProp(7);
         }
     }
 }

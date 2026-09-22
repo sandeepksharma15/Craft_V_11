@@ -1,498 +1,280 @@
+using System.Globalization;
+
 namespace Craft.Extensions.Tests.System;
 
 public class NumericExtensionsTests
 {
-    #region Clamp Tests
-
-    [Theory]
-    [InlineData(5, 0, 10, 5)]
-    [InlineData(-5, 0, 10, 0)]
-    [InlineData(15, 0, 10, 10)]
-    [InlineData(0, 0, 10, 0)]
-    [InlineData(10, 0, 10, 10)]
-    public void Clamp_Int_ReturnsCorrectValue(int value, int min, int max, int expected)
-    {
-        // Act
-        var result = value.Clamp(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(5.5, 0.0, 10.0, 5.5)]
-    [InlineData(-5.5, 0.0, 10.0, 0.0)]
-    [InlineData(15.5, 0.0, 10.0, 10.0)]
-    public void Clamp_Decimal_ReturnsCorrectValue(double valueD, double minD, double maxD, double expectedD)
-    {
-        // Arrange
-        var value = (decimal)valueD;
-        var min = (decimal)minD;
-        var max = (decimal)maxD;
-        var expected = (decimal)expectedD;
-
-        // Act
-        var result = value.Clamp(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region IsBetween Tests
-
     [Theory]
     [InlineData(5, 0, 10, true)]
     [InlineData(0, 0, 10, true)]
     [InlineData(10, 0, 10, true)]
     [InlineData(-1, 0, 10, false)]
     [InlineData(11, 0, 10, false)]
-    public void IsBetween_Int_ReturnsCorrectResult(int value, int min, int max, bool expected)
-    {
-        // Act
-        var result = value.IsBetween(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [InlineData(5, 10, 0, false)]
+    public void IsBetween_Int_ReturnsExpected(
+        int value, int min, int max, bool expected)
+        => Assert.Equal(expected, value.IsBetween(min, max));
 
     [Theory]
-    [InlineData(5.5, 0.0, 10.0, true)]
-    [InlineData(-0.1, 0.0, 10.0, false)]
-    [InlineData(10.1, 0.0, 10.0, false)]
-    public void IsBetween_Double_ReturnsCorrectResult(double value, double min, double max, bool expected)
-    {
-        // Act
-        var result = value.IsBetween(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region IsPositive Tests
+    [InlineData(5.5, 0, 10, true)]
+    [InlineData(-0.1, 0, 10, false)]
+    [InlineData(10.1, 0, 10, false)]
+    public void IsBetween_Double_ReturnsExpected(
+        double value, double min, double max, bool expected)
+        => Assert.Equal(expected, value.IsBetween(min, max));
 
     [Theory]
     [InlineData(5, true)]
     [InlineData(0, false)]
     [InlineData(-5, false)]
-    public void IsPositive_Int_ReturnsCorrectResult(int value, bool expected)
-    {
-        // Act
-        var result = value.IsPositive();
+    public void IsPositive_Int_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [Theory]
+    [InlineData(5L, true)]
+    [InlineData(0L, false)]
+    [InlineData(-5L, false)]
+    public void IsPositive_Long_ReturnsExpected(long value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
     [Theory]
     [InlineData(5.5, true)]
-    [InlineData(0.0, false)]
+    [InlineData(0, false)]
     [InlineData(-5.5, false)]
-    public void IsPositive_Double_ReturnsCorrectResult(double value, bool expected)
-    {
-        // Act
-        var result = value.IsPositive();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region IsNegative Tests
+    public void IsPositive_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
     [Theory]
     [InlineData(-5, true)]
     [InlineData(0, false)]
     [InlineData(5, false)]
-    public void IsNegative_Int_ReturnsCorrectResult(int value, bool expected)
-    {
-        // Act
-        var result = value.IsNegative();
+    public void IsNegative_Int_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, value.IsNegative());
 
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [Theory]
+    [InlineData(-5L, true)]
+    [InlineData(0L, false)]
+    [InlineData(5L, false)]
+    public void IsNegative_Long_ReturnsExpected(long value, bool expected)
+        => Assert.Equal(expected, value.IsNegative());
 
-    #endregion
-
-    #region IsZero Tests
+    [Theory]
+    [InlineData(-5.5, true)]
+    [InlineData(0, false)]
+    [InlineData(5.5, false)]
+    public void IsNegative_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsNegative());
 
     [Theory]
     [InlineData(0, true)]
     [InlineData(5, false)]
     [InlineData(-5, false)]
-    public void IsZero_Int_ReturnsCorrectResult(int value, bool expected)
-    {
-        // Act
-        var result = value.IsZero();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    public void IsZero_Int_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
 
     [Theory]
-    [InlineData(0.0, true)]
-    [InlineData(1e-11, true)]  // Less than default tolerance 1e-10
-    [InlineData(0.001, false)]
-    [InlineData(-1e-11, true)] // Less than default tolerance 1e-10
-    public void IsZero_Double_WithTolerance_ReturnsCorrectResult(double value, bool expected)
-    {
-        // Act
-        var result = value.IsZero();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region IsEven/IsOdd Tests
+    [InlineData(0L, true)]
+    [InlineData(5L, false)]
+    [InlineData(-5L, false)]
+    public void IsZero_Long_ReturnsExpected(long value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
 
     [Theory]
     [InlineData(0, true)]
-    [InlineData(2, true)]
-    [InlineData(4, true)]
-    [InlineData(1, false)]
-    [InlineData(3, false)]
-    [InlineData(-2, true)]
-    [InlineData(-1, false)]
-    public void IsEven_ReturnsCorrectResult(int value, bool expected)
-    {
-        // Act
-        var result = value.IsEven();
+    [InlineData(5, false)]
+    [InlineData(-5, false)]
+    public void IsZero_Decimal_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, ((decimal)value).IsZero());
 
-        // Assert
-        Assert.Equal(expected, result);
+    [Theory]
+    [InlineData(0.0, true)]
+    [InlineData(1e-11, true)]
+    [InlineData(-1e-11, true)]
+    [InlineData(1e-10, false)]
+    [InlineData(0.001, false)]
+    public void IsZero_Double_UsesDefaultTolerance(double value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
+
+    [Fact]
+    public void IsZero_Double_UsesSpecifiedTolerance()
+    {
+        Assert.True(0.001d.IsZero(0.01d));
+        Assert.False(0.001d.IsZero(0.001d));
     }
 
     [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
-    [InlineData(3, true)]
-    [InlineData(2, false)]
-    [InlineData(4, false)]
-    [InlineData(-1, true)]
-    [InlineData(-2, false)]
-    public void IsOdd_ReturnsCorrectResult(int value, bool expected)
-    {
-        // Act
-        var result = value.IsOdd();
+    [InlineData(0f, true)]
+    [InlineData(1e-7f, true)]
+    [InlineData(-1e-7f, true)]
+    [InlineData(1e-6f, false)]
+    [InlineData(0.001f, false)]
+    public void IsZero_Float_UsesDefaultTolerance(float value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
 
-        // Assert
-        Assert.Equal(expected, result);
+    [Fact]
+    public void IsZero_Float_UsesSpecifiedTolerance()
+    {
+        Assert.True(0.01f.IsZero(0.1f));
+        Assert.False(0.01f.IsZero(0.01f));
     }
 
-    #endregion
-
-    #region Formatting Tests
+    [Theory]
+    [InlineData(0, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(3, false, true)]
+    [InlineData(-2, true, false)]
+    [InlineData(-3, false, true)]
+    public void IsEvenAndOdd_Int_ReturnExpected(int value, bool even, bool odd)
+    {
+        Assert.Equal(even, value.IsEven());
+        Assert.Equal(odd, value.IsOdd());
+    }
 
     [Theory]
-    [InlineData(1000, "1,000")]
-    [InlineData(1000000, "1,000,000")]
-    [InlineData(0, "0")]
-    public void ToFormattedString_Int_FormatsCorrectly(int value, string expected)
+    [InlineData(2.0, true, false)]
+    [InlineData(3.0, false, true)]
+    [InlineData(2.5, false, false)]
+    public void IsEvenAndOdd_Double_UseIntegerSemantics(
+        double value, bool even, bool odd)
     {
-        // Act
-        var result = value.ToFormattedString();
+        Assert.Equal(even, value.IsEven());
+        Assert.Equal(odd, value.IsOdd());
+    }
 
-        // Assert
-        Assert.Contains(expected.Replace(",", ""), result.Replace(",", "").Replace(".", "").Replace(" ", ""));
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(5, true)]
+    public void IsFinite_Int_ReturnsTrue(int value)
+        => Assert.True(value.IsFinite());
+
+    [Theory]
+    [InlineData(0d, true)]
+    [InlineData(1.5d, true)]
+    [InlineData(double.NaN, false)]
+    [InlineData(double.PositiveInfinity, false)]
+    [InlineData(double.NegativeInfinity, false)]
+    public void IsFinite_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsFinite());
+
+    [Theory]
+    [InlineData(0f, true)]
+    [InlineData(1.5f, true)]
+    [InlineData(float.NaN, false)]
+    [InlineData(float.PositiveInfinity, false)]
+    [InlineData(float.NegativeInfinity, false)]
+    public void IsFinite_Float_ReturnsExpected(float value, bool expected)
+        => Assert.Equal(expected, value.IsFinite());
+
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1000000)]
+    [InlineData(-1000)]
+    public void ToFormattedString_Int_UsesCurrentCulture(int value)
+    {
+        var expected = value.ToString("N0", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString());
+    }
+
+    [Theory]
+    [InlineData(1000L)]
+    [InlineData(-1000L)]
+    public void ToFormattedString_Long_UsesCurrentCulture(long value)
+    {
+        var expected = value.ToString("N0", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString());
+    }
+
+    [Theory]
+    [InlineData(1234.5, 2)]
+    [InlineData(1234.5678, 3)]
+    [InlineData(-12.5, 0)]
+    public void ToFormattedString_Decimal_UsesRequestedPrecision(
+        double value, int decimalPlaces)
+    {
+        var decimalValue = (decimal)value;
+        var expected = decimalValue.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, decimalValue.ToFormattedString(decimalPlaces));
+    }
+
+    [Theory]
+    [InlineData(1234.5, 2)]
+    [InlineData(1234.5678, 3)]
+    [InlineData(-12.5, 0)]
+    public void ToFormattedString_Double_UsesRequestedPrecision(
+        double value, int decimalPlaces)
+    {
+        var expected = value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString(decimalPlaces));
+    }
+
+    [Theory]
+    [InlineData(1234.5)]
+    [InlineData(-12.5)]
+    public void ToFormattedString_Decimal_UsesDefaultPrecision(double value)
+    {
+        var decimalValue = (decimal)value;
+        var expected = decimalValue.ToString("N2", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, decimalValue.ToFormattedString());
+    }
+
+    [Theory]
+    [InlineData(1234.5)]
+    [InlineData(-12.5)]
+    public void ToFormattedString_Double_UsesDefaultPrecision(double value)
+    {
+        var expected = value.ToString("N2", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString());
     }
 
     [Fact]
-    public void ToCurrency_FormatsAsExpected()
+    public void ToCurrency_UsesCurrentCulture()
     {
-        // Arrange
-        decimal value = 1234.56m;
+        decimal decimalValue = 1234.56m;
+        double doubleValue = 1234.56d;
+        const int intValue = 1234;
+        const long longValue = 1234L;
 
-        // Act
-        var result = value.ToCurrency();
-
-        // Assert
-        Assert.Contains("1", result);
-        Assert.Contains("234", result);
-        Assert.Contains("56", result);
+        Assert.Equal(decimalValue.ToString("C", CultureInfo.CurrentCulture), decimalValue.ToCurrency());
+        Assert.Equal(doubleValue.ToString("C", CultureInfo.CurrentCulture), doubleValue.ToCurrency());
+        Assert.Equal(intValue.ToString("C", CultureInfo.CurrentCulture), intValue.ToCurrency());
+        Assert.Equal(longValue.ToString("C", CultureInfo.CurrentCulture), longValue.ToCurrency());
     }
-
-    #endregion
-
-    #region RoundTo Tests
-
-    [Theory]
-    [InlineData(1.2345, 2, 1.23)]
-    [InlineData(1.2355, 2, 1.24)]
-    [InlineData(1.2, 2, 1.2)]
-    public void RoundTo_Double_RoundsCorrectly(double value, int decimals, double expected)
-    {
-        // Act
-        var result = value.RoundTo(decimals);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(1.2345, 2, 1.23)]
-    [InlineData(1.2355, 2, 1.24)]
-    [InlineData(1.2, 2, 1.2)]
-    public void RoundTo_Decimal_RoundsCorrectly(double valueD, int decimals, double expectedD)
-    {
-        // Arrange
-        var value = (decimal)valueD;
-        var expected = (decimal)expectedD;
-
-        // Act
-        var result = value.RoundTo(decimals);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region Abs Tests
-
-    [Theory]
-    [InlineData(5, 5)]
-    [InlineData(-5, 5)]
-    [InlineData(0, 0)]
-    public void Abs_Int_ReturnsAbsoluteValue(int value, int expected)
-    {
-        // Act
-        var result = value.Abs();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(5.5, 5.5)]
-    [InlineData(-5.5, 5.5)]
-    [InlineData(0.0, 0.0)]
-    public void Abs_Double_ReturnsAbsoluteValue(double value, double expected)
-    {
-        // Act
-        var result = value.Abs();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region Byte Conversion Tests
 
     [Theory]
     [InlineData(1024, 1.0)]
     [InlineData(2048, 2.0)]
     [InlineData(512, 0.5)]
     [InlineData(0, 0.0)]
-    public void ToKilobytes_ConvertsCorrectly(long bytes, double expectedKB)
-    {
-        // Act
-        var result = bytes.ToKilobytes();
-
-        // Assert
-        Assert.Equal(expectedKB, result);
-    }
+    public void ToKilobytes_ConvertsUsingBinaryUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToKilobytes());
 
     [Theory]
     [InlineData(1048576, 1.0)]
     [InlineData(2097152, 2.0)]
     [InlineData(524288, 0.5)]
     [InlineData(0, 0.0)]
-    public void ToMegabytes_ConvertsCorrectly(long bytes, double expectedMB)
-    {
-        // Act
-        var result = bytes.ToMegabytes();
-
-        // Assert
-        Assert.Equal(expectedMB, result);
-    }
+    public void ToMegabytes_ConvertsUsingBinaryUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToMegabytes());
 
     [Theory]
     [InlineData(1073741824, 1.0)]
     [InlineData(2147483648, 2.0)]
+    [InlineData(536870912, 0.5)]
     [InlineData(0, 0.0)]
-    public void ToGigabytes_ConvertsCorrectly(long bytes, double expectedGB)
+    public void ToGigabytes_ConvertsUsingBinaryUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToGigabytes());
+
+    [Fact]
+    public void ByteConversions_SupportNegativeValues()
     {
-        // Act
-        var result = bytes.ToGigabytes();
-
-        // Assert
-        Assert.Equal(expectedGB, result);
+        Assert.Equal(-1.0, (-1024L).ToKilobytes());
+        Assert.Equal(-1.0, (-1048576L).ToMegabytes());
+        Assert.Equal(-1.0, (-1073741824L).ToGigabytes());
     }
-
-    #endregion
-
-    #region Long Clamp Tests
-
-    [Theory]
-    [InlineData(5L, 0L, 10L, 5L)]
-    [InlineData(-5L, 0L, 10L, 0L)]
-    [InlineData(15L, 0L, 10L, 10L)]
-    public void Clamp_Long_ReturnsCorrectValue(long value, long min, long max, long expected)
-    {
-        // Act
-        var result = value.Clamp(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region Float Tests
-
-    [Theory]
-    [InlineData(5.5f, 0.0f, 10.0f, 5.5f)]
-    [InlineData(-5.5f, 0.0f, 10.0f, 0.0f)]
-    [InlineData(15.5f, 0.0f, 10.0f, 10.0f)]
-    public void Clamp_Float_ReturnsCorrectValue(float value, float min, float max, float expected)
-    {
-        // Act
-        var result = value.Clamp(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(5.5f, true)]
-    [InlineData(0.0f, false)]
-    [InlineData(-5.5f, false)]
-    public void IsPositive_Float_ReturnsCorrectResult(float value, bool expected)
-    {
-        // Act
-        var result = value.IsPositive();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(-5.5f, true)]
-    [InlineData(0.0f, false)]
-    [InlineData(5.5f, false)]
-    public void IsNegative_Float_ReturnsCorrectResult(float value, bool expected)
-    {
-        // Act
-        var result = value.IsNegative();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(0.0f, true)]
-    [InlineData(0.0000001f, true)]
-    [InlineData(0.001f, false)]
-    public void IsZero_Float_WithTolerance_ReturnsCorrectResult(float value, bool expected)
-    {
-        // Act
-        var result = value.IsZero();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region Decimal Tests
-
-    [Theory]
-    [InlineData(5, true)]
-    [InlineData(0, false)]
-    [InlineData(-5, false)]
-    public void IsPositive_Decimal_ReturnsCorrectResult(int valueInt, bool expected)
-    {
-        // Arrange
-        var value = (decimal)valueInt;
-
-        // Act
-        var result = value.IsPositive();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(-5, true)]
-    [InlineData(0, false)]
-    [InlineData(5, false)]
-    public void IsNegative_Decimal_ReturnsCorrectResult(int valueInt, bool expected)
-    {
-        // Arrange
-        var value = (decimal)valueInt;
-
-        // Act
-        var result = value.IsNegative();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(0, true)]
-    [InlineData(5, false)]
-    [InlineData(-5, false)]
-    public void IsZero_Decimal_ReturnsCorrectResult(int valueInt, bool expected)
-    {
-        // Arrange
-        var value = (decimal)valueInt;
-
-        // Act
-        var result = value.IsZero();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
-
-    #region Long Tests
-
-    [Theory]
-    [InlineData(5L, 0L, 10L, true)]
-    [InlineData(-1L, 0L, 10L, false)]
-    [InlineData(11L, 0L, 10L, false)]
-    public void IsBetween_Long_ReturnsCorrectResult(long value, long min, long max, bool expected)
-    {
-        // Act
-        var result = value.IsBetween(min, max);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(0L, true)]
-    [InlineData(2L, true)]
-    [InlineData(1L, false)]
-    public void IsEven_Long_ReturnsCorrectResult(long value, bool expected)
-    {
-        // Act
-        var result = value.IsEven();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(1L, true)]
-    [InlineData(2L, false)]
-    public void IsOdd_Long_ReturnsCorrectResult(long value, bool expected)
-    {
-        // Act
-        var result = value.IsOdd();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    #endregion
 }

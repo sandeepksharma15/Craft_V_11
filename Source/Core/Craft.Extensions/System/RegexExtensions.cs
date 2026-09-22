@@ -4,16 +4,21 @@ namespace System.Text.RegularExpressions;
 
 public static class RegexExtensions
 {
-    public static Match RegexMatch(this Regex regex, string source)
+    extension(Regex? regex)
     {
-        if ((regex == null) || (source == null))
-            return Match.Empty;
+        public Match RegexMatch(string? source)
+        {
+            if (regex is null || source is null)
+                return Match.Empty;
 
-        var match = regex.Match(source);
-
-        return match.Success ? match : Match.Empty;
+            var match = regex.Match(source);
+            return match.Success ? match : Match.Empty;
+        }
     }
 
-    public static Match RegexMatch(this string? source, Regex? regex) =>
-        regex!.RegexMatch(source!);
+    extension(string? source)
+    {
+        public Match RegexMatch(Regex? regex)
+            => regex.RegexMatch(source);
+    }
 }

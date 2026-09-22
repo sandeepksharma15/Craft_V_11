@@ -247,6 +247,30 @@ public class NumericExtensionsTests
     }
 
     [Theory]
+    [InlineData(1000, 1.0)]
+    [InlineData(2000, 2.0)]
+    [InlineData(500, 0.5)]
+    [InlineData(0, 0.0)]
+    public void ToKilobytes_ConvertsUsingDecimalUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToKilobytes());
+
+    [Theory]
+    [InlineData(1000000, 1.0)]
+    [InlineData(2000000, 2.0)]
+    [InlineData(500000, 0.5)]
+    [InlineData(0, 0.0)]
+    public void ToMegabytes_ConvertsUsingDecimalUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToMegabytes());
+
+    [Theory]
+    [InlineData(1000000000, 1.0)]
+    [InlineData(2000000000, 2.0)]
+    [InlineData(500000000, 0.5)]
+    [InlineData(0, 0.0)]
+    public void ToGigabytes_ConvertsUsingDecimalUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToGigabytes());
+
+    [Theory]
     [InlineData(1024, 1.0)]
     [InlineData(2048, 2.0)]
     [InlineData(512, 0.5)]
@@ -273,6 +297,9 @@ public class NumericExtensionsTests
     [Fact]
     public void ByteConversions_SupportNegativeValues()
     {
+        Assert.Equal(-1.0, (-1000L).ToKilobytes());
+        Assert.Equal(-1.0, (-1_000_000L).ToMegabytes());
+        Assert.Equal(-1.0, (-1_000_000_000L).ToGigabytes());
         Assert.Equal(-1.0, (-1024L).ToKibibytes());
         Assert.Equal(-1.0, (-1048576L).ToMebibytes());
         Assert.Equal(-1.0, (-1073741824L).ToGibibytes());

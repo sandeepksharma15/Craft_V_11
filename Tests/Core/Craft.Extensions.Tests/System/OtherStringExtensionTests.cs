@@ -80,8 +80,8 @@ public class OtherStringExtensionsTests
         => Assert.Equal(expected, input.ReplaceFirst(search, replacement, comparison));
 
     [Theory]
-    [InlineData("", "D41D8CD98F00B204E9800998ECF8427E")]
-    [InlineData("hello world", "5EB63BBBE01EEED093CB22BB8F5ACDC3")]
+    [InlineData("", "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855")]
+    [InlineData("hello world", "B94D27B9934D3E08A52E52D7DA7DABFAC484EFE37A5380EE9088F7ACE2EFcDE9".ToUpperInvariant())]
     public void ToSha256_ReturnsExpected(string input, string expected)
         => Assert.Equal(expected, input.ToSha256());
 

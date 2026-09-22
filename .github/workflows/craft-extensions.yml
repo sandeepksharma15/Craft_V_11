@@ -48,9 +48,7 @@ jobs:
           --configuration Release
           --no-build
           --logger "trx;LogFileName=test-results.trx"
-          --coverlet
-          --coverlet-output-format cobertura
-          --results-directory Tests/Core/Craft.Extensions.Tests/TestResults
+          --collect:"XPlat Code Coverage"
 
       - name: Verify 100% line coverage
         shell: bash
@@ -60,7 +58,7 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          reports = glob.glob("Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage*.cobertura.xml", recursive=True)
+          reports = glob.glob("Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage.cobertura.xml", recursive=True)
           if not reports:
               print("No Cobertura coverage report was produced.")
               sys.exit(1)

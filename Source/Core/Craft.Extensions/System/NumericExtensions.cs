@@ -58,7 +58,7 @@ public static class NumericExtensions
             => value == 0;
 
         public string ToFormattedString(int decimalPlaces = 2)
-            => value.ToString($\"N{decimalPlaces}\", CultureInfo.CurrentCulture);
+            => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
 
         public string ToCurrency()
             => value.ToString("C", CultureInfo.CurrentCulture);
@@ -70,7 +70,7 @@ public static class NumericExtensions
             => Math.Abs(value) < tolerance;
 
         public string ToFormattedString(int decimalPlaces = 2)
-            => value.ToString($\"N{decimalPlaces}\", CultureInfo.CurrentCulture);
+            => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
 
         public string ToCurrency()
             => value.ToString("C", CultureInfo.CurrentCulture);

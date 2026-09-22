@@ -174,9 +174,7 @@ public static class ReflectionExtensions
                 property.SetValue(clonedObj, clonedValue);
             }
             else
-            {
                 property.SetValue(clonedObj, value);
-            }
         }
 
         return clonedObj;

@@ -7,151 +7,160 @@ namespace System.Reflection;
 
 public static class ReflectionExtensions
 {
-    /// <summary>
-    /// Gets a PropertyDescriptor for a specified member by name within the given Type.
-    /// Supports nested properties using dot notation (e.g., "NestedClass.Property").
-    /// </summary>
-    public static PropertyDescriptor? GetMemberByName(this Type type, string memberName)
+    extension(Type type)
     {
-        ArgumentNullException.ThrowIfNull(type);
-        ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
-
-        var members = TypeDescriptor.GetProperties(type);
-
-        if (!memberName.Contains('.'))
-            return members.Find(memberName, true);
-
-        var memberNameParts = memberName.Split('.', 2);
-        var topLevelMember = members.Find(memberNameParts[0], true);
-
-        return topLevelMember?.GetChildProperties()?.Find(memberNameParts[1], true);
-    }
-
-    /// <summary>
-    /// Retrieves the name of a property from a lambda expression.
-    /// </summary>
-    public static string GetMemberName<TSource, TProperty>(this Expression<Func<TSource, TProperty>> property)
-        => property.GetPropertyInfo().Name;
-
-    /// <summary>
-    /// Gets the underlying type of the member represented by the lambda expression.
-    /// </summary>
-    public static Type? GetMemberType<TSource, TProperty>(this Expression<Func<TSource, TProperty>> property)
-    {
-        var type = property.GetPropertyInfo().GetMemberUnderlyingType();
-
-        return Nullable.GetUnderlyingType(type!) ?? type;
-    }
-
-    /// <summary>
-    /// Gets the <see cref="PropertyInfo"/> of a specified property by name from the given <see cref="Type"/>.
-    /// Throws an <see cref="ArgumentException"/> if the property is not found.
-    /// </summary>
-    public static PropertyInfo GetPropertyInfo(this Type objType, string name)
-    {
-        ArgumentNullException.ThrowIfNull(objType);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        var property = objType.GetProperty(name, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-
-        return property ?? throw new ArgumentException($"Property '{name}' not found in type '{objType.FullName}'", nameof(name));
-    }
-
-    /// <summary>
-    /// Gets the <see cref="PropertyInfo"/> from a property access expression represented by the given lambda expression.
-    /// Throws an <see cref="ArgumentException"/> if the expression is not a valid property access expression.
-    /// </summary>
-    public static PropertyInfo GetPropertyInfo<TSource, TProperty>(this Expression<Func<TSource, TProperty>> expression)
-        => (PropertyInfo)GetMemberExpression(expression.Body).Member;
-
-    /// <summary>
-    /// Gets the <see cref="PropertyInfo"/> from a property access expression represented by the given lambda expression.
-    /// Throws an <see cref="ArgumentException"/> if the expression is not a valid property access expression.
-    /// </summary>
-    public static PropertyInfo GetPropertyInfo<T>(this Expression<Func<T, object>> expression)
-        => (PropertyInfo)GetMemberExpression(expression.Body).Member;
-
-    /// <summary>
-    /// Retrieves the PropertyInfo object from a lambda expression representing a property access.
-    /// </summary>
-    public static PropertyInfo GetPropertyInfo(this LambdaExpression expression)
-        => (PropertyInfo)GetMemberExpression(expression.Body).Member;
-
-    /// <summary>
-    /// Deep clones an object using reflection. Only public instance properties are cloned.
-    /// </summary>
-    public static T GetClone<T>(this T input)
-    {
-        ArgumentNullException.ThrowIfNull(input);
-
-        var type = typeof(T);
-        var visited = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
-
-        return (T)CloneObject(input!, type, visited);
-    }
-
-    /// <summary>
-    /// Retrieves all properties declared on the specified type and its base types.
-    /// </summary>
-    /// <remarks>This method retrieves both public and non-public instance properties, including those
-    /// declared only on the specified type and its base types. Properties are returned in the order they are
-    /// encountered while traversing the type hierarchy.</remarks>
-    /// <param name="type">The type whose properties are to be retrieved. This parameter cannot be <see langword="null"/>.</param>
-    /// <returns>A list of <see cref="PropertyInfo"/> objects representing all properties declared on the specified type and its
-    /// base types.</returns>
-    public static List<PropertyInfo> GetAllProperties(this Type? type)
-    {
-        ArgumentNullException.ThrowIfNull(type);
-
-        var properties = new List<PropertyInfo>();
-        while (type != null)
+        /// <summary>
+        /// Gets a property descriptor for a member by name.
+        /// </summary>
+        public PropertyDescriptor? GetMemberByName(string memberName)
         {
-            properties.AddRange(
-                type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            );
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
 
-            type = type.BaseType;
+            var members = TypeDescriptor.GetProperties(type);
+
+            if (!memberName.Contains('.'))
+                return members.Find(memberName, true);
+
+            var memberNameParts = memberName.Split('.', 2);
+            var topLevelMember = members.Find(memberNameParts[0], true);
+
+            return topLevelMember?.GetChildProperties()?.Find(memberNameParts[1], true);
         }
 
-        return properties;
+        /// <summary>
+        /// Gets all properties declared on the type and its base types.
+        /// </summary>
+        public List<PropertyInfo> GetAllProperties()
+        {
+            ArgumentNullException.ThrowIfNull(type);
+
+            var properties = new List<PropertyInfo>();
+
+            while (type != null)
+            {
+                properties.AddRange(
+                    type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+
+                type = type.BaseType;
+            }
+
+            return properties;
+        }
+
+        /// <summary>
+        /// Gets a property by name.
+        /// </summary>
+        public PropertyInfo GetPropertyInfo(string name)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+            var property = type.GetProperty(
+                name,
+                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+            return property ?? throw new ArgumentException(
+                $"Property '{name}' not found in type '{type.FullName}'", nameof(name));
+        }
     }
 
-    /// <summary>
-    /// Sets the value of a specified property on the given object.
-    /// </summary>
-    /// <remarks>This method uses reflection to locate and set the value of the specified property.  Both
-    /// public and non-public instance properties are considered. The property must be writable.</remarks>
-    /// <param name="obj">The object whose property value is to be set. Cannot be <see langword="null"/>.</param>
-    /// <param name="propertyName">The name of the property to set. This is case-sensitive and cannot be <see langword="null"/> or empty.</param>
-    /// <param name="value">The value to assign to the specified property. The value must be compatible with the property's type.</param>
-    /// <exception cref="ArgumentException">Thrown if the specified property is not found, is not writable, or <paramref name="propertyName"/> is empty.</exception>
-    public static void SetPropertyValue(this object obj, string propertyName, object value)
+    extension<TSource, TProperty>(Expression<Func<TSource, TProperty>> property)
     {
-        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+        /// <summary>
+        /// Gets the member name.
+        /// </summary>
+        public string GetMemberName() => property.GetPropertyInfo().Name;
 
-        if (prop == null || !prop.CanWrite)
-            throw new ArgumentException($"Property '{propertyName}' not found or not writable.");
+        /// <summary>
+        /// Gets the underlying member type.
+        /// </summary>
+        public Type? GetMemberType()
+        {
+            var type = property.GetPropertyInfo().GetMemberUnderlyingType();
 
-        prop.SetValue(obj, value);
+            return Nullable.GetUnderlyingType(type!) ?? type;
+        }
+
+        /// <summary>
+        /// Gets the property represented by the expression.
+        /// </summary>
+        public PropertyInfo GetPropertyInfo()
+            => (PropertyInfo)GetMemberExpression(property.Body).Member;
     }
 
-    public static object? GetPropertyValue(this object obj, string propertyName)
+    extension<T>(Expression<Func<T, object>> expression)
     {
-        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
-
-        return prop == null ? throw new ArgumentException($"Property '{propertyName}' not found.") : prop.GetValue(obj);
+        /// <summary>
+        /// Gets the property represented by the expression.
+        /// </summary>
+        public PropertyInfo GetPropertyInfo()
+            => (PropertyInfo)GetMemberExpression(expression.Body).Member;
     }
 
-    // --- Private helpers ---
+    extension(LambdaExpression expression)
+    {
+        /// <summary>
+        /// Gets the property represented by the expression.
+        /// </summary>
+        public PropertyInfo GetPropertyInfo()
+            => (PropertyInfo)GetMemberExpression(expression.Body).Member;
+    }
+
+    extension<T>(T input)
+    {
+        /// <summary>
+        /// Deep clones an object using public instance properties.
+        /// </summary>
+        public T GetClone()
+        {
+            ArgumentNullException.ThrowIfNull(input);
+
+            var type = typeof(T);
+            var visited = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
+
+            return (T)CloneObject(input!, type, visited);
+        }
+    }
+
+    extension(object obj)
+    {
+        /// <summary>
+        /// Sets a property value.
+        /// </summary>
+        public void SetPropertyValue(string propertyName, object value)
+        {
+            var prop = obj.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (prop == null || !prop.CanWrite)
+                throw new ArgumentException($"Property '{propertyName}' not found or not writable.");
+
+            prop.SetValue(obj, value);
+        }
+
+        /// <summary>
+        /// Gets a property value.
+        /// </summary>
+        public object? GetPropertyValue(string propertyName)
+        {
+            var prop = obj.GetType().GetProperty(
+                propertyName,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+
+            return prop == null
+                ? throw new ArgumentException($"Property '{propertyName}' not found.")
+                : prop.GetValue(obj);
+        }
+    }
 
     private static MemberExpression GetMemberExpression(Expression body)
-    {
-        return body is MemberExpression memberExpr
+        => body is MemberExpression memberExpr
             ? memberExpr
-            : body is UnaryExpression unary && unary.Operand is MemberExpression member
+            : body is UnaryExpression { Operand: MemberExpression member }
                 ? member
                 : throw new ArgumentException("Invalid expression. Expected a property access expression.");
-    }
 
     private static object CloneObject(object input, Type type, Dictionary<object, object> visited)
     {
@@ -163,12 +172,14 @@ public static class ReflectionExtensions
 
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
-            if (!property.CanWrite) continue;
+            if (!property.CanWrite)
+                continue;
 
             var value = property.GetValue(input);
             var propertyType = property.PropertyType;
 
-            if (value != null && propertyType.IsClass && !propertyType.FullName!.StartsWith("System.", StringComparison.Ordinal))
+            if (value != null && propertyType.IsClass &&
+                !propertyType.FullName!.StartsWith("System.", StringComparison.Ordinal))
             {
                 var clonedValue = CloneObject(value, propertyType, visited);
                 property.SetValue(clonedObj, clonedValue);
@@ -182,7 +193,6 @@ public static class ReflectionExtensions
         return clonedObj;
     }
 
-    // --- Optional: Add a reference equality comparer for visited dictionary ---
     private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
     {
         public static ReferenceEqualityComparer Instance { get; } = new();

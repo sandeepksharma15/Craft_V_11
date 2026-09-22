@@ -20,8 +20,7 @@ public static class DateTimeExtensions
         {
             var age = referenceDate.Year - dateTime.Year;
 
-            if (referenceDate.Month < dateTime.Month ||
-                (referenceDate.Month == dateTime.Month && referenceDate.Day < dateTime.Day))
+            if (referenceDate.Month < dateTime.Month || (referenceDate.Month == dateTime.Month && referenceDate.Day < dateTime.Day))
                 age--;
 
             return age;

@@ -98,4 +98,13 @@ public class MembershipExtensionsTests
 
         public override string ToString() => $"TestItem:{Id}:{Name}";
     }
+    [Fact]
+    public void IsIn_Enumerable_ShouldReturnExpectedResult()
+    {
+        IEnumerable<int> values = new List<int> { 1, 2, 3 };
+
+        Assert.True(2.IsIn(values));
+        Assert.False(4.IsIn(values));
+    }
+
 }

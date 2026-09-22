@@ -112,8 +112,11 @@ public static class TypeExtensions
             .ToList();
 
     private static IEnumerable<Type> GetLoadableTypes()
+        => GetLoadableTypes(AppDomain.CurrentDomain.GetAssemblies());
+
+    private static IEnumerable<Type> GetLoadableTypes(IEnumerable<Assembly> assemblies)
     {
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        foreach (var assembly in assemblies)
         {
             Type[] types;
 

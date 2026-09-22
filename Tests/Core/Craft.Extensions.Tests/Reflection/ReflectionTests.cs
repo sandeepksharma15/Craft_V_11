@@ -367,4 +367,12 @@ public class ReflectionExtensionsTests
         {
         }
     }
+    [Fact]
+    public void GetPropertyInfo_ShouldHandleUnaryConversion()
+    {
+        Expression<Func<TestClass, object>> expression = value => value.Name;
+
+        Assert.Equal(nameof(TestClass.Name), expression.GetPropertyInfo().Name);
+    }
+
 }

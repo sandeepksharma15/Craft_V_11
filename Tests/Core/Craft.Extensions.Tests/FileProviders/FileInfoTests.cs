@@ -293,4 +293,12 @@ public class FakeFileInfo(string name) : IFileInfo
     {
         throw new NotImplementedException();
     }
+    [Fact]
+    public void GetFileSize_ShouldReturnLength()
+    {
+        var fileInfo = new FakeFileInfo("image.jpg", length: 1234);
+
+        Assert.Equal(1234, fileInfo.GetFileSize());
+    }
+
 }

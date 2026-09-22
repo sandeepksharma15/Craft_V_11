@@ -377,4 +377,13 @@ readonly file record struct CultureAwareFormattable(string CurrentCultureValue, 
         ReferenceEquals(formatProvider, CultureInfo.InvariantCulture)
             ? InvariantCultureValue
             : CurrentCultureValue;
+    [Fact]
+    public void GetOrAdd_DefaultValue_ShouldReturnExistingValue()
+    {
+        var dictionary = new Dictionary<string, int> { ["one"] = 1 };
+
+        Assert.Equal(1, dictionary.GetOrAdd("one", 99));
+        Assert.Equal(1, dictionary["one"]);
+    }
+
 }

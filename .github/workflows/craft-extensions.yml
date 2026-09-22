@@ -60,7 +60,7 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          reports = glob.glob("TestResults/coverage*.cobertura.xml", recursive=True)
+          reports = glob.glob("TestResults/coverage*.xml", recursive=True)
           if not reports:
               print("No Cobertura coverage report was produced.")
               sys.exit(1)
@@ -84,5 +84,5 @@ jobs:
         with:
           name: craft-extensions-test-results
           path: |
-            Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage*.cobertura.xml
+            TestResults/coverage*.xml
           if-no-files-found: warn

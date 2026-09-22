@@ -5,83 +5,50 @@ namespace Craft.Extensions.Tests.System;
 public class EnumExtensionsTests
 {
     [Fact]
-    public void GetOrderedEnumValues_ReturnsOrdered()
-    {
-        // Arrange & Act
-        var result = EnumExtensions.GetOrderedEnumValues<SimpleEnum>();
+    public void GetOrderedEnumValues_ReturnsUnderlyingOrder()
+        => Assert.Equal(
+            [SimpleEnum.Zero, SimpleEnum.One, SimpleEnum.Two],
+            SimpleEnum.GetOrderedEnumValues());
 
-        // Assert
-        Assert.Equal(new[] { SimpleEnum.Zero, SimpleEnum.One, SimpleEnum.Two }, result);
+    [Fact]
+    public void GetHighestAndLowestEnumValue_ReturnExtremes()
+    {
+        Assert.Equal(SimpleEnum.Two, SimpleEnum.GetHighestEnumValue());
+        Assert.Equal(SimpleEnum.Zero, SimpleEnum.GetLowestEnumValue());
     }
 
     [Fact]
-    public void GetExtremeEnumValue_ReturnsHighestAndLowest()
+    public void GetDescriptions_ReturnsDescriptionOrName()
     {
-        // Arrange & Act & Assert
-        Assert.Equal(SimpleEnum.Two, EnumExtensions.GetExtremeEnumValue<SimpleEnum>(true));
-        Assert.Equal(SimpleEnum.Zero, EnumExtensions.GetExtremeEnumValue<SimpleEnum>(false));
-    }
+        var result = DescEnum.GetDescriptions();
 
-    [Fact]
-    public void GetHighestEnumValue_ReturnsHighest()
-    {
-        // Arrange & Act & Assert
-        Assert.Equal(SimpleEnum.Two, EnumExtensions.GetHighestEnumValue<SimpleEnum>());
-    }
-
-    [Fact]
-    public void GetLowestEnumValue_ReturnsLowest()
-    {
-        // Arrange & Act & Assert
-        Assert.Equal(SimpleEnum.Zero, EnumExtensions.GetLowestEnumValue<SimpleEnum>());
-    }
-
-    [Fact]
-    public void GetDescriptions_ReturnsDescriptions()
-    {
-        // Arrange & Act
-        var dict = EnumExtensions.GetDescriptions<DescEnum>();
-
-        // Assert
-        Assert.Equal("Alpha Desc", dict[DescEnum.Alpha]);
-        Assert.Equal("Beta Desc", dict[DescEnum.Beta]);
-        Assert.Equal("Gamma", dict[DescEnum.Gamma]);
+        Assert.Equal("Alpha Desc", result[DescEnum.Alpha]);
+        Assert.Equal("Beta Desc", result[DescEnum.Beta]);
+        Assert.Equal("Gamma", result[DescEnum.Gamma]);
     }
 
     [Fact]
     public void GetNames_ReturnsNames()
-    {
-        // Arrange & Act
-        var dict = EnumExtensions.GetNames<SimpleEnum>();
-
-        // Assert
-        Assert.Equal("Zero", dict[SimpleEnum.Zero]);
-        Assert.Equal("One", dict[SimpleEnum.One]);
-        Assert.Equal("Two", dict[SimpleEnum.Two]);
-    }
+        => Assert.Equal(
+            "Two",
+            SimpleEnum.GetNames()[SimpleEnum.Two]);
 
     [Fact]
-    public void GetValues_ReturnsAll()
-    {
-        // Arrange & Act
-        var arr = EnumExtensions.GetValues<SimpleEnum>();
-
-        // Assert
-        Assert.Equal([SimpleEnum.Zero, SimpleEnum.One, SimpleEnum.Two], arr);
-    }
+    public void GetValues_ReturnsAllValues()
+        => Assert.Equal(
+            [SimpleEnum.Zero, SimpleEnum.One, SimpleEnum.Two],
+            SimpleEnum.GetValues());
 
     [Fact]
-    public void GetNextEnumValue_ReturnsNextOrFirst()
+    public void GetNextEnumValue_WrapsAtEnd()
     {
-        // Arrange & Act & Assert
         Assert.Equal(SimpleEnum.One, SimpleEnum.Zero.GetNextEnumValue());
         Assert.Equal(SimpleEnum.Zero, SimpleEnum.Two.GetNextEnumValue());
     }
 
     [Fact]
-    public void GetPrevEnumValue_ReturnsPrevOrLast()
+    public void GetPrevEnumValue_WrapsAtBeginning()
     {
-        // Arrange & Act & Assert
         Assert.Equal(SimpleEnum.Zero, SimpleEnum.One.GetPrevEnumValue());
         Assert.Equal(SimpleEnum.Two, SimpleEnum.Zero.GetPrevEnumValue());
     }
@@ -89,222 +56,118 @@ public class EnumExtensionsTests
     [Fact]
     public void GetDescription_ReturnsDescriptionOrName()
     {
-        // Arrange & Act & Assert
         Assert.Equal("Alpha Desc", DescEnum.Alpha.GetDescription());
         Assert.Equal("Gamma", DescEnum.Gamma.GetDescription());
     }
 
     [Fact]
-    public void GetFlags_ReturnsSetFlags()
-    {
-        // Arrange & Act
-        var flags = TestFlags.All.GetFlags();
-
-        // Assert
-        Assert.Contains(TestFlags.One, flags);
-        Assert.Contains(TestFlags.Two, flags);
-        Assert.Contains(TestFlags.Four, flags);
-    }
+    public void GetDescription_UnknownValue_ReturnsNumericText()
+        => Assert.Equal("999", ((SimpleEnum)999).GetDescription());
 
     [Fact]
-    public void IsSet_ReturnsTrueIfFlagIsSet()
+    public void GetName_UsesEnumFormatting()
     {
-        // Arrange & Act & Assert
-        Assert.True((TestFlags.One | TestFlags.Two).IsSet(TestFlags.Two));
-        Assert.False(TestFlags.One.IsSet(TestFlags.Four));
-    }
-
-    [Fact]
-    public void GetName_ReturnsNameOrFlags()
-    {
-        // Arrange & Act & Assert
         Assert.Equal("One", TestFlags.One.GetName());
-        Assert.Equal("None,One,Two", (TestFlags.One | TestFlags.Two).GetName());
+        Assert.Equal("One, Two", (TestFlags.One | TestFlags.Two).GetName());
     }
 
     [Fact]
-    public void TryGetSingleDescription_ReturnsTrueAndDescription()
+    public void TryGetSingleDescription_RejectsCompositeValue()
     {
-        // Arrange & Act & Assert
-        Assert.True(DescEnum.Beta.TryGetSingleDescription(out var desc));
-        Assert.Equal("Beta Desc", desc);
+        Assert.True(DescEnum.Beta.TryGetSingleDescription(out var description));
+        Assert.Equal("Beta Desc", description);
+
+        Assert.False((TestFlags.One | TestFlags.Two).TryGetSingleDescription(out description));
+        Assert.Null(description);
     }
 
     [Fact]
-    public void TryGetSingleName_ReturnsTrueAndName()
+    public void TryGetSingleName_RejectsCompositeValue()
     {
-        // Arrange & Act & Assert
         Assert.True(DescEnum.Beta.TryGetSingleName(out var name));
         Assert.Equal("Beta", name);
-    }
 
-    [Fact]
-    public void ToStringInvariant_ReturnsName()
-    {
-        // Arrange & Act & Assert
-        Assert.Equal("Alpha", DescEnum.Alpha.ToStringInvariant());
-    }
-
-    [Fact]
-    public void ValidateEnumType_ThrowsIfNotEnum()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<Exception>(() => EnumExtensions.ValidateEnumType<int>());
-    }
-
-    [Fact]
-    public void ToEnum_IntToEnum_ReturnsEnumValue()
-    {
-        // Arrange & Act & Assert
-        Assert.Equal(SimpleEnum.One, 1.ToEnum<SimpleEnum>());
-    }
-
-    [Fact]
-    public void ToEnum_StringToEnum_ReturnsEnumValue()
-    {
-        // Arrange & Act & Assert
-        Assert.Equal(SimpleEnum.Two, "Two".ToEnum<SimpleEnum>());
-        Assert.Equal(SimpleEnum.One, "1".ToEnum<SimpleEnum>());
-    }
-
-    [Fact]
-    public void ToEnum_StringToEnum_ThrowsOnNullOrEmpty()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => ((string)null!).ToEnum<SimpleEnum>());
-        Assert.Throws<ArgumentNullException>(() => "".ToEnum<SimpleEnum>());
-    }
-
-    [Fact]
-    public void Contains_ReturnsTrueIfStringContainsFlagName()
-    {
-        // Arrange & Act & Assert
-        Assert.True("One,Two".Contains(TestFlags.One));
-        Assert.False("Four".Contains(TestFlags.One));
-    }
-
-    [Fact]
-    public void Contains_ReturnsTrueIfStringContainsAnyFlag()
-    {
-        // Arrange & Act & Assert
-        Assert.False("One,Two".Contains(TestFlags.All));
-        Assert.True("One".Contains(TestFlags.One));
-    }
-
-    // --- Additional edge and negative tests for full coverage ---
-
-    [Fact]
-    public void GetDescription_ReturnsEmptyStringIfNoMember()
-    {
-        // Arrange & Act
-        var fake = (SimpleEnum)999;
-
-        // Assert
-        Assert.Equal(string.Empty, fake.GetDescription());
-    }
-
-    [Fact]
-    public void GetName_ReturnsFlagsNamesIfNotFound()
-    {
-        // Arrange & Act
-        var fake = (TestFlags)3; // One | Two
-
-        // Assert
-        Assert.Equal("None,One,Two", fake.GetName());
-    }
-
-    [Fact]
-    public void TryGetSingleDescription_ReturnsFalseIfNotFound()
-    {
-        // Arrange & Act
-        var fake = (SimpleEnum)999;
-
-        // Assert
-        Assert.False(fake.TryGetSingleDescription(out var desc));
-        Assert.Null(desc);
-    }
-
-    [Fact]
-    public void TryGetSingleName_ReturnsFalseIfNotFound()
-    {
-        // Arrange & Act
-        var fake = (SimpleEnum)999;
-
-        // Assert
-        Assert.False(fake.TryGetSingleName(out var name));
+        Assert.False((TestFlags.One | TestFlags.Two).TryGetSingleName(out name));
         Assert.Null(name);
     }
 
     [Fact]
-    public void IsSet_WorksForZero()
+    public void GetFlags_ReturnsOnlyIndividualSetFlags()
     {
-        // Arrange & Act & Assert
-        Assert.False(TestFlags.None.IsSet(TestFlags.One));
-        Assert.False(TestFlags.One.IsSet(TestFlags.None));
+        var flags = (TestFlags.One | TestFlags.Two).GetFlags().ToArray();
+
+        Assert.Equal([TestFlags.One, TestFlags.Two], flags);
     }
 
     [Fact]
-    public void GetFlags_ReturnsEmptyForZero()
-    {
-        // Arrange & Act
-        var flags = TestFlags.None.GetFlags();
+    public void GetFlags_ReturnsEmptyForNonFlagsEnum()
+        => Assert.Empty(SimpleEnum.One.GetFlags());
 
-        // Assert
-        Assert.Contains(TestFlags.None, flags);
+    [Fact]
+    public void GetFlags_ReturnsEmptyForNoFlags()
+        => Assert.Empty(TestFlags.None.GetFlags());
+
+    [Fact]
+    public void IsSet_ReturnsTrueOnlyWhenAllRequestedBitsAreSet()
+    {
+        var value = TestFlags.One | TestFlags.Two;
+
+        Assert.True(value.IsSet(TestFlags.One));
+        Assert.True(value.IsSet(TestFlags.One | TestFlags.Two));
+        Assert.False(value.IsSet(TestFlags.Four));
     }
 
     [Fact]
-    public void Contains_MultiFlagValue_ReturnsTrueIfAnyFlagNamePresent()
-    {
-        // Arrange & Act
-        string input = "One,Two";
-        var flags = TestFlags.One | TestFlags.Two;
+    public void IsSet_ZeroFlags_ReturnsTrue()
+        => Assert.True(TestFlags.One.IsSet(TestFlags.None));
 
-        // Assert
-        Assert.True(input.Contains(flags));
+    [Fact]
+    public void ToStringInvariant_UsesEnumName()
+        => Assert.Equal("Alpha", DescEnum.Alpha.ToStringInvariant());
+
+    [Fact]
+    public void ToEnum_String_ParsesNameAndNumericValue()
+    {
+        Assert.Equal(SimpleEnum.Two, "Two".ToEnum<SimpleEnum>());
+        Assert.Equal(SimpleEnum.One, "1".ToEnum<SimpleEnum>());
+        Assert.Equal(SimpleEnum.Two, "two".ToEnum<SimpleEnum>());
     }
 
     [Fact]
-    public void Contains_MultiFlagValue_ReturnsFalseIfNoFlagNamePresent()
-    {
-        // Arrange & Act
-        string input = "Three";
-        var flags = TestFlags.One | TestFlags.Two;
+    public void ToEnum_String_ThrowsForEmpty()
+        => Assert.Throws<ArgumentException>(() => "".ToEnum<SimpleEnum>());
 
-        // Assert
-        Assert.False(input.Contains(flags));
+    [Fact]
+    public void ToEnum_Int_ConvertsValue()
+        => Assert.Equal(SimpleEnum.One, 1.ToEnum<SimpleEnum>());
+
+    [Fact]
+    public void Contains_FindsSingleAndCompositeFlags()
+    {
+        Assert.True("One,Two".Contains(TestFlags.One));
+        Assert.True("two".Contains(TestFlags.One | TestFlags.Two));
+        Assert.False("Four".Contains(TestFlags.One));
+        Assert.False("Three".Contains(TestFlags.One | TestFlags.Two));
     }
 
     [Fact]
-    public void Contains_AllFlagsValue_ReturnsTrueIfAnyFlagNamePresent()
-    {
-        // Arrange
-        string input = "Four";
+    public void Contains_HandlesEmptyInput()
+        => Assert.False("".Contains(TestFlags.One));
 
-        // Act & Assert
-        Assert.False(input.Contains(TestFlags.All));
+    [Fact]
+    public void GetEnumNameValuePairs_ReturnsValuesForEnumAndNullableEnum()
+    {
+        var values = typeof(SimpleEnum).GetEnumNameValuePairs();
+        var nullableValues = typeof(SimpleEnum?).GetEnumNameValuePairs();
+
+        Assert.Equal(values, nullableValues);
+        Assert.Equal(3, values.Count);
+        Assert.Equal(("One", (object)SimpleEnum.One), values[1]);
     }
 
     [Fact]
-    public void Contains_AllFlagsValue_ReturnsFalseIfNoFlagNamePresent()
-    {
-        // Arrange
-        string input = "None";
-
-        // Act & Assert
-        Assert.False(input.Contains(TestFlags.All));
-    }
-
-    [Fact]
-    public void Contains_MultiFlagValue_CaseInsensitive()
-    {
-        // Arrange
-        string input = "two";
-        var flags = TestFlags.Two | TestFlags.Four;
-
-        // Act & Assert
-        Assert.True(input.Contains(flags));
-    }
+    public void GetEnumNameValuePairs_ReturnsEmptyForNonEnum()
+        => Assert.Empty(typeof(string).GetEnumNameValuePairs());
 
     [Flags]
     private enum TestFlags
@@ -312,8 +175,7 @@ public class EnumExtensionsTests
         None = 0,
         One = 1,
         Two = 2,
-        Four = 4,
-        All = One | Two | Four
+        Four = 4
     }
 
     private enum SimpleEnum

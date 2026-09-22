@@ -75,20 +75,20 @@ public static class ReflectionExtensions
         {
             ArgumentNullException.ThrowIfNull(expression);
 
-            return GetPropertyInfo(expression.Body);
+            return ExtractPropertyInfo(expression.Body);
         }
 
         /// <summary>
         /// Gets the property name represented by the expression.
         /// </summary>
-        public string GetMemberName() => GetPropertyInfo().Name;
+        public string GetMemberName() => expression.GetPropertyInfo().Name;
 
         /// <summary>
         /// Gets the underlying property type.
         /// </summary>
         public Type GetMemberType()
         {
-            var type = GetPropertyInfo().PropertyType;
+            var type = expression.GetPropertyInfo().PropertyType;
 
             return Nullable.GetUnderlyingType(type) ?? type;
         }
@@ -145,7 +145,7 @@ public static class ReflectionExtensions
         }
     }
 
-    private static PropertyInfo GetPropertyInfo(Expression expression)
+    private static PropertyInfo ExtractPropertyInfo(Expression expression)
     {
         var member = expression switch
         {
@@ -197,7 +197,7 @@ public static class ReflectionExtensions
     {
         public static ReferenceEqualityComparer Instance { get; } = new();
 
-        public bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+        bool IEqualityComparer<object>.Equals(object? x, object? y) => ReferenceEquals(x, y);
 
         public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
     }

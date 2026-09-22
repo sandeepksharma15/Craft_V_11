@@ -261,7 +261,7 @@ public class TypeTests
     [Fact]
     public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
     {
-        var method = typeof(System.TypeExtensions).GetMethod(
+        var method = typeof(global::System.TypeExtensions).GetMethod(
             "GetLoadableTypes",
             BindingFlags.NonPublic | BindingFlags.Static,
             binder: null,

@@ -258,6 +258,9 @@ public class FileInfoTests
         Assert.Equal("application/octet-stream", webp.ContentType());
     }
 
+
+}
+
     [Fact]
     public void GetFileSize_ShouldReturnLength()
     {
@@ -265,8 +268,6 @@ public class FileInfoTests
 
         Assert.Equal(1234, fileInfo.GetFileSize());
     }
-
-}
 
 internal sealed class CultureScope : IDisposable
 {

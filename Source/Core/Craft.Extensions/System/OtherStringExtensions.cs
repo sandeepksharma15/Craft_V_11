@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,12 +9,9 @@ namespace System;
 
 public static class OtherStringExtensions
 {
-    #region Private Fields
-
-    private static readonly Regex PascalWordBoundaryRegex = new("([a-z0-9])([A-Z])",
+    private static readonly Regex PascalWordBoundaryRegex = new(
+        "([a-z0-9])([A-Z])",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-    #endregion Private Fields
 
     extension(string? value)
     {
@@ -31,8 +29,10 @@ public static class OtherStringExtensions
             var count = 0;
 
             for (var index = 0; index < value.Length; index++)
+            {
                 if (value[index] == character && ++count == occurrence)
                     return index;
+            }
 
             return -1;
         }
@@ -45,8 +45,10 @@ public static class OtherStringExtensions
             var result = value;
 
             foreach (var item in values)
+            {
                 if (!string.IsNullOrEmpty(item))
                     result = result.Replace(item, string.Empty);
+            }
 
             return result;
         }
@@ -65,8 +67,10 @@ public static class OtherStringExtensions
                 return value;
 
             foreach (var postFix in postFixes)
+            {
                 if (!string.IsNullOrEmpty(postFix) && value.EndsWith(postFix, comparisonType))
                     return value[..^postFix.Length];
+            }
 
             return value;
         }
@@ -80,13 +84,18 @@ public static class OtherStringExtensions
                 return value;
 
             foreach (var preFix in preFixes)
+            {
                 if (!string.IsNullOrEmpty(preFix) && value.StartsWith(preFix, comparisonType))
                     return value[preFix.Length..];
+            }
 
             return value;
         }
 
-        public string? ReplaceFirst(string? search, string? replacement, StringComparison comparisonType = StringComparison.Ordinal)
+        public string? ReplaceFirst(
+            string? search,
+            string? replacement,
+            StringComparison comparisonType = StringComparison.Ordinal)
         {
             if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(search) || replacement is null)
                 return value;
@@ -98,36 +107,12 @@ public static class OtherStringExtensions
                 : string.Concat(value.AsSpan(0, index), replacement, value.AsSpan(index + search.Length));
         }
 
-        /// <summary>
-        /// Reverses the characters in the string.
-        /// </summary>
-        public string? Reverse(string? str)
-        {
-            if (string.IsNullOrEmpty(str))
-                return str;
-
-            var charArray = str.ToCharArray();
-            Array.Reverse(charArray);
-            return new string(charArray);
-        }
-
         public string ToSha256()
         {
             ArgumentNullException.ThrowIfNull(value);
             return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
         }
 
-        /// <summary>
-        /// Converts a string to camelCase (e.g., "hello world" -> "helloWorld").
-        /// </summary>
-        public string? ToCamelCase(string? str)
-        {
-            var pascal = str.ToPascalCase();
-
-            return string.IsNullOrEmpty(pascal)
-                ? pascal
-                : char.ToLowerInvariant(pascal[0]) + pascal[1..];
-        }
         public bool IsBase64String()
         {
             if (string.IsNullOrWhiteSpace(value) || value.Length % 4 != 0)
@@ -137,21 +122,117 @@ public static class OtherStringExtensions
             return Convert.TryFromBase64String(value, buffer, out _);
         }
 
-        /// <summary>
-        /// Converts a string to kebab-case (e.g., "HelloWorld" -> "hello-world").
-        /// </summary>
-        public string? ToKebabCase(string? str)
-        {
-            if (string.IsNullOrEmpty(str))
-                return str;
-        }
-
         public string? Truncate(int maxLength)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
 
-            var result = Regex.Replace(str, "([a-z0-9])([A-Z])", "$1-$2");
-            return result.Replace(' ', '-').Replace('_', '-').ToLowerInvariant();
+            return string.IsNullOrEmpty(value) || value.Length <= maxLength
+                ? value
+                : value[..maxLength];
         }
+
+        public string? TruncateWithEllipsis(int maxLength, string ellipsis = "...")
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
+            ArgumentNullException.ThrowIfNull(ellipsis);
+
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+                return value;
+
+            return maxLength <= ellipsis.Length
+                ? value[..maxLength]
+                : value[..(maxLength - ellipsis.Length)] + ellipsis;
+        }
+
+        public string? ToPascalCase()
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            var words = value.Split([' ', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+            var result = new StringBuilder();
+
+            foreach (var word in words)
+                result.Append(char.ToUpperInvariant(word[0])).Append(word[1..].ToLowerInvariant());
+
+            return result.ToString();
+        }
+
+        public string? ToCamelCase()
+        {
+            var pascal = value.ToPascalCase();
+
+            return string.IsNullOrEmpty(pascal)
+                ? pascal
+                : char.ToLowerInvariant(pascal[0]) + pascal[1..];
+        }
+
+        public string? ToSnakeCase()
+            => ToSeparatedCase(value, '_');
+
+        public string? ToKebabCase()
+            => ToSeparatedCase(value, '-');
+
+        public string? Reverse()
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            var textElements = StringInfo.ParseCombiningCharacters(value);
+            var result = new StringBuilder(value.Length);
+
+            for (var index = textElements.Length - 1; index >= 0; index--)
+            {
+                var start = textElements[index];
+                var length = index == textElements.Length - 1
+                    ? value.Length - start
+                    : textElements[index + 1] - start;
+
+                result.Append(value.AsSpan(start, length));
+            }
+
+            return result.ToString();
+        }
+
+        public int CountOccurrences(
+            string? substring,
+            StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(substring))
+                return 0;
+
+            var count = 0;
+            var index = 0;
+
+            while ((index = value.IndexOf(substring, index, comparisonType)) >= 0)
+            {
+                count++;
+                index += substring.Length;
+            }
+
+            return count;
+        }
+
+        public bool IsNumeric()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsDigit);
+
+        public bool IsAlphabetic()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsLetter);
+
+        public bool IsAlphanumeric()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsLetterOrDigit);
+    }
+
+    private static string? ToSeparatedCase(string? value, char separator)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        var separated = PascalWordBoundaryRegex.Replace(value, "$1" + separator + "$2");
+
+        foreach (var character in new[] { ' ', '_', '-' })
+            separated = separated.Replace(character, separator);
+
+        return separated.ToLowerInvariant();
     }
 }

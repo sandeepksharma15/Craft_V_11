@@ -224,7 +224,6 @@ public class ReflectionExtensionsTests
 
         Assert.Equal(created, clone.Created);
         Assert.Same(original.Uri, clone.Uri);
-        Assert.Same(original, original.GetCloneReferenceForTest());
     }
 
     [Fact]
@@ -346,7 +345,6 @@ public class ReflectionExtensionsTests
         public object? Polymorphic { get; set; }
         public int ReadOnlyValue => 10;
 
-        public CustomClone GetCloneReferenceForTest() => this;
     }
 
     private class SpecialClone : CustomClone

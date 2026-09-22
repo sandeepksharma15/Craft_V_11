@@ -282,8 +282,10 @@ public class ReflectionExtensionsTests
     {
         const int number = 42;
         const string text = "hello";
+        object boxedNumber = number;
 
         Assert.Equal(number, number.GetClone());
+        Assert.Equal(number, boxedNumber.GetClone());
         Assert.Same(text, text.GetClone());
     }
 

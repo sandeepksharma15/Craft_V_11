@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace System;
@@ -6,73 +6,62 @@ namespace System;
 
 public static class StandardStringExtensions
 {
-    /// <summary>
-    /// Ensures that the specified character is at the start of the string.
-    /// </summary>
-    public static string? EnsureStartsWith(this string? source, char c, StringComparison comparisonType = StringComparison.Ordinal)
-        => source is null
-            ? null
-            : source.StartsWith(c.ToString(), comparisonType) ? source : c + source;
+    extension(string? value)
+    {
+        public string? EnsureStartsWith(
+            char character,
+            StringComparison comparisonType = StringComparison.Ordinal)
+            => value is null
+                ? null
+                : value.StartsWith(character.ToString(), comparisonType)
+                    ? value
+                    : character + value;
 
-    /// <summary>
-    /// Ensures that the specified character is at the end of the string.
-    /// </summary>
-    public static string? EnsureEndsWith(this string? source, char c, StringComparison comparisonType = StringComparison.Ordinal)
-        => source is null
-            ? null
-            : source.EndsWith(c.ToString(), comparisonType) ? source : source + c;
+        public string? EnsureEndsWith(
+            char character,
+            StringComparison comparisonType = StringComparison.Ordinal)
+            => value is null
+                ? null
+                : value.EndsWith(character.ToString(), comparisonType)
+                    ? value
+                    : value + character;
 
-    /// <summary>
-    /// Converts the first character of the string to uppercase, while leaving the rest of the string unchanged.
-    /// </summary>
-    public static string? FirstCharToUpper(this string? source)
-        => string.IsNullOrEmpty(source)
-            ? source
-            : string.Concat(source[0].ToString(CultureInfo.InvariantCulture).ToUpperInvariant(), source.AsSpan(1));
+        public string? FirstCharToUpper()
+            => string.IsNullOrEmpty(value)
+                ? value
+                : char.ToUpperInvariant(value[0]) + value[1..];
 
-    /// <summary>
-    /// Retrieves the substring that appears after the last occurrence of the specified delimiter.
-    /// </summary>
-    public static string? GetStringAfterLastDelimiter(this string? source, char delimiter = '.')
-        => string.IsNullOrEmpty(source)
-            ? source
-            : source.LastIndexOf(delimiter) is int idx && idx >= 0
-                ? source[(idx + 1)..]
-                : source;
+        public string? GetStringAfterLastDelimiter(char delimiter = '.')
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
 
-    /// <summary>
-    /// Determines whether the source string is null, empty, or consists only of white-space characters.
-    /// </summary>
-    public static bool IsEmpty(this string? source) => string.IsNullOrWhiteSpace(source);
+            var index = value.LastIndexOf(delimiter);
+            return index < 0 ? value : value[(index + 1)..];
+        }
 
-    /// <summary>
-    /// Determines whether the source string is not null, empty, or consists only of white-space characters.
-    /// </summary>
-    public static bool IsNonEmpty(this string? source) => !string.IsNullOrWhiteSpace(source);
+        public bool IsNullOrEmpty()
+            => string.IsNullOrEmpty(value);
 
-    /// <summary>
-    /// Determines whether the source string is null or an empty string.
-    /// </summary>
-    public static bool IsNullOrEmpty(this string? source) => string.IsNullOrEmpty(source);
+        public bool IsNullOrWhiteSpace()
+            => string.IsNullOrWhiteSpace(value);
 
-    /// <summary>
-    /// Determines whether the source string is null, empty, or consists only of white-space characters.
-    /// </summary>
-    public static bool IsNullOrWhiteSpace(this string? source) => string.IsNullOrWhiteSpace(source);
+        public string? Left(int length)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-    /// <summary>
-    /// Returns a substring containing the leftmost characters of the source string, up to the specified length.
-    /// </summary>
-    public static string? Left(this string? source, int len) =>
-        string.IsNullOrEmpty(source) || len >= source.Length
-            ? source
-            : source[..len];
+            return string.IsNullOrEmpty(value) || length >= value.Length
+                ? value
+                : value[..length];
+        }
 
-    /// <summary>
-    /// Returns the specified number of characters from the end of the string.
-    /// </summary>
-    public static string? Right(this string? source, int len) =>
-        string.IsNullOrEmpty(source) || len >= source.Length
-            ? source
-            : source[^len..];
+        public string? Right(int length)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+            return string.IsNullOrEmpty(value) || length >= value.Length
+                ? value
+                : value[^length..];
+        }
+    }
 }

@@ -150,7 +150,7 @@ public class ObjectTests
         public decimal ToDecimal(IFormatProvider? provider) => throw new NotSupportedException();
         public double ToDouble(IFormatProvider? provider) => throw new NotSupportedException();
         public short ToInt16(IFormatProvider? provider) => throw new NotSupportedException();
-        public int ToInt32(IFormatProvider? provider) => throw new NotSupportedException();
+        public int ToInt32(IFormatProvider? provider) => throw new ArgumentException();
         public long ToInt64(IFormatProvider? provider) => throw new NotSupportedException();
         public sbyte ToSByte(IFormatProvider? provider) => throw new NotSupportedException();
         public float ToSingle(IFormatProvider? provider) => throw new NotSupportedException();

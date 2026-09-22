@@ -267,7 +267,7 @@ public class FileInfoTests
 
 }
 
-public sealed class CultureScope : IDisposable
+internal sealed class CultureScope : IDisposable
 {
     private readonly CultureInfo _currentCulture = CultureInfo.CurrentCulture;
     private readonly CultureInfo _currentUICulture = CultureInfo.CurrentUICulture;
@@ -286,7 +286,7 @@ public sealed class CultureScope : IDisposable
     }
 }
 
-public class FakeFileInfo(string name, long length = 0) : IFileInfo
+internal sealed class FakeFileInfo(string name, long length = 0) : IFileInfo
 {
     public bool Exists => throw new NotImplementedException();
 

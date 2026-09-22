@@ -369,14 +369,6 @@ public class DictionaryExtensionsTests
         // Act & Assert
         _ = Assert.Throws<ArgumentNullException>(() => target.Merge(source!));
     }
-}
-
-readonly file record struct CultureAwareFormattable(string CurrentCultureValue, string InvariantCultureValue) : IFormattable
-{
-    public string ToString(string? format, IFormatProvider? formatProvider) =>
-        ReferenceEquals(formatProvider, CultureInfo.InvariantCulture)
-            ? InvariantCultureValue
-            : CurrentCultureValue;
     [Fact]
     public void GetOrAdd_DefaultValue_ShouldReturnExistingValue()
     {
@@ -386,4 +378,12 @@ readonly file record struct CultureAwareFormattable(string CurrentCultureValue, 
         Assert.Equal(1, dictionary["one"]);
     }
 
+}
+
+readonly file record struct CultureAwareFormattable(string CurrentCultureValue, string InvariantCultureValue) : IFormattable
+{
+    public string ToString(string? format, IFormatProvider? formatProvider) =>
+        ReferenceEquals(formatProvider, CultureInfo.InvariantCulture)
+            ? InvariantCultureValue
+            : CurrentCultureValue;
 }

@@ -257,6 +257,7 @@ public class FileInfoTests
         Assert.Equal(ImageExtension.Unknown, webp.GetImageExtension());
         Assert.Equal("application/octet-stream", webp.ContentType());
     }
+
     [Fact]
     public void GetFileSize_ShouldReturnLength()
     {
@@ -286,15 +287,21 @@ internal sealed class CultureScope : IDisposable
     }
 }
 
-internal sealed class FakeFileInfo(string name, long length = 0) : IFileInfo
+internal sealed class FakeFileInfo : IFileInfo
 {
+    public FakeFileInfo(string name, long length = 0)
+    {
+        Name = name;
+        Length = length;
+    }
+
     public bool Exists => throw new NotImplementedException();
 
     public bool IsDirectory { get; }
     public DateTimeOffset LastModified { get; }
-    public long Length { get; } = length;
+    public long Length { get; }
 
-    public string Name { get; } = name;
+    public string Name { get; }
     public string PhysicalPath => throw new NotImplementedException();
 
     public Stream CreateReadStream()

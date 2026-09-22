@@ -44,8 +44,7 @@ public static class ReflectionExtensions
             var properties = new List<PropertyInfo>();
 
             for (var current = type; current is not null; current = current.BaseType)
-                properties.AddRange(current.GetProperties(
-                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+                properties.AddRange(current.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
 
             return properties;
         }
@@ -58,11 +57,8 @@ public static class ReflectionExtensions
             ArgumentNullException.ThrowIfNull(type);
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-            return type.GetProperty(
-                name,
-                BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
-                ?? throw new ArgumentException(
-                    $"Property '{name}' not found in type '{type.FullName}'.", nameof(name));
+            return type.GetProperty(name, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                ?? throw new ArgumentException($"Property '{name}' not found in type '{type.FullName}'.", nameof(name));
         }
     }
 
@@ -124,8 +120,7 @@ public static class ReflectionExtensions
             var property = GetInstanceProperty(obj, propertyName);
 
             if (property is null || !property.CanWrite)
-                throw new ArgumentException(
-                    $"Property '{propertyName}' not found or not writable.", nameof(propertyName));
+                throw new ArgumentException($"Property '{propertyName}' not found or not writable.", nameof(propertyName));
 
             property.SetValue(obj, value);
         }
@@ -138,32 +133,13 @@ public static class ReflectionExtensions
             ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
 
             var property = GetInstanceProperty(obj, propertyName)
-                ?? throw new ArgumentException(
-                    $"Property '{propertyName}' not found.", nameof(propertyName));
+                ?? throw new ArgumentException($"Property '{propertyName}' not found.", nameof(propertyName));
 
             return property.GetValue(obj);
         }
     }
 
-    private static PropertyInfo ExtractPropertyInfo(Expression expression)
-    {
-        var member = expression switch
-        {
-            MemberExpression memberExpression => memberExpression.Member,
-            UnaryExpression { Operand: MemberExpression memberExpression } => memberExpression.Member,
-            _ => throw new ArgumentException(
-                "Invalid expression. Expected a property access expression.", nameof(expression))
-        };
-
-        return member as PropertyInfo
-            ?? throw new ArgumentException(
-                "Invalid expression. Expected a property access expression.", nameof(expression));
-    }
-
-    private static PropertyInfo? GetInstanceProperty(object obj, string propertyName)
-        => obj.GetType().GetProperty(
-            propertyName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+    #region Private Methods
 
     private static object CloneObject(object input, Dictionary<object, object> visited)
     {
@@ -193,12 +169,42 @@ public static class ReflectionExtensions
         return clone;
     }
 
+    private static PropertyInfo ExtractPropertyInfo(Expression expression)
+    {
+        var member = expression switch
+        {
+            MemberExpression memberExpression => memberExpression.Member,
+            UnaryExpression { Operand: MemberExpression memberExpression } => memberExpression.Member,
+            _ => throw new ArgumentException("Invalid expression. Expected a property access expression.", nameof(expression))
+        };
+
+        return member as PropertyInfo
+            ?? throw new ArgumentException("Invalid expression. Expected a property access expression.", nameof(expression));
+    }
+
+    private static PropertyInfo? GetInstanceProperty(object obj, string propertyName)
+        => obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+
+    #endregion Private Methods
+
+    #region Private Classes
+
     private sealed class ReferenceEqualityComparer : IEqualityComparer<object>
     {
+        #region Public Properties
+
         public static ReferenceEqualityComparer Instance { get; } = new();
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
 
         bool IEqualityComparer<object>.Equals(object? x, object? y) => ReferenceEquals(x, y);
 
-        public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
+        #endregion Public Methods
     }
+
+    #endregion Private Classes
 }

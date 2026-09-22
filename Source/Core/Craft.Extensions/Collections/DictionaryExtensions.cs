@@ -143,6 +143,8 @@ public static class DictionaryExtensions
         }
     }
 
+    #region Private Methods
+
     private static string FormatQueryStringValue<T>(T value)
     {
         return value switch
@@ -152,4 +154,6 @@ public static class DictionaryExtensions
             _ => value.ToString() ?? string.Empty,
         };
     }
+
+    #endregion Private Methods
 }

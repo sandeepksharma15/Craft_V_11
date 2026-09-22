@@ -1,9 +1,9 @@
-﻿using System.Net.Http.Json;
-
-namespace Craft.Extensions.HttpResponse;
+﻿namespace Craft.Extensions.HttpResponse;
 
 public static class HttpResponseExtensions
 {
+    #region Public Methods
+
     /// <summary>
     /// Attempts to read error messages from an HTTP response.
     /// </summary>
@@ -36,4 +36,6 @@ public static class HttpResponseExtensions
             return [string.IsNullOrWhiteSpace(text) ? $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}" : text];
         }
     }
+
+    #endregion Public Methods
 }

@@ -269,7 +269,7 @@ public class ReflectionExtensionsTests
     [Fact]
     public void GetClone_SupportsPrivateParameterlessConstructors()
     {
-        var original = new PrivateConstructorClone { Name = "A" };
+        var original = PrivateConstructorClone.Create("A");
 
         var clone = original.GetClone();
 
@@ -302,7 +302,7 @@ public class ReflectionExtensionsTests
         public Nested? Nested { get; set; }
         public int ReadOnlyProp => 10;
         public static int StaticProp { get; set; }
-        public int Field;
+        public int Field = 0;
         private int PrivateProp { get; set; }
 
         public int GetPrivateProp() => PrivateProp;

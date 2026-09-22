@@ -51,7 +51,6 @@ jobs:
           --no-build
           --coverlet
           --coverlet-output-format cobertura
-          --results-directory Tests/Core/Craft.Extensions.Tests/TestResults
 
       - name: Verify 100% line coverage
         shell: bash
@@ -61,7 +60,7 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          reports = glob.glob("Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage*.cobertura.xml", recursive=True)
+          reports = glob.glob("Tests/Core/Craft.Extensions.Tests/coverage*.cobertura.xml", recursive=True)
           if not reports:
               print("No Cobertura coverage report was produced.")
               sys.exit(1)
@@ -85,6 +84,5 @@ jobs:
         with:
           name: craft-extensions-test-results
           path: |
-            Tests/Core/Craft.Extensions.Tests/TestResults/**/*.trx
             Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage*.cobertura.xml
           if-no-files-found: warn

@@ -103,7 +103,7 @@ public static class ReflectionExtensions
         {
             ArgumentNullException.ThrowIfNull(input);
 
-            if (input is string || typeof(T).IsValueType)
+            if (input is string || input is ValueType)
                 return input;
 
             var visited = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);

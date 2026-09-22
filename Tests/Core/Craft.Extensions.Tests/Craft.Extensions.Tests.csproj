@@ -7,10 +7,12 @@
 		<IsPackable>false</IsPackable>
 		<Authors>Sandeep SHARMA</Authors>
 		<LangVersion>preview</LangVersion>
+		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="coverlet.collector" Version="10.0.1">
+		<PackageReference Include="coverlet.MTP" Version="10.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

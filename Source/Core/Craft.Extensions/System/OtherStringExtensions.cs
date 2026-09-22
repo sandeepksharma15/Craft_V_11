@@ -1,292 +1,238 @@
-﻿using System.Security.Cryptography;
+using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Craft.Extensions.System;
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+namespace System;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class OtherStringExtensions
 {
-    /// <summary>
-    /// Normalizes the line endings in the current string to the platform-specific line ending.
-    /// </summary>
-    public static string? NormalizeLineEndings(this string? str) =>
-        str?
-            .Replace("\r\n", "\n")
-            .Replace("\r", "\n")
-            .Replace("\n", Environment.NewLine);
+    private static readonly Regex PascalWordBoundaryRegex = new(
+        "([a-z0-9])([A-Z])",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    /// <summary>
-    /// Finds the zero-based index of the nth occurrence of a specified character in the string.
-    /// </summary>
-    public static int NthIndexOf(this string? str, char c, int n)
+    extension(string? value)
     {
-        if (str is null || n <= 0) return -1;
+        public string? NormalizeLineEndings()
+            => value?
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n")
+                .Replace("\n", Environment.NewLine);
 
-        int count = 0;
-
-        for (int i = 0; i < str.Length; i++)
-            if (str[i] == c && ++count == n)
-                return i;
-
-        return -1;
-    }
-
-    /// <summary>
-    /// Removes all occurrences of the specified strings from the current string.
-    /// </summary>
-    public static string? RemoveAll(this string? str, params string[]? strings)
-    {
-        if (str is null || strings is null || strings.Length == 0)
-            return str;
-
-        var result = str;
-
-        foreach (var s in strings)
-            result = result.Replace(s, string.Empty);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Removes extra spaces from the current string, leaving only single spaces between words.
-    /// </summary>
-    public static string? RemoveExtraSpaces(this string? str) =>
-        string.IsNullOrEmpty(str)
-            ? str
-            : string.Join(" ", str.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-
-    /// <summary>
-    /// Removes the specified postfixes from the current string, if any are present.
-    /// </summary>
-    public static string? RemovePostFix(this string? str, params string[]? postFixes) =>
-        str.RemovePostFix(StringComparison.Ordinal, postFixes);
-
-    /// <summary>
-    /// Removes the specified postfix from the current string if it ends with any of the provided postfixes.
-    /// </summary>
-    public static string? RemovePostFix(this string? str, StringComparison comparisonType, params string[]? postFixes)
-    {
-        if (string.IsNullOrEmpty(str) || postFixes is null || postFixes.Length == 0)
-            return str;
-
-        foreach (string postFix in postFixes)
-            if (str.EndsWith(postFix, comparisonType))
-                return str[..^postFix.Length];
-
-        return str;
-    }
-
-    /// <summary>
-    /// Removes the specified prefixes from the current string, if any are present.
-    /// </summary>
-    public static string? RemovePreFix(this string? str, params string[]? preFixes) =>
-        str.RemovePreFix(StringComparison.Ordinal, preFixes);
-
-    /// <summary>
-    /// Removes the first matching prefix from the current string, if any of the specified prefixes are found.
-    /// </summary>
-    public static string? RemovePreFix(this string? str, StringComparison comparisonType, params string[]? preFixes)
-    {
-        if (string.IsNullOrEmpty(str) || preFixes is null || preFixes.Length == 0)
-            return str;
-
-        foreach (string preFix in preFixes)
-            if (str.StartsWith(preFix, comparisonType))
-                return str[preFix.Length..];
-
-        return str;
-    }
-
-    /// <summary>
-    /// Replaces the first occurrence of a specified substring in the current string with another specified substring.
-    /// </summary>
-    public static string? ReplaceFirst(this string? str, string? search, string? replace, StringComparison comparisonType = StringComparison.Ordinal)
-    {
-        if (string.IsNullOrEmpty(str) || string.IsNullOrEmpty(search) || replace is null)
-            return str;
-
-        int index = str.IndexOf(search, comparisonType);
-
-        return index < 0 ? str : string.Concat(str.AsSpan(0, index), replace, str.AsSpan(index + search.Length));
-    }
-
-    /// <summary>
-    /// Computes the MD5 hash of the current string and returns it as a hexadecimal string.
-    /// </summary>
-    public static string ToMd5(this string str)
-    {
-        ArgumentNullException.ThrowIfNull(str);
-
-        byte[] inputBytes = Encoding.UTF8.GetBytes(str);
-        byte[] hashBytes = MD5.HashData(inputBytes);
-
-        StringBuilder sb = new(hashBytes.Length * 2);
-
-        foreach (byte hashByte in hashBytes)
-            sb.Append(hashByte.ToString("X2"));
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Determines whether the specified string is a valid Base64-encoded string.
-    /// </summary>
-    /// <remarks>A valid Base64 string must contain only characters allowed in Base64 encoding  and must have
-    /// a length that is a multiple of 4. This method returns <see langword="false"/>  for null, empty, or whitespace
-    /// strings.</remarks>
-    /// <param name="s">The string to validate as Base64-encoded.</param>
-    /// <returns><see langword="true"/> if the specified string is a valid Base64-encoded string;  otherwise, <see
-    /// langword="false"/>.</returns>
-    public static bool IsBase64String(this string s)
-    {
-        if (s.IsNullOrWhiteSpace()) return false;
-
-        Span<byte> buffer = new byte[s.Length + 1];
-
-        return Convert.TryFromBase64String(s, buffer, out _);
-    }
-
-    /// <summary>
-    /// Truncates the string to the specified maximum length.
-    /// </summary>
-    public static string? Truncate(this string? str, int maxLength)
-    {
-        if (string.IsNullOrEmpty(str) || str.Length <= maxLength)
-            return str;
-
-        return str[..maxLength];
-    }
-
-    /// <summary>
-    /// Truncates the string to the specified maximum length and appends an ellipsis if truncated.
-    /// </summary>
-    public static string? TruncateWithEllipsis(this string? str, int maxLength, string ellipsis = "...")
-    {
-        if (string.IsNullOrEmpty(str) || str.Length <= maxLength)
-            return str;
-
-        return maxLength <= ellipsis.Length
-            ? str[..maxLength]
-            : str[..(maxLength - ellipsis.Length)] + ellipsis;
-    }
-
-    /// <summary>
-    /// Converts a string to PascalCase (e.g., "hello world" -> "HelloWorld").
-    /// </summary>
-    public static string? ToPascalCase(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-
-        var words = str.Split([' ', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
-        var result = new StringBuilder();
-
-        foreach (var word in words)
-            if (word.Length > 0)
-                result.Append(char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant());
-
-        return result.ToString();
-    }
-
-    /// <summary>
-    /// Converts a string to camelCase (e.g., "hello world" -> "helloWorld").
-    /// </summary>
-    public static string? ToCamelCase(this string? str)
-    {
-        var pascal = str.ToPascalCase();
-
-        return string.IsNullOrEmpty(pascal)
-            ? pascal
-            : char.ToLowerInvariant(pascal[0]) + pascal[1..];
-    }
-
-    /// <summary>
-    /// Converts a string to snake_case (e.g., "HelloWorld" -> "hello_world").
-    /// </summary>
-    public static string? ToSnakeCase(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-
-        var result = Regex.Replace(str, "([a-z0-9])([A-Z])", "$1_$2");
-        return result.Replace(' ', '_').Replace('-', '_').ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Converts a string to kebab-case (e.g., "HelloWorld" -> "hello-world").
-    /// </summary>
-    public static string? ToKebabCase(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-
-        var result = Regex.Replace(str, "([a-z0-9])([A-Z])", "$1-$2");
-        return result.Replace(' ', '-').Replace('_', '-').ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Reverses the characters in the string.
-    /// </summary>
-    public static string? Reverse(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-
-        var charArray = str.ToCharArray();
-        Array.Reverse(charArray);
-        return new string(charArray);
-    }
-
-    /// <summary>
-    /// Counts the number of occurrences of a substring within the string.
-    /// </summary>
-    public static int CountOccurrences(this string? str, string substring, StringComparison comparisonType = StringComparison.Ordinal)
-    {
-        if (string.IsNullOrEmpty(str) || string.IsNullOrEmpty(substring))
-            return 0;
-
-        int count = 0;
-        int index = 0;
-
-        while ((index = str.IndexOf(substring, index, comparisonType)) != -1)
+        public int NthIndexOf(char character, int occurrence)
         {
-            count++;
-            index += substring.Length;
+            if (value is null || occurrence <= 0)
+                return -1;
+
+            var count = 0;
+
+            for (var index = 0; index < value.Length; index++)
+            {
+                if (value[index] == character && ++count == occurrence)
+                    return index;
+            }
+
+            return -1;
         }
 
-        return count;
+        public string? RemoveAll(params string[]? values)
+        {
+            if (value is null || values is null || values.Length == 0)
+                return value;
+
+            var result = value;
+
+            foreach (var item in values)
+            {
+                if (!string.IsNullOrEmpty(item))
+                    result = result.Replace(item, string.Empty);
+            }
+
+            return result;
+        }
+
+        public string? RemoveExtraSpaces()
+            => string.IsNullOrEmpty(value)
+                ? value
+                : string.Join(" ", value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        public string? RemovePostFix(params string[]? postFixes)
+            => value.RemovePostFix(StringComparison.Ordinal, postFixes);
+
+        public string? RemovePostFix(StringComparison comparisonType, params string[]? postFixes)
+        {
+            if (string.IsNullOrEmpty(value) || postFixes is null || postFixes.Length == 0)
+                return value;
+
+            foreach (var postFix in postFixes)
+            {
+                if (!string.IsNullOrEmpty(postFix) && value.EndsWith(postFix, comparisonType))
+                    return value[..^postFix.Length];
+            }
+
+            return value;
+        }
+
+        public string? RemovePreFix(params string[]? preFixes)
+            => value.RemovePreFix(StringComparison.Ordinal, preFixes);
+
+        public string? RemovePreFix(StringComparison comparisonType, params string[]? preFixes)
+        {
+            if (string.IsNullOrEmpty(value) || preFixes is null || preFixes.Length == 0)
+                return value;
+
+            foreach (var preFix in preFixes)
+            {
+                if (!string.IsNullOrEmpty(preFix) && value.StartsWith(preFix, comparisonType))
+                    return value[preFix.Length..];
+            }
+
+            return value;
+        }
+
+        public string? ReplaceFirst(
+            string? search,
+            string? replacement,
+            StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(search) || replacement is null)
+                return value;
+
+            var index = value.IndexOf(search, comparisonType);
+
+            return index < 0
+                ? value
+                : string.Concat(value.AsSpan(0, index), replacement, value.AsSpan(index + search.Length));
+        }
+
+        public string ToSha256()
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+        }
+
+        public bool IsBase64String()
+        {
+            if (string.IsNullOrWhiteSpace(value) || value.Length % 4 != 0)
+                return false;
+
+            var buffer = new byte[value.Length / 4 * 3];
+            return Convert.TryFromBase64String(value, buffer, out _);
+        }
+
+        public string? Truncate(int maxLength)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
+
+            return string.IsNullOrEmpty(value) || value.Length <= maxLength
+                ? value
+                : value[..maxLength];
+        }
+
+        public string? TruncateWithEllipsis(int maxLength, string ellipsis = "...")
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
+            ArgumentNullException.ThrowIfNull(ellipsis);
+
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+                return value;
+
+            return maxLength <= ellipsis.Length
+                ? value[..maxLength]
+                : value[..(maxLength - ellipsis.Length)] + ellipsis;
+        }
+
+        public string? ToPascalCase()
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            var words = value.Split([' ', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+            var result = new StringBuilder();
+
+            foreach (var word in words)
+                result.Append(char.ToUpperInvariant(word[0])).Append(word[1..].ToLowerInvariant());
+
+            return result.ToString();
+        }
+
+        public string? ToCamelCase()
+        {
+            var pascal = value.ToPascalCase();
+
+            return string.IsNullOrEmpty(pascal)
+                ? pascal
+                : char.ToLowerInvariant(pascal[0]) + pascal[1..];
+        }
+
+        public string? ToSnakeCase()
+            => ToSeparatedCase(value, '_');
+
+        public string? ToKebabCase()
+            => ToSeparatedCase(value, '-');
+
+        public string? Reverse()
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            var textElements = StringInfo.ParseCombiningCharacters(value);
+            var result = new StringBuilder(value.Length);
+
+            for (var index = textElements.Length - 1; index >= 0; index--)
+            {
+                var start = textElements[index];
+                var length = index == textElements.Length - 1
+                    ? value.Length - start
+                    : textElements[index + 1] - start;
+
+                result.Append(value.AsSpan(start, length));
+            }
+
+            return result.ToString();
+        }
+
+        public int CountOccurrences(
+            string? substring,
+            StringComparison comparisonType = StringComparison.Ordinal)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(substring))
+                return 0;
+
+            var count = 0;
+            var index = 0;
+
+            while ((index = value.IndexOf(substring, index, comparisonType)) >= 0)
+            {
+                count++;
+                index += substring.Length;
+            }
+
+            return count;
+        }
+
+        public bool IsNumeric()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsDigit);
+
+        public bool IsAlphabetic()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsLetter);
+
+        public bool IsAlphanumeric()
+            => !string.IsNullOrEmpty(value) && value.All(char.IsLetterOrDigit);
     }
 
-    /// <summary>
-    /// Determines whether the string contains only digits.
-    /// </summary>
-    public static bool IsNumeric(this string? str)
+    private static string? ToSeparatedCase(string? value, char separator)
     {
-        if (string.IsNullOrEmpty(str))
-            return false;
+        if (string.IsNullOrEmpty(value))
+            return value;
 
-        return str.All(char.IsDigit);
-    }
+        var separated = PascalWordBoundaryRegex.Replace(value, "$1" + separator + "$2");
 
-    /// <summary>
-    /// Determines whether the string contains only letters.
-    /// </summary>
-    public static bool IsAlphabetic(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return false;
+        foreach (var character in new[] { ' ', '_', '-' })
+            separated = separated.Replace(character, separator);
 
-        return str.All(char.IsLetter);
-    }
-
-    /// <summary>
-    /// Determines whether the string contains only letters and digits.
-    /// </summary>
-    public static bool IsAlphanumeric(this string? str)
-    {
-        if (string.IsNullOrEmpty(str))
-            return false;
-
-        return str.All(char.IsLetterOrDigit);
+        return separated.ToLowerInvariant();
     }
 }

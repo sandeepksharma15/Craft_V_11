@@ -21,23 +21,17 @@ public static class ReflectionExtensions
             var names = memberName.Split('.');
             var properties = TypeDescriptor.GetProperties(type);
 
-            for (var index = 0; index < names.Length; index++)
+            for (var index = 0; index < names.Length - 1; index++)
             {
                 var property = properties.Find(names[index], true);
 
                 if (property is null)
                     return null;
 
-                if (index == names.Length - 1)
-                    return property;
-
                 properties = property.GetChildProperties();
-
-                if (properties is null)
-                    return null;
             }
 
-            return null;
+            return properties.Find(names[^1], true);
         }
 
         /// <summary>
@@ -114,7 +108,7 @@ public static class ReflectionExtensions
 
             var visited = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
 
-            return (T)CloneObject(input!, input!.GetType(), visited);
+            return (T)CloneObject(input!, visited);
         }
     }
 
@@ -171,17 +165,12 @@ public static class ReflectionExtensions
             propertyName,
             BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
-    private static object CloneObject(object input, Type type, Dictionary<object, object> visited)
+    private static object CloneObject(object input, Dictionary<object, object> visited)
     {
-        if (input is string || type.IsValueType)
-            return input;
-
         if (visited.TryGetValue(input, out var existing))
             return existing;
 
-        if (type.IsAbstract || type.IsInterface)
-            throw new ArgumentException($"Cannot clone type '{type.FullName}'.", nameof(input));
-
+        var type = input.GetType();
         var clone = Activator.CreateInstance(type, nonPublic: true)
             ?? throw new ArgumentException($"Cannot create an instance of type '{type.FullName}'.", nameof(input));
 
@@ -196,7 +185,7 @@ public static class ReflectionExtensions
 
             if (value is not null && value.GetType().IsClass &&
                 !value.GetType().FullName!.StartsWith("System.", StringComparison.Ordinal))
-                value = CloneObject(value, value.GetType(), visited);
+                value = CloneObject(value, visited);
 
             property.SetValue(clone, value);
         }

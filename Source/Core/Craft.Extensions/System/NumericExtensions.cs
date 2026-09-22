@@ -90,13 +90,13 @@ public static class NumericExtensions
 
     extension(long bytes)
     {
-        public double ToKilobytes()
+        public double ToKibibytes()
             => bytes / 1024d;
 
-        public double ToMegabytes()
+        public double ToMebibytes()
             => bytes / (1024d * 1024d);
 
-        public double ToGigabytes()
+        public double ToGibibytes()
             => bytes / (1024d * 1024d * 1024d);
     }
 }

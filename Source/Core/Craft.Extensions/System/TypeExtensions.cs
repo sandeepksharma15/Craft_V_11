@@ -40,7 +40,9 @@ public static class TypeExtensions
         public bool IsDateTime()
         {
             var underlyingType = type?.GetNonNullableType();
-            return underlyingType is typeof(DateTime) or typeof(DateTimeOffset) or typeof(DateOnly);
+            return underlyingType == typeof(DateTime)
+                || underlyingType == typeof(DateTimeOffset)
+                || underlyingType == typeof(DateOnly);
         }
 
         public bool IsBoolean()

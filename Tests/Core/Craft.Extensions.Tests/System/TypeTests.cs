@@ -178,7 +178,7 @@ public class TypeTests
 
     [Fact]
     public void GetMemberUnderlyingType_UnsupportedMember_ShouldThrow()
-        => Assert.Throws<ArgumentException>(() => typeof(MyTestClass).GetMemberUnderlyingType(typeof(MyTestClass)));
+        => Assert.Throws<ArgumentException>(() => typeof(MyTestClass).GetMethod(nameof(MyTestClass.Method)).GetMemberUnderlyingType());
 
     [Fact]
     public void GetClassesWithAttribute_ShouldReturnMatchingClasses()

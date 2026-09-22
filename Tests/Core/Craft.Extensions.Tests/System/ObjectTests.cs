@@ -15,7 +15,7 @@ public class ObjectTests
     {
         var observed = 0;
 
-        var result = 5.If(true, x => observed = x * 2);
+        var result = 5.If(true, (Action<int>)(x => observed = x * 2));
 
         Assert.Equal(10, observed);
         Assert.Equal(5, result);

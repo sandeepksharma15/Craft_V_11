@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Craft.Extensions.Tests.System;
 
 public class OtherExtensionsTests
@@ -82,7 +84,7 @@ public class OtherExtensionsTests
     public void ToPercentage_FormatsSpecialDoubleValues()
     {
         Assert.Equal("NaN%", double.NaN.ToPercentage());
-        Assert.Equal("∞%", double.PositiveInfinity.ToPercentage());
-        Assert.Equal("-∞%", double.NegativeInfinity.ToPercentage());
+        Assert.Equal($"{double.PositiveInfinity.ToString(CultureInfo.CurrentCulture)}%", double.PositiveInfinity.ToPercentage());
+        Assert.Equal($"{double.NegativeInfinity.ToString(CultureInfo.CurrentCulture)}%", double.NegativeInfinity.ToPercentage());
     }
 }

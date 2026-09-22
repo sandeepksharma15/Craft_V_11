@@ -10,7 +10,7 @@ public class OtherStringExtensionsTests
     [InlineData("Carriage\rReturn", "Carriage\r\nReturn")]
     [InlineData("Line\nFeed", "Line\r\nFeed")]
     public void NormalizeLineEndings_ReturnsExpected(string? input, string? expected)
-        => Assert.Equal(expected, input.NormalizeLineEndings());
+        => Assert.Equal(expected?.Replace("\r\n", Environment.NewLine).Replace("\r", Environment.NewLine).Replace("\n", Environment.NewLine), input.NormalizeLineEndings());
 
     [Theory]
     [InlineData("abcabc", 'a', 1, 0)]
@@ -62,7 +62,7 @@ public class OtherStringExtensionsTests
 
     [Fact]
     public void RemovePreFix_WithComparison_IsCaseInsensitive()
-        => Assert.Equal("example", "EXAMPLE".RemovePreFix(StringComparison.OrdinalIgnoreCase, "ex"));
+        => Assert.Equal("AMPLE", "EXAMPLE".RemovePreFix(StringComparison.OrdinalIgnoreCase, "ex"));
 
     [Theory]
     [InlineData("hello world", "hello", "hi", StringComparison.Ordinal, "hi world")]

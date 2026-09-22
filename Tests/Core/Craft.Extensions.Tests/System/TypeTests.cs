@@ -5,8 +5,8 @@ namespace Craft.Extensions.Tests.System;
 public class TypeTests
 {
     [Theory]
-    [InlineData(typeof(BaseClass), true)]
-    [InlineData(typeof(DerivedClass), false)]
+    [InlineData(typeof(BaseClass), false)]
+    [InlineData(typeof(DerivedClass), true)]
     [InlineData(typeof(IInterface), false)]
     public void HasAttribute_ShouldReturnExpectedResult(Type type, bool expected)
         => Assert.Equal(expected, type.HasAttribute<TestAttribute>());

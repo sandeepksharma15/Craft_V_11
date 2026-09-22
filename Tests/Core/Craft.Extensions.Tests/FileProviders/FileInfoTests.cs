@@ -267,6 +267,23 @@ public class FileInfoTests
         Assert.Equal(1234, fileInfo.GetFileSize());
     }
 
+    private sealed class FakeFileInfo : IFileInfo
+    {
+        public FakeFileInfo(string name, long length = 0)
+        {
+            Name = name;
+            Length = length;
+        }
+
+        public bool Exists => throw new NotImplementedException();
+        public bool IsDirectory { get; }
+        public DateTimeOffset LastModified { get; }
+        public long Length { get; }
+        public string Name { get; }
+        public string PhysicalPath => throw new NotImplementedException();
+        public Stream CreateReadStream() => throw new NotImplementedException();
+    }
+
 }
 
 internal sealed class CultureScope : IDisposable
@@ -286,35 +303,4 @@ internal sealed class CultureScope : IDisposable
         CultureInfo.CurrentCulture = _currentCulture;
         CultureInfo.CurrentUICulture = _currentUICulture;
     }
-}
-
-internal sealed class FakeFileInfo : IFileInfo
-{
-    public FakeFileInfo(string name, long length = 0)
-    {
-        Name = name;
-        Length = length;
-    }
-
-    public bool Exists => throw new NotImplementedException();
-
-    public bool IsDirectory { get; }
-    public DateTimeOffset LastModified { get; }
-    public long Length { get; }
-
-    public string Name { get; }
-    public string PhysicalPath => throw new NotImplementedException();
-
-    public Stream CreateReadStream()
-    {
-        throw new NotImplementedException();
-    }
-    [Fact]
-    public void GetFileSize_ShouldReturnLength()
-    {
-        var fileInfo = new FakeFileInfo("image.jpg", length: 1234);
-
-        Assert.Equal(1234, fileInfo.GetFileSize());
-    }
-
 }

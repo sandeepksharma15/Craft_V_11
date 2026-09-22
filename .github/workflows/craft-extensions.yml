@@ -50,6 +50,7 @@ jobs:
           --configuration Release
           --no-build
           --coverlet
+          --coverlet-include "[Craft.Extensions]*"
           --coverlet-output-format cobertura
 
       - name: Verify 100% line coverage

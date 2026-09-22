@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace System;
@@ -6,45 +6,73 @@ namespace System;
 
 public static class ObjectExtensions
 {
-    /// <summary>
-    /// Casts the object to the specified reference type.
-    /// </summary>
-    public static T AsType<T>(this object obj) where T : class => (T)obj;
-
-    /// <summary>
-    /// Conditionally applies a function to an object and returns the result, or the original object if the condition is false.
-    /// Useful for fluent chaining.
-    /// </summary>
-    public static T If<T>(this T obj, bool condition, Func<T, T> func)
+    extension<T>(T value)
     {
-        return condition && func is not null ? func(obj) : obj;
+        public T If(bool condition, Func<T, T> func)
+        {
+            ArgumentNullException.ThrowIfNull(func);
+            return condition ? func(value) : value;
+        }
+
+        public T If(bool condition, Action<T> action)
+        {
+            ArgumentNullException.ThrowIfNull(action);
+
+            if (condition)
+                action(value);
+
+            return value;
+        }
     }
 
-    /// <summary>
-    /// Conditionally performs an action on an object and returns the original object.
-    /// Useful for fluent chaining.
-    /// </summary>
-    public static T If<T>(this T obj, bool condition, Action<T> action)
+    extension(object? value)
     {
-        if (condition && action is not null)
-            action(obj);
+        public T ToValue<T>() where T : struct
+            => value.TryToValue(out T result) ? result : default;
 
-        return obj;
-    }
+        public bool TryToValue<T>(out T result) where T : struct
+        {
+            result = default;
 
-    /// <summary>
-    /// Converts an object to a value of the specified value type <typeparamref name="T"/>.
-    /// Handles special cases like converting to Guid. Returns the default value if the object is null or conversion fails.
-    /// Uses culture-specific conversion for non-Guid types.
-    /// </summary>
-    public static T ToValue<T>(this object obj) where T : struct
-    {
-        return obj is null
-            ? default
-            : typeof(T) == typeof(Guid)
-                ? Guid.TryParse(obj.ToString(), out var guid) ? (T)(object)guid : default
-                : obj is IConvertible convertible
-                    ? (T)Convert.ChangeType(convertible, typeof(T), CultureInfo.CurrentCulture)
-                    : default;
+            if (value is null)
+                return false;
+
+            if (typeof(T) == typeof(Guid))
+            {
+                if (!Guid.TryParse(value.ToString(), out var guid))
+                    return false;
+
+                result = (T)(object)guid;
+                return true;
+            }
+
+            if (value is not IConvertible convertible)
+                return false;
+
+            try
+            {
+                result = (T)Convert.ChangeType(
+                    convertible,
+                    typeof(T),
+                    CultureInfo.CurrentCulture);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+            catch (InvalidCastException)
+            {
+                return false;
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+        }
     }
 }

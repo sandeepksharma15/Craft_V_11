@@ -1,4 +1,4 @@
-﻿namespace Craft.Extensions.Tests.Generic;
+﻿namespace Craft.Extensions.Tests.Collections;
 
 public class MembershipExtensionsTests
 {

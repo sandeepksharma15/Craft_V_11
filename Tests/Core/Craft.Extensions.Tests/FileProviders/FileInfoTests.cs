@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.FileProviders;
 using Moq;
 
-namespace Craft.Extensions.Tests.FileInfo;
+namespace Craft.Extensions.Tests.FileProviders;
 
 public class FileInfoTests
 {

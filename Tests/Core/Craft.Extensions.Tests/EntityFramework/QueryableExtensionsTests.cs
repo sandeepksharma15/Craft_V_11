@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Extensions.Tests.Linq;
+namespace Craft.Extensions.Tests.EntityFramework;
 
 public class QueryableExtensionsTests
 {

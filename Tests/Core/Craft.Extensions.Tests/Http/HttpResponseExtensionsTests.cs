@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Craft.Extensions.HttpResponse;
+using System.Net.Http;
 
-namespace Craft.Extensions.Tests.HttpResponse;
+namespace Craft.Extensions.Tests.Http;
 
 public class HttpResponseExtensionsTests
 {

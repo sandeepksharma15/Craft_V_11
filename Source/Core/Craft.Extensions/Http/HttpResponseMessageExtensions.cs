@@ -1,6 +1,6 @@
-﻿namespace Craft.Extensions.HttpResponse;
+﻿namespace System.Net.Http;
 
-public static class HttpResponseExtensions
+public static class HttpResponseMessageExtensions
 {
     #region Public Methods
 

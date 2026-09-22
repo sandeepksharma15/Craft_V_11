@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
-namespace System.Linq;
+namespace Microsoft.EntityFrameworkCore;
 #pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class QueryableExtensions

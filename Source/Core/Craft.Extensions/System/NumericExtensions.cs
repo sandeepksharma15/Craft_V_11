@@ -58,7 +58,7 @@ public static class NumericExtensions
             => value == 0;
 
         public string ToFormattedString(int decimalPlaces = 2)
-            => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+            => value.ToString($\"N{decimalPlaces}\", CultureInfo.CurrentCulture);
 
         public string ToCurrency()
             => value.ToString("C", CultureInfo.CurrentCulture);
@@ -69,11 +69,8 @@ public static class NumericExtensions
         public bool IsZero(double tolerance = 1e-10)
             => Math.Abs(value) < tolerance;
 
-        public bool IsFinite()
-            => double.IsFinite(value);
-
         public string ToFormattedString(int decimalPlaces = 2)
-            => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+            => value.ToString($\"N{decimalPlaces}\", CultureInfo.CurrentCulture);
 
         public string ToCurrency()
             => value.ToString("C", CultureInfo.CurrentCulture);
@@ -83,29 +80,12 @@ public static class NumericExtensions
     {
         public bool IsZero(float tolerance = 1e-6f)
             => Math.Abs(value) < tolerance;
-
-        public bool IsFinite()
-            => float.IsFinite(value);
     }
 
-    extension(long bytes)
+    extension<T>(T value) where T : IFloatingPoint<T>
     {
-        public double ToKilobytes()
-            => bytes / 1_000d;
-
-        public double ToKibibytes()
-            => bytes / 1024d;
-
-        public double ToMegabytes()
-            => bytes / 1_000_000d;
-
-        public double ToMebibytes()
-            => bytes / (1024d * 1024d);
-
-        public double ToGigabytes()
-            => bytes / 1_000_000_000d;
-
-        public double ToGibibytes()
-            => bytes / (1024d * 1024d * 1024d);
+        public string ToPercentage()
+            => (value * T.CreateChecked(100))
+                .ToString("0.##", CultureInfo.CurrentCulture) + "%";
     }
 }

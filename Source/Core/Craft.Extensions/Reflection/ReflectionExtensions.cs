@@ -18,20 +18,26 @@ public static class ReflectionExtensions
             ArgumentNullException.ThrowIfNull(type);
             ArgumentException.ThrowIfNullOrWhiteSpace(memberName);
 
-            PropertyDescriptorCollection? properties = TypeDescriptor.GetProperties(type);
+            var names = memberName.Split('.');
+            var properties = TypeDescriptor.GetProperties(type);
 
-            foreach (var name in memberName.Split('.'))
+            for (var index = 0; index < names.Length; index++)
             {
-                var property = properties?.Find(name, true);
+                var property = properties.Find(names[index], true);
 
                 if (property is null)
                     return null;
 
-                if (name != memberName.Split('.').Last())
-                    properties = property.GetChildProperties();
+                if (index == names.Length - 1)
+                    return property;
+
+                properties = property.GetChildProperties();
+
+                if (properties is null)
+                    return null;
             }
 
-            return properties?.Find(memberName.Split('.').Last(), true);
+            return null;
         }
 
         /// <summary>
@@ -55,6 +61,7 @@ public static class ReflectionExtensions
         /// </summary>
         public PropertyInfo GetPropertyInfo(string name)
         {
+            ArgumentNullException.ThrowIfNull(type);
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
             return type.GetProperty(
@@ -187,8 +194,8 @@ public static class ReflectionExtensions
 
             var value = property.GetValue(input);
 
-            if (value is not null && property.PropertyType.IsClass &&
-                !property.PropertyType.FullName!.StartsWith("System.", StringComparison.Ordinal))
+            if (value is not null && value.GetType().IsClass &&
+                !value.GetType().FullName!.StartsWith("System.", StringComparison.Ordinal))
                 value = CloneObject(value, value.GetType(), visited);
 
             property.SetValue(clone, value);

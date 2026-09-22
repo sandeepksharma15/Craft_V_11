@@ -1,260 +1,131 @@
-﻿namespace Craft.Extensions.Tests.System;
+namespace Craft.Extensions.Tests.System;
 
 public class ObjectTests
 {
     [Fact]
-    public void AsType_Should_Return_Correct_Type()
-    {
-        // Arrange
-        object obj = "Hello, World!";
-
-        // Act
-        var result = obj.AsType<string>();
-
-        // Assert
-        Assert.IsType<string>(result);
-        Assert.Equal("Hello, World!", result);
-    }
+    public void If_WithFunc_True_AppliesFunction()
+        => Assert.Equal(10, 5.If(true, x => x * 2));
 
     [Fact]
-    public void AsType_Should_Return_Null_For_Incorrect_Type()
-    {
-        // Arrange
-        object obj = 123;
-
-        // Act & Assert
-        Assert.Throws<InvalidCastException>(() => obj.AsType<string>());
-    }
+    public void If_WithFunc_False_ReturnsOriginalValue()
+        => Assert.Equal(5, 5.If(false, x => x * 2));
 
     [Fact]
-    public void AsType_Should_Return_Null_When_Object_Is_Null()
+    public void If_WithAction_True_PerformsActionAndReturnsOriginalValue()
     {
-        // Arrange
-        object obj = null!;
+        var observed = 0;
 
-        // Act
-        var result = obj.AsType<string>();
+        var result = 5.If(true, x => observed = x * 2);
 
-        // Assert
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void If_Should_Apply_Function_When_Condition_Is_True()
-    {
-        // Arrange
-        const int value = 5;
-        const bool condition = true;
-
-        // Act
-        var result = value.If(condition, x => x * 2);
-
-        // Assert
-        Assert.Equal(10, result);
-    }
-
-    [Fact]
-    public void If_Should_Not_Apply_Function_When_Condition_Is_False()
-    {
-        // Arrange
-        const int value = 5;
-        const bool condition = false;
-
-        // Act
-        var result = value.If(condition, x => x * 2);
-
-        // Assert
+        Assert.Equal(10, observed);
         Assert.Equal(5, result);
     }
 
     [Fact]
-    public void If_Should_Not_Perform_Action_When_Action_Is_Null()
+    public void If_WithAction_False_DoesNotPerformAction()
     {
-        // Arrange
-        const int value = 5;
-        const bool condition = true;
+        var called = false;
 
-        // Act
-        int newValue = value.If(condition, null!);
+        var result = 5.If(false, _ => called = true);
 
-        // Assert
-        Assert.Equal(value, newValue);
+        Assert.False(called);
+        Assert.Equal(5, result);
     }
 
     [Fact]
-    public void If_Should_Not_Perform_Action_When_Condition_Is_False()
+    public void If_WithFunc_NullDelegate_Throws()
+        => Assert.Throws<ArgumentNullException>(
+            () => 5.If(true, (Func<int, int>)null!));
+
+    [Fact]
+    public void If_WithAction_NullDelegate_Throws()
+        => Assert.Throws<ArgumentNullException>(
+            () => 5.If(true, (Action<int>)null!));
+
+    [Fact]
+    public void If_WithFunc_SupportsNullReferenceValue()
     {
-        // Arrange
-        const int value = 5;
-        const bool condition = false;
-        int newValue = 0;
+        string? value = null;
 
-        // Act
-        value.If(condition, x => newValue = x * 2);
-
-        // Assert
-        Assert.Equal(0, newValue);
+        Assert.Equal("default", value.If(true, x => x ?? "default"));
     }
 
     [Fact]
-    public void If_Should_Perform_Action_When_Condition_Is_True()
+    public void If_WithAction_SupportsNullReferenceValue()
     {
-        // Arrange
-        const int value = 5;
-        const bool condition = true;
-        int newValue = 0;
+        string? value = null;
+        var called = false;
 
-        // Act
-        value.If(condition, x => newValue = x * 2);
+        var result = value.If(true, x => called = x is null);
 
-        // Assert
-        Assert.Equal(10, newValue);
-    }
-
-    [Fact]
-    public void If_Should_Return_Same_Value_When_Condition_Is_False_And_No_Action_Provided()
-    {
-        // Arrange
-        const string text = "Hello";
-        const bool condition = false;
-
-        // Act
-        var result = text.If(condition, null!);
-
-        // Assert
-        Assert.Equal(text, result);
-    }
-
-    [Fact]
-    public void If_Should_Return_Same_Value_When_Condition_Is_True_And_No_Function_Provided()
-    {
-        // Arrange
-        const string text = "Hello";
-        const bool condition = true;
-
-        // Act
-        var result = text.If(condition, null!);
-
-        // Assert
-        Assert.Equal(text, result);
-    }
-
-    [Fact]
-    public void If_WithFunc_Should_Handle_Null_Object()
-    {
-        // Arrange
-        string? obj = null;
-
-        // Act
-        var result = obj.If(true, s => s ?? "default");
-
-        // Assert
-        Assert.Equal("default", result);
-    }
-
-    [Fact]
-    public void If_WithAction_Should_Handle_Null_Object()
-    {
-        // Arrange
-        string? obj = null;
-        bool called = false;
-
-        // Act
-        var result = obj.If(true, s => { if (s == null) called = true; });
-
-        // Assert
         Assert.True(called);
         Assert.Null(result);
     }
 
     [Fact]
-    public void ToValue_Should_Convert_Guid_Correctly()
+    public void ToValue_ConvertsGuid()
     {
-        // Arrange
-        object obj = "6F9619FF-8B86-D011-B42D-00C04FC964FF";
+        var input = "6F9619FF-8B86-D011-B42D-00C04FC964FF";
 
-        // Act
-        var result = obj.ToValue<Guid>();
-
-        // Assert
-        Assert.Equal(Guid.Parse("6F9619FF-8B86-D011-B42D-00C04FC964FF"), result);
+        Assert.Equal(Guid.Parse(input), input.ToValue<Guid>());
     }
 
     [Fact]
-    public void ToValue_Should_Convert_To_Correct_Type()
+    public void ToValue_ConvertsValue()
+        => Assert.Equal(123, "123".ToValue<int>());
+
+    [Fact]
+    public void ToValue_ConvertsBoxedValue()
+        => Assert.Equal(42, ((object)42).ToValue<int>());
+
+    [Fact]
+    public void ToValue_ReturnsDefaultForNull()
     {
-        // Arrange
-        object obj = "123";
+        object? input = null;
 
-        // Act
-        var result = obj.ToValue<int>();
+        Assert.Equal(default, input.ToValue<int>());
+    }
 
-        // Assert
+    [Fact]
+    public void ToValue_ReturnsDefaultForInvalidConversion()
+        => Assert.Equal(default, "InvalidNumber".ToValue<int>());
+
+    [Fact]
+    public void ToValue_ReturnsDefaultForInvalidGuid()
+        => Assert.Equal(default, "not-a-guid".ToValue<Guid>());
+
+    [Fact]
+    public void ToValue_ReturnsDefaultForNonConvertibleValue()
+        => Assert.Equal(default, new object().ToValue<int>());
+
+    [Fact]
+    public void TryToValue_ReportsSuccessfulConversion()
+    {
+        Assert.True("123".TryToValue<int>(out var result));
         Assert.Equal(123, result);
     }
 
     [Fact]
-    public void ToValue_Should_Throw_Exception_For_Invalid_Conversion()
+    public void TryToValue_ReportsFailureWithoutThrowing()
     {
-        // Arrange
-        object obj = "InvalidNumber";
-
-        // Act
-        var action = new Action(() => obj.ToValue<int>());
-
-        // Act & Assert
-        Assert.Throws<FormatException>(() => obj.ToValue<int>());
-    }
-
-    [Fact]
-    public void ToValue_Should_Return_Default_For_Null()
-    {
-        // Arrange
-        object obj = null!;
-
-        // Act
-        var result = obj.ToValue<int>();
-
-        // Assert
+        Assert.False("InvalidNumber".TryToValue<int>(out var result));
         Assert.Equal(default, result);
     }
 
     [Fact]
-    public void ToValue_Should_Return_Default_For_Failed_Guid_Parse()
+    public void TryToValue_ReportsNullAsFailure()
     {
-        // Arrange
-        object obj = "not-a-guid";
+        object? input = null;
 
-        // Act
-        var result = obj.ToValue<Guid>();
-
-        // Assert
+        Assert.False(input.TryToValue<int>(out var result));
         Assert.Equal(default, result);
     }
 
     [Fact]
-    public void ToValue_Should_Return_Default_For_NonConvertible_Type()
-    {
-        // Arrange
-        object obj = new ObjectTests();
-
-        // Act
-        var result = obj.ToValue<int>();
-
-        // Assert
-        Assert.Equal(default, result);
-    }
+    public void TryToValue_ReportsInvalidGuidAsFailure()
+        => Assert.False("not-a-guid".TryToValue<Guid>(out _));
 
     [Fact]
-    public void ToValue_Should_Convert_Boxed_Value_Type()
-    {
-        // Arrange
-        object obj = 42;
-
-        // Act
-        var result = obj.ToValue<int>();
-
-        // Assert
-        Assert.Equal(42, result);
-    }
+    public void TryToValue_ReportsNonConvertibleValueAsFailure()
+        => Assert.False(new object().TryToValue<int>(out _));
 }

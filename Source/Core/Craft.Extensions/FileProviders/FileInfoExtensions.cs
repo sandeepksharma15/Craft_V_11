@@ -32,7 +32,7 @@ public static class FileInfoExtensions
         {
             int index = file.Name.LastIndexOf('.');
 
-            return index < 0 ? string.Empty : file.Name[index..].ToLower();
+            return index < 0 ? string.Empty : file.Name[index..].ToLowerInvariant();
         }
 
         /// <summary>

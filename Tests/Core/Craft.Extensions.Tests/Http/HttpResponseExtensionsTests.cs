@@ -120,4 +120,19 @@ public class HttpResponseExtensionsTests
         var item = Assert.Single(result);
         Assert.Equal("{ not valid json }", item);
     }
+
+    [Fact]
+    public async Task TryReadErrors_RethrowsCancellation()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("{ invalid json }", Encoding.UTF8, "application/json")
+        };
+
+        using var cancellationSource = new CancellationTokenSource();
+        cancellationSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => response.TryReadErrors(cancellationSource.Token));
+    }
 }

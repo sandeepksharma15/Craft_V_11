@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.FileProviders;
 using Moq;
+using System.Globalization;
 
 namespace Craft.Extensions.Tests.FileProviders;
 
@@ -120,6 +121,17 @@ public class FileInfoTests
 
         // Assert
         Assert.Equal(".pdf", result);
+    }
+
+    [Fact]
+    public void Extension_ShouldUseInvariantCasing()
+    {
+        using (new CultureScope("tr-TR"))
+        {
+            var fileInfo = new FakeFileInfo("file.I");
+
+            Assert.Equal(".i", fileInfo.Extension());
+        }
     }
 
     [Fact]
@@ -244,6 +256,25 @@ public class FileInfoTests
         Assert.Equal(".webp", webp.Extension());
         Assert.Equal(ImageExtension.Unknown, webp.GetImageExtension());
         Assert.Equal("application/octet-stream", webp.ContentType());
+    }
+}
+
+public sealed class CultureScope : IDisposable
+{
+    private readonly CultureInfo _currentCulture = CultureInfo.CurrentCulture;
+    private readonly CultureInfo _currentUICulture = CultureInfo.CurrentUICulture;
+
+    public CultureScope(string cultureName)
+    {
+        var culture = CultureInfo.GetCultureInfo(cultureName);
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+    }
+
+    public void Dispose()
+    {
+        CultureInfo.CurrentCulture = _currentCulture;
+        CultureInfo.CurrentUICulture = _currentUICulture;
     }
 }
 

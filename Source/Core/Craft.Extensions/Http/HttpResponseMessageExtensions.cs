@@ -26,6 +26,10 @@ public static class HttpResponseMessageExtensions
 
             return errors ?? [$"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}"];
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch
         {
             var text = await response

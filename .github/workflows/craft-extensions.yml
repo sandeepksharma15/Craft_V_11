@@ -50,6 +50,32 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
           --collect:"XPlat Code Coverage"
 
+      - name: Verify 100% line coverage
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import glob
+          import sys
+          import xml.etree.ElementTree as ET
+
+          reports = glob.glob("Tests/Core/Craft.Extensions.Tests/TestResults/**/coverage.cobertura.xml", recursive=True)
+          if not reports:
+              print("No Cobertura coverage report was produced.")
+              sys.exit(1)
+
+          report = reports[0]
+          root = ET.parse(report).getroot()
+          line_rate = float(root.attrib.get("line-rate", "0"))
+          lines_valid = int(root.attrib.get("lines-valid", "0"))
+          lines_covered = int(root.attrib.get("lines-covered", "0"))
+
+          print(f"Coverage: {lines_covered}/{lines_valid} lines ({line_rate:.2%})")
+
+          if lines_valid == 0 or line_rate < 1.0:
+              print("Required line coverage is 100%.")
+              sys.exit(1)
+          PY
+
       - name: Upload test and coverage results
         if: always()
         uses: actions/upload-artifact@v7

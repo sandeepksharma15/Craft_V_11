@@ -1,75 +1,43 @@
-﻿namespace Craft.Extensions.Tests.System;
+namespace Craft.Extensions.Tests.System;
 
 public class OtherExtensionsTests
 {
     [Theory]
-    [InlineData(null, null)] // Null input should return null
-    [InlineData(new byte[0], "")] // Empty byte array should return an empty string
-    [InlineData(new byte[] { 0x01, 0xAB, 0xFF }, "01ABFF")] // Typical byte values
-    [InlineData(new byte[] { 0x00, 0x0F, 0xFF }, "000FFF")] // Byte values with leading zeros
-    public void BytesToHex_ReturnsExpectedResult(byte[]? inputBytes, string? expectedResult)
-    {
-        // Act
-        var result = inputBytes!.BytesToHex();
-
-        // Assert
-        Assert.Equal(expectedResult, result);
-    }
-
-    [Theory]
-    [InlineData("InvalidHex")]
-    [InlineData("12345")]
-    [InlineData("ABCDEF012G")]
-    public void HexToBytes_InvalidInput_ThrowsFormatException(string input)
-    {
-        // Act & Assert
-        Assert.Throws<FormatException>(() => input.HexToBytes());
-    }
+    [InlineData(null, null)]
+    [InlineData(new byte[0], "")]
+    [InlineData(new byte[] { 0x01, 0xAB, 0xFF }, "01ABFF")]
+    [InlineData(new byte[] { 0x00, 0x0F, 0xFF }, "000FFF")]
+    public void BytesToHex_ReturnsExpectedResult(byte[]? input, string? expected)
+        => Assert.Equal(expected, input.BytesToHex());
 
     [Theory]
     [InlineData("48656C6C6F", new byte[] { 72, 101, 108, 108, 111 })]
     [InlineData("010203", new byte[] { 1, 2, 3 })]
-    [InlineData("", new byte[0])]
-    [InlineData(null, new byte[0])]
-    public void HexToBytes_ValidInput_ReturnsExpectedByteArray(string? input, byte[] expected)
-    {
-        // Act
-        var result = input?.HexToBytes() ?? [];
+    [InlineData("abcdef", new byte[] { 0xAB, 0xCD, 0xEF })]
+    [InlineData("  01ABFF  ", new byte[] { 0x01, 0xAB, 0xFF })]
+    public void HexToBytes_ReturnsExpectedResult(string input, byte[] expected)
+        => Assert.Equal(expected, input.HexToBytes());
 
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void HexToBytes_EmptyOrWhitespace_ReturnsEmptyArray(string? input)
+        => Assert.Empty(input.HexToBytes());
 
-    [Fact]
-    public void HexToBytes_WhitespaceOnly_ReturnsEmptyArray()
-    {
-        // Act
-        var result = "   ".HexToBytes();
-
-        // Assert
-        Assert.Empty(result);
-    }
+    [Theory]
+    [InlineData("12345")]
+    [InlineData("InvalidHex")]
+    [InlineData("ABCDEF012G")]
+    public void HexToBytes_InvalidInput_ThrowsFormatException(string input)
+        => Assert.Throws<FormatException>(() => input.HexToBytes());
 
     [Fact]
-    public void HexToBytes_ParsesUpperAndLowerCase()
+    public void HexToBytes_InvalidInput_PreservesInnerException()
     {
-        // Act
-        var upper = "aBcDeF".HexToBytes();
-        var lower = "abcdef".HexToBytes();
+        var exception = Assert.Throws<FormatException>(() => "GG".HexToBytes());
 
-        // Assert
-        Assert.Equal(new byte[] { 0xAB, 0xCD, 0xEF }, upper);
-        Assert.Equal(new byte[] { 0xAB, 0xCD, 0xEF }, lower);
-    }
-
-    [Fact]
-    public void HexToBytes_TrimsWhitespace()
-    {
-        // Act
-        var result = "  01ABFF  ".HexToBytes();
-
-        // Assert
-        Assert.Equal(new byte[] { 0x01, 0xAB, 0xFF }, result);
+        Assert.NotNull(exception.InnerException);
     }
 
     [Theory]
@@ -81,32 +49,22 @@ public class OtherExtensionsTests
     [InlineData(0.005, "0.5%")]
     [InlineData(123.456, "12345.6%")]
     [InlineData(-123.456, "-12345.6%")]
-    public void ToPercentage_ShouldConvertDecimalToPercentage(decimal input, string expected)
-    {
-        // Act
-        var result = input.ToPercentage();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [InlineData(0.9999, "99.99%")]
+    [InlineData(0.995, "99.5%")]
+    public void ToPercentage_Decimal_ReturnsExpected(decimal input, string expected)
+        => Assert.Equal(expected, input.ToPercentage());
 
     [Theory]
-    [InlineData(0, "0%")]
-    [InlineData(0.1234, "12.34%")]
-    [InlineData(-0.1234, "-12.34%")]
-    [InlineData(1, "100%")]
-    [InlineData(-1, "-100%")]
-    [InlineData(0.005, "0.5%")]
-    [InlineData(123.456, "12345.6%")]
-    [InlineData(-123.456, "-12345.6%")]
-    public void ToPercentage_ShouldConvertDoubleToPercentage(double input, string expected)
-    {
-        // Act
-        var result = input.ToPercentage();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
+    [InlineData(0d, "0%")]
+    [InlineData(0.1234d, "12.34%")]
+    [InlineData(-0.1234d, "-12.34%")]
+    [InlineData(1d, "100%")]
+    [InlineData(-1d, "-100%")]
+    [InlineData(0.005d, "0.5%")]
+    [InlineData(123.456d, "12345.6%")]
+    [InlineData(-123.456d, "-12345.6%")]
+    public void ToPercentage_Double_ReturnsExpected(double input, string expected)
+        => Assert.Equal(expected, input.ToPercentage());
 
     [Theory]
     [InlineData(0f, "0%")]
@@ -117,24 +75,14 @@ public class OtherExtensionsTests
     [InlineData(0.005f, "0.5%")]
     [InlineData(123.456f, "12345.6%")]
     [InlineData(-123.456f, "-12345.6%")]
-    public void ToPercentage_ShouldConvertFloatToPercentage(float input, string expected)
+    public void ToPercentage_Float_ReturnsExpected(float input, string expected)
+        => Assert.Equal(expected, input.ToPercentage());
+
+    [Fact]
+    public void ToPercentage_FormatsSpecialDoubleValues()
     {
-        // Act
-        var result = input.ToPercentage();
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(0.9999, "99.99%")]
-    [InlineData(0.995, "99.5%")]
-    public void ToPercentage_RoundingEdgeCases(decimal input, string expected)
-    {
-        // Act
-        var result = input.ToPercentage();
-
-        // Assert
-        Assert.Equal(expected, result);
+        Assert.Equal("NaN%", double.NaN.ToPercentage());
+        Assert.Equal("∞%", double.PositiveInfinity.ToPercentage());
+        Assert.Equal("-∞%", double.NegativeInfinity.ToPercentage());
     }
 }

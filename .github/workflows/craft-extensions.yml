@@ -52,6 +52,9 @@ jobs:
           --coverlet
           --coverlet-output-format cobertura
 
+      - name: Locate coverage report
+        run: find . -type f \( -name 'coverage*.xml' -o -name 'coverage*.json' \) -print
+
       - name: Verify 100% line coverage
         shell: bash
         run: |

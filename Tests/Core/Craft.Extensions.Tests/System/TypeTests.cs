@@ -171,7 +171,10 @@ public class TypeTests
 
     [Fact]
     public void GetMemberUnderlyingType_Null_ShouldReturnNull()
-        => Assert.Null(typeof(MyTestClass).GetMethod(nameof(MyTestClass.Method)).GetMemberUnderlyingType(null));
+    {
+        MemberInfo? member = null;
+        Assert.Null(member.GetMemberUnderlyingType());
+    }
 
     [Fact]
     public void GetMemberUnderlyingType_UnsupportedMember_ShouldThrow()

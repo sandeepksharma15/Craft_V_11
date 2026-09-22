@@ -112,7 +112,7 @@ public class DateTimeExtensionsTests
 
         var result = value.EndOfWeek();
 
-        Assert.Equal(new DateTime(2023, 6, 19, DateTimeKind.Utc).AddTicks(-1), result);
+        Assert.Equal(new DateTime(2023, 6, 19, 0, 0, 0, DateTimeKind.Utc).AddTicks(-1), result);
     }
 
     [Theory]

@@ -18,8 +18,8 @@ public static class NumericExtensions
         public bool IsNegative()
             => value < T.Zero;
 
-        public bool IsZero()
-            => value == T.Zero;
+        public bool IsFinite()
+            => T.IsFinite(value);
 
         public bool IsEven()
             => T.IsEvenInteger(value);
@@ -28,26 +28,11 @@ public static class NumericExtensions
             => T.IsOddInteger(value);
     }
 
-    extension(double value)
-    {
-        public bool IsZero(double tolerance)
-            => Math.Abs(value) < tolerance;
-
-        public bool IsFinite()
-            => double.IsFinite(value);
-    }
-
-    extension(float value)
-    {
-        public bool IsZero(float tolerance)
-            => Math.Abs(value) < tolerance;
-
-        public bool IsFinite()
-            => float.IsFinite(value);
-    }
-
     extension(int value)
     {
+        public bool IsZero()
+            => value == 0;
+
         public string ToFormattedString()
             => value.ToString("N0", CultureInfo.CurrentCulture);
 
@@ -57,6 +42,9 @@ public static class NumericExtensions
 
     extension(long value)
     {
+        public bool IsZero()
+            => value == 0;
+
         public string ToFormattedString()
             => value.ToString("N0", CultureInfo.CurrentCulture);
 
@@ -66,6 +54,9 @@ public static class NumericExtensions
 
     extension(decimal value)
     {
+        public bool IsZero()
+            => value == 0;
+
         public string ToFormattedString(int decimalPlaces = 2)
             => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
 
@@ -75,11 +66,26 @@ public static class NumericExtensions
 
     extension(double value)
     {
+        public bool IsZero(double tolerance = 1e-10)
+            => Math.Abs(value) < tolerance;
+
+        public bool IsFinite()
+            => double.IsFinite(value);
+
         public string ToFormattedString(int decimalPlaces = 2)
             => value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
 
         public string ToCurrency()
             => value.ToString("C", CultureInfo.CurrentCulture);
+    }
+
+    extension(float value)
+    {
+        public bool IsZero(float tolerance = 1e-6f)
+            => Math.Abs(value) < tolerance;
+
+        public bool IsFinite()
+            => float.IsFinite(value);
     }
 
     extension(long bytes)

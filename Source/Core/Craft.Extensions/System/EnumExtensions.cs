@@ -13,7 +13,9 @@ public static class EnumExtensions
             var name = value.ToString();
             var member = typeof(T).GetMember(name).FirstOrDefault();
 
-            return member?.GetCustomAttributes<DescriptionAttribute>().FirstOrDefault()?.Description
+            return member?.GetCustomAttributes(typeof(DescriptionAttribute), false)
+                    .OfType<DescriptionAttribute>()
+                    .FirstOrDefault()?.Description
                 ?? name;
         }
 
@@ -75,8 +77,7 @@ public static class EnumExtensions
             var numericValue = Convert.ToUInt64(value);
 
             return Enum.GetValues<T>()
-                .Where(flag => flag is not null &&
-                               !EqualityComparer<T>.Default.Equals(flag, default) &&
+                .Where(flag => !EqualityComparer<T>.Default.Equals(flag, default) &&
                                (numericValue & Convert.ToUInt64(flag)) == Convert.ToUInt64(flag));
         }
 

@@ -4,6 +4,27 @@ namespace Craft.Extensions.Tests.System;
 
 public class NumericExtensionsTests
 {
+    #region Public Methods
+
+    [Fact]
+    public void ByteConversions_SupportNegativeValues()
+    {
+        Assert.Equal(-1.0, (-1000L).ToKilobytes());
+        Assert.Equal(-1.0, (-1_000_000L).ToMegabytes());
+        Assert.Equal(-1.0, (-1_000_000_000L).ToGigabytes());
+        Assert.Equal(-1.0, (-1024L).ToKibibytes());
+        Assert.Equal(-1.0, (-1048576L).ToMebibytes());
+        Assert.Equal(-1.0, (-1073741824L).ToGibibytes());
+    }
+
+    [Theory]
+    [InlineData(5.5, 0, 10, true)]
+    [InlineData(-0.1, 0, 10, false)]
+    [InlineData(10.1, 0, 10, false)]
+    public void IsBetween_Double_ReturnsExpected(
+        double value, double min, double max, bool expected)
+        => Assert.Equal(expected, value.IsBetween(min, max));
+
     [Theory]
     [InlineData(5, 0, 10, true)]
     [InlineData(0, 0, 10, true)]
@@ -16,33 +37,58 @@ public class NumericExtensionsTests
         => Assert.Equal(expected, value.IsBetween(min, max));
 
     [Theory]
-    [InlineData(5.5, 0, 10, true)]
-    [InlineData(-0.1, 0, 10, false)]
-    [InlineData(10.1, 0, 10, false)]
-    public void IsBetween_Double_ReturnsExpected(
-        double value, double min, double max, bool expected)
-        => Assert.Equal(expected, value.IsBetween(min, max));
+    [InlineData(2.0, true, false)]
+    [InlineData(3.0, false, true)]
+    [InlineData(2.5, false, false)]
+    public void IsEvenAndOdd_Double_UseIntegerSemantics(
+        double value, bool even, bool odd)
+    {
+        Assert.Equal(even, value.IsEven());
+        Assert.Equal(odd, value.IsOdd());
+    }
 
     [Theory]
+    [InlineData(0, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(3, false, true)]
+    [InlineData(-2, true, false)]
+    [InlineData(-3, false, true)]
+    public void IsEvenAndOdd_Int_ReturnExpected(int value, bool even, bool odd)
+    {
+        Assert.Equal(even, value.IsEven());
+        Assert.Equal(odd, value.IsOdd());
+    }
+
+    [Theory]
+    [InlineData(0d, true)]
+    [InlineData(1.5d, true)]
+    [InlineData(double.NaN, false)]
+    [InlineData(double.PositiveInfinity, false)]
+    [InlineData(double.NegativeInfinity, false)]
+    public void IsFinite_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsFinite());
+
+    [Theory]
+    [InlineData(0f, true)]
+    [InlineData(1.5f, true)]
+    [InlineData(float.NaN, false)]
+    [InlineData(float.PositiveInfinity, false)]
+    [InlineData(float.NegativeInfinity, false)]
+    public void IsFinite_Float_ReturnsExpected(float value, bool expected)
+        => Assert.Equal(expected, value.IsFinite());
+
+    [Theory]
+    [InlineData(0, true)]
     [InlineData(5, true)]
-    [InlineData(0, false)]
-    [InlineData(-5, false)]
-    public void IsPositive_Int_ReturnsExpected(int value, bool expected)
-        => Assert.Equal(expected, value.IsPositive());
+    public void IsFinite_Int_ReturnsTrue(int value, bool result)
+        => Assert.Equal(result, value.IsFinite());
 
     [Theory]
-    [InlineData(5L, true)]
-    [InlineData(0L, false)]
-    [InlineData(-5L, false)]
-    public void IsPositive_Long_ReturnsExpected(long value, bool expected)
-        => Assert.Equal(expected, value.IsPositive());
-
-    [Theory]
-    [InlineData(5.5, true)]
+    [InlineData(-5.5, true)]
     [InlineData(0, false)]
-    [InlineData(-5.5, false)]
-    public void IsPositive_Double_ReturnsExpected(double value, bool expected)
-        => Assert.Equal(expected, value.IsPositive());
+    [InlineData(5.5, false)]
+    public void IsNegative_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsNegative());
 
     [Theory]
     [InlineData(-5, true)]
@@ -59,25 +105,25 @@ public class NumericExtensionsTests
         => Assert.Equal(expected, value.IsNegative());
 
     [Theory]
-    [InlineData(-5.5, true)]
+    [InlineData(5.5, true)]
     [InlineData(0, false)]
-    [InlineData(5.5, false)]
-    public void IsNegative_Double_ReturnsExpected(double value, bool expected)
-        => Assert.Equal(expected, value.IsNegative());
+    [InlineData(-5.5, false)]
+    public void IsPositive_Double_ReturnsExpected(double value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
     [Theory]
-    [InlineData(0, true)]
-    [InlineData(5, false)]
+    [InlineData(5, true)]
+    [InlineData(0, false)]
     [InlineData(-5, false)]
-    public void IsZero_Int_ReturnsExpected(int value, bool expected)
-        => Assert.Equal(expected, value.IsZero());
+    public void IsPositive_Int_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
     [Theory]
-    [InlineData(0L, true)]
-    [InlineData(5L, false)]
+    [InlineData(5L, true)]
+    [InlineData(0L, false)]
     [InlineData(-5L, false)]
-    public void IsZero_Long_ReturnsExpected(long value, bool expected)
-        => Assert.Equal(expected, value.IsZero());
+    public void IsPositive_Long_ReturnsExpected(long value, bool expected)
+        => Assert.Equal(expected, value.IsPositive());
 
     [Theory]
     [InlineData(0, true)]
@@ -119,51 +165,78 @@ public class NumericExtensionsTests
     }
 
     [Theory]
-    [InlineData(0, true, false)]
-    [InlineData(2, true, false)]
-    [InlineData(3, false, true)]
-    [InlineData(-2, true, false)]
-    [InlineData(-3, false, true)]
-    public void IsEvenAndOdd_Int_ReturnExpected(int value, bool even, bool odd)
-    {
-        Assert.Equal(even, value.IsEven());
-        Assert.Equal(odd, value.IsOdd());
-    }
-
-    [Theory]
-    [InlineData(2.0, true, false)]
-    [InlineData(3.0, false, true)]
-    [InlineData(2.5, false, false)]
-    public void IsEvenAndOdd_Double_UseIntegerSemantics(
-        double value, bool even, bool odd)
-    {
-        Assert.Equal(even, value.IsEven());
-        Assert.Equal(odd, value.IsOdd());
-    }
-
-    [Theory]
     [InlineData(0, true)]
-    [InlineData(5, true)]
-    public void IsFinite_Int_ReturnsTrue(int value)
-        => Assert.True(value.IsFinite());
+    [InlineData(5, false)]
+    [InlineData(-5, false)]
+    public void IsZero_Int_ReturnsExpected(int value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
 
     [Theory]
-    [InlineData(0d, true)]
-    [InlineData(1.5d, true)]
-    [InlineData(double.NaN, false)]
-    [InlineData(double.PositiveInfinity, false)]
-    [InlineData(double.NegativeInfinity, false)]
-    public void IsFinite_Double_ReturnsExpected(double value, bool expected)
-        => Assert.Equal(expected, value.IsFinite());
+    [InlineData(0L, true)]
+    [InlineData(5L, false)]
+    [InlineData(-5L, false)]
+    public void IsZero_Long_ReturnsExpected(long value, bool expected)
+        => Assert.Equal(expected, value.IsZero());
+
+    [Fact]
+    public void ToCurrency_UsesCurrentCulture()
+    {
+        decimal decimalValue = 1234.56m;
+        double doubleValue = 1234.56d;
+        const int intValue = 1234;
+        const long longValue = 1234L;
+
+        Assert.Equal(decimalValue.ToString("C", CultureInfo.CurrentCulture), decimalValue.ToCurrency());
+        Assert.Equal(doubleValue.ToString("C", CultureInfo.CurrentCulture), doubleValue.ToCurrency());
+        Assert.Equal(intValue.ToString("C", CultureInfo.CurrentCulture), intValue.ToCurrency());
+        Assert.Equal(longValue.ToString("C", CultureInfo.CurrentCulture), longValue.ToCurrency());
+    }
 
     [Theory]
-    [InlineData(0f, true)]
-    [InlineData(1.5f, true)]
-    [InlineData(float.NaN, false)]
-    [InlineData(float.PositiveInfinity, false)]
-    [InlineData(float.NegativeInfinity, false)]
-    public void IsFinite_Float_ReturnsExpected(float value, bool expected)
-        => Assert.Equal(expected, value.IsFinite());
+    [InlineData(1234.5)]
+    [InlineData(-12.5)]
+    public void ToFormattedString_Decimal_UsesDefaultPrecision(double value)
+    {
+        var decimalValue = (decimal)value;
+        var expected = decimalValue.ToString("N2", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, decimalValue.ToFormattedString());
+    }
+
+    [Theory]
+    [InlineData(1234.5, 2)]
+    [InlineData(1234.5678, 3)]
+    [InlineData(-12.5, 0)]
+    public void ToFormattedString_Decimal_UsesRequestedPrecision(
+        double value, int decimalPlaces)
+    {
+        var decimalValue = (decimal)value;
+        var expected = decimalValue.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, decimalValue.ToFormattedString(decimalPlaces));
+    }
+
+    [Theory]
+    [InlineData(1234.5)]
+    [InlineData(-12.5)]
+    public void ToFormattedString_Double_UsesDefaultPrecision(double value)
+    {
+        var expected = value.ToString("N2", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString());
+    }
+
+    [Theory]
+    [InlineData(1234.5, 2)]
+    [InlineData(1234.5678, 3)]
+    [InlineData(-12.5, 0)]
+    public void ToFormattedString_Double_UsesRequestedPrecision(
+        double value, int decimalPlaces)
+    {
+        var expected = value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
+
+        Assert.Equal(expected, value.ToFormattedString(decimalPlaces));
+    }
 
     [Theory]
     [InlineData(1000)]
@@ -187,80 +260,12 @@ public class NumericExtensionsTests
     }
 
     [Theory]
-    [InlineData(1234.5, 2)]
-    [InlineData(1234.5678, 3)]
-    [InlineData(-12.5, 0)]
-    public void ToFormattedString_Decimal_UsesRequestedPrecision(
-        double value, int decimalPlaces)
-    {
-        var decimalValue = (decimal)value;
-        var expected = decimalValue.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
-
-        Assert.Equal(expected, decimalValue.ToFormattedString(decimalPlaces));
-    }
-
-    [Theory]
-    [InlineData(1234.5, 2)]
-    [InlineData(1234.5678, 3)]
-    [InlineData(-12.5, 0)]
-    public void ToFormattedString_Double_UsesRequestedPrecision(
-        double value, int decimalPlaces)
-    {
-        var expected = value.ToString($"N{decimalPlaces}", CultureInfo.CurrentCulture);
-
-        Assert.Equal(expected, value.ToFormattedString(decimalPlaces));
-    }
-
-    [Theory]
-    [InlineData(1234.5)]
-    [InlineData(-12.5)]
-    public void ToFormattedString_Decimal_UsesDefaultPrecision(double value)
-    {
-        var decimalValue = (decimal)value;
-        var expected = decimalValue.ToString("N2", CultureInfo.CurrentCulture);
-
-        Assert.Equal(expected, decimalValue.ToFormattedString());
-    }
-
-    [Theory]
-    [InlineData(1234.5)]
-    [InlineData(-12.5)]
-    public void ToFormattedString_Double_UsesDefaultPrecision(double value)
-    {
-        var expected = value.ToString("N2", CultureInfo.CurrentCulture);
-
-        Assert.Equal(expected, value.ToFormattedString());
-    }
-
-    [Fact]
-    public void ToCurrency_UsesCurrentCulture()
-    {
-        decimal decimalValue = 1234.56m;
-        double doubleValue = 1234.56d;
-        const int intValue = 1234;
-        const long longValue = 1234L;
-
-        Assert.Equal(decimalValue.ToString("C", CultureInfo.CurrentCulture), decimalValue.ToCurrency());
-        Assert.Equal(doubleValue.ToString("C", CultureInfo.CurrentCulture), doubleValue.ToCurrency());
-        Assert.Equal(intValue.ToString("C", CultureInfo.CurrentCulture), intValue.ToCurrency());
-        Assert.Equal(longValue.ToString("C", CultureInfo.CurrentCulture), longValue.ToCurrency());
-    }
-
-    [Theory]
-    [InlineData(1000, 1.0)]
-    [InlineData(2000, 2.0)]
-    [InlineData(500, 0.5)]
+    [InlineData(1073741824, 1.0)]
+    [InlineData(2147483648, 2.0)]
+    [InlineData(536870912, 0.5)]
     [InlineData(0, 0.0)]
-    public void ToKilobytes_ConvertsUsingDecimalUnits(long bytes, double expected)
-        => Assert.Equal(expected, bytes.ToKilobytes());
-
-    [Theory]
-    [InlineData(1000000, 1.0)]
-    [InlineData(2000000, 2.0)]
-    [InlineData(500000, 0.5)]
-    [InlineData(0, 0.0)]
-    public void ToMegabytes_ConvertsUsingDecimalUnits(long bytes, double expected)
-        => Assert.Equal(expected, bytes.ToMegabytes());
+    public void ToGibibytes_ConvertsUsingBinaryUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToGibibytes());
 
     [Theory]
     [InlineData(1000000000, 1.0)]
@@ -279,6 +284,14 @@ public class NumericExtensionsTests
         => Assert.Equal(expected, bytes.ToKibibytes());
 
     [Theory]
+    [InlineData(1000, 1.0)]
+    [InlineData(2000, 2.0)]
+    [InlineData(500, 0.5)]
+    [InlineData(0, 0.0)]
+    public void ToKilobytes_ConvertsUsingDecimalUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToKilobytes());
+
+    [Theory]
     [InlineData(1048576, 1.0)]
     [InlineData(2097152, 2.0)]
     [InlineData(524288, 0.5)]
@@ -287,21 +300,12 @@ public class NumericExtensionsTests
         => Assert.Equal(expected, bytes.ToMebibytes());
 
     [Theory]
-    [InlineData(1073741824, 1.0)]
-    [InlineData(2147483648, 2.0)]
-    [InlineData(536870912, 0.5)]
+    [InlineData(1000000, 1.0)]
+    [InlineData(2000000, 2.0)]
+    [InlineData(500000, 0.5)]
     [InlineData(0, 0.0)]
-    public void ToGibibytes_ConvertsUsingBinaryUnits(long bytes, double expected)
-        => Assert.Equal(expected, bytes.ToGibibytes());
+    public void ToMegabytes_ConvertsUsingDecimalUnits(long bytes, double expected)
+        => Assert.Equal(expected, bytes.ToMegabytes());
 
-    [Fact]
-    public void ByteConversions_SupportNegativeValues()
-    {
-        Assert.Equal(-1.0, (-1000L).ToKilobytes());
-        Assert.Equal(-1.0, (-1_000_000L).ToMegabytes());
-        Assert.Equal(-1.0, (-1_000_000_000L).ToGigabytes());
-        Assert.Equal(-1.0, (-1024L).ToKibibytes());
-        Assert.Equal(-1.0, (-1048576L).ToMebibytes());
-        Assert.Equal(-1.0, (-1073741824L).ToGibibytes());
-    }
+    #endregion Public Methods
 }

@@ -331,6 +331,8 @@ public class ReflectionExtensionsTests
     {
         public int BaseProp { get; set; }
         private int PrivateBaseProp { get; set; }
+
+        public void SetPrivateBaseProp(int value) => PrivateBaseProp = value;
     }
 
     private class Derived : Base
@@ -339,7 +341,7 @@ public class ReflectionExtensionsTests
 
         public Derived()
         {
-            PrivateBaseProp = 7;
+            SetPrivateBaseProp(7);
         }
     }
 }

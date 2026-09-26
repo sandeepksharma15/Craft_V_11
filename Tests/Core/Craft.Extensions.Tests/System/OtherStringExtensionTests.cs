@@ -10,7 +10,7 @@ public class OtherStringExtensionsTests
     [InlineData("Carriage\rReturn", "Carriage\r\nReturn")]
     [InlineData("Line\nFeed", "Line\r\nFeed")]
     public void NormalizeLineEndings_ReturnsExpected(string? input, string? expected)
-        => Assert.Equal(expected?.Replace("\r\n", Environment.NewLine).Replace("\r", Environment.NewLine).Replace("\n", Environment.NewLine), input.NormalizeLineEndings());
+        => Assert.Equal(expected?.ReplaceLineEndings(), input.NormalizeLineEndings());
 
     [Theory]
     [InlineData("abcabc", 'a', 1, 0)]

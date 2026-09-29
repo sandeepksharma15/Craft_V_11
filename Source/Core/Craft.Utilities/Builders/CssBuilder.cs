@@ -1,8 +1,7 @@
 ﻿/// <summary>
-/// A builder for constructing CSS class strings.
-/// This class allows for fluent construction of CSS class names,
-/// supporting conditional addition of classes.
-/// </summary>  
+/// A builder for constructing CSS class strings. This class allows for fluent construction of CSS
+/// class names, supporting conditional addition of classes.
+/// </summary>
 /// The original code is from https://github.com/EdCharbeneau/BlazorComponentUtilities
 
 using System.Text;
@@ -11,7 +10,13 @@ namespace Craft.Utilities.Builders;
 
 public readonly struct CssBuilder(string value)
 {
+    #region Private Fields
+
     private readonly StringBuilder stringBuffer = new(value);
+
+    #endregion Private Fields
+
+    #region Public Methods
 
     public static CssBuilder Default(string value) => new(value);
 
@@ -49,19 +54,24 @@ public readonly struct CssBuilder(string value)
     }
 
     public readonly string Build()
-        => stringBuffer != null
-            ? stringBuffer.ToString().Trim()
-            : string.Empty;
+        => stringBuffer != null ? stringBuffer.ToString().Trim() : string.Empty;
 
     public override readonly string ToString()
         => Build();
 
+    #endregion Public Methods
 }
 
 public static class CssBuilderExtensions
 {
-    public static string? NullIfEmpty(this CssBuilder cssBuilder)
-        => string.IsNullOrWhiteSpace(cssBuilder.Build())
-            ? null
-            : cssBuilder.Build();
+    extension(CssBuilder cssBuilder)
+    {
+        /// <summary>
+        /// Returns null if the built CSS string is empty or whitespace; otherwise, returns the
+        /// built CSS string.
+        /// </summary>
+        /// <returns> </returns>
+        public string? NullIfEmpty()
+            => string.IsNullOrWhiteSpace(cssBuilder.Build()) ? null : cssBuilder.Build();
+    }
 }

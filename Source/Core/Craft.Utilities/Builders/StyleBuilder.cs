@@ -1,195 +1,99 @@
-﻿/// <summary>
-/// A builder for constructing CSS style strings.
-/// This class allows for fluent construction of CSS style strings,
-/// supporting conditional addition of styles.
-/// </summary>  
-/// The original code is from https://github.com/EdCharbeneau/BlazorComponentUtilities
-
 namespace Craft.Utilities.Builders;
 
+// Adapted from https://github.com/EdCharbeneau/BlazorComponentUtilities
+/// <summary>Builds inline CSS declarations. Adding a style mutates this value and returns it for chaining.</summary>
 public struct StyleBuilder
 {
-    private string stringBuffer;
+    private string? _stringBuffer;
 
-    /// <summary>
-    /// Creates a StyleBuilder used to define conditional in-line style used in a component. Call Build() to return the completed style as a string.
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value"></param>
-    public static StyleBuilder Default(string prop, string value)
-        => new(prop, value);
+    public static StyleBuilder Default(string prop, string value) => new(prop, value);
 
-    /// <summary>
-    /// Creates a StyleBuilder used to define conditional in-line style used in a component. Call Build() to return the completed style as a string.
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value"></param>
-    public static StyleBuilder Default(string style)
-        => Empty().AddStyle(style);
+    public static StyleBuilder Default(string? style) => Empty().AddStyle(style);
 
-    /// <summary>
-    /// Creates a StyleBuilder used to define conditional in-line style used in a component. Call Build() to return the completed style as a string.
-    /// </summary>
-    public static StyleBuilder Empty()
-        => new();
+    public static StyleBuilder Empty() => new();
 
-    /// <summary>
-    /// Creates a StyleBuilder used to define conditional in-line style used in a component. Call Build() to return the completed style as a string.
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value"></param>
     public StyleBuilder(string prop, string value)
-        => stringBuffer = $"{prop}:{value};";
+        => _stringBuffer = $"{prop}:{value};";
 
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon.
-    /// </summary>
-    /// <param name="style"></param>
-    public StyleBuilder AddStyle(string style)
-        => !string.IsNullOrWhiteSpace(style)
-            ? AddRaw($"{style};")
-            : this;
+    /// <summary>Appends a style fragment followed by a semicolon, preserving any existing semicolons.</summary>
+    public StyleBuilder AddStyle(string? style)
+        => !string.IsNullOrWhiteSpace(style) ? AddRaw($"{style};") : this;
 
-    /// <summary>
-    /// Adds a raw string to the builder that will be concatenated with the next style or value added to the builder.
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value"></param>
-    /// <returns>StyleBuilder</returns>
     private StyleBuilder AddRaw(string style)
     {
-        stringBuffer += style;
+        _stringBuffer += style;
         return this;
     }
 
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value">Style to add</param>
-    /// <returns>StyleBuilder</returns>
     public StyleBuilder AddStyle(string prop, string value)
         => AddRaw($"{prop}:{value};");
 
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value">Style to conditionally add.</param>
-    /// <param name="when">Condition in which the style is added.</param>
-    /// <returns>StyleBuilder</returns>
     public StyleBuilder AddStyle(string prop, string value, bool when = true)
-        => when
-            ? AddStyle(prop, value)
-            : this;
+        => when ? AddStyle(prop, value) : this;
 
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value">Style to conditionally add.</param>
-    /// <param name="when">Condition in which the style is added.</param>
-    /// <returns></returns>
     public StyleBuilder AddStyle(string prop, Func<string> value, bool when = true)
-        => when
-            ? AddStyle(prop, value())
-            : this;
-
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value">Style to conditionally add.</param>
-    /// <param name="when">Condition in which the style is added.</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyle(string prop, string value, Func<bool> when = null!)
-        => AddStyle(prop, value, when());
-
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="value">Style to conditionally add.</param>
-    /// <param name="when">Condition in which the style is added.</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyle(string prop, Func<string> value, Func<bool> when = null!)
-        => AddStyle(prop, value(), when());
-
-    /// <summary>
-    /// Adds a conditional nested StyleBuilder to the builder with separator and closing semicolon.
-    /// </summary>
-    /// <param name="builder">Style Builder to conditionally add.</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyle(StyleBuilder builder)
-        => AddRaw(builder.Build());
-
-    /// <summary>
-    /// Adds a conditional nested StyleBuilder to the builder with separator and closing semicolon.
-    /// </summary>
-    /// <param name="builder">Style Builder to conditionally add.</param>
-    /// <param name="when">Condition in which the style is added.</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyle(StyleBuilder builder, bool when = true)
-        => when
-            ? AddRaw(builder.Build())
-            : this;
-
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// </summary>
-    /// <param name="builder">Style Builder to conditionally add.</param>
-    /// <param name="when">Condition in which the styles are added.</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyle(StyleBuilder builder, Func<bool> when = null!)
-        => AddStyle(builder, when());
-
-    /// <summary>
-    /// Adds a conditional in-line style to the builder with space separator and closing semicolon..
-    /// A ValueBuilder action defines a complex set of values for the property.
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="builder"></param>
-    /// <param name="when"></param>
-    public StyleBuilder AddStyle(string prop, Action<ValueBuilder> builder, bool when = true)
     {
-        ValueBuilder values = new();
+        if (!when)
+            return this;
 
-        builder(values);
-
-        return AddStyle(prop, values.ToString(), when && values.HasValue);
+        ArgumentNullException.ThrowIfNull(value);
+        return AddStyle(prop, value());
     }
 
-    /// <summary>
-    /// Adds a conditional in-line style when it exists in a dictionary to the builder with separator.
-    /// Null safe operation.
-    /// </summary>
-    /// <param name="additionalAttributes">Additional Attribute splat parameters</param>
-    /// <returns>StyleBuilder</returns>
-    public StyleBuilder AddStyleFromAttributes(IReadOnlyDictionary<string, object> additionalAttributes) =>
-        additionalAttributes == null
-            ? this
-            : additionalAttributes.TryGetValue("style", out var c)
-                ? AddRaw(c?.ToString() ?? string.Empty)
-                : this;
+    /// <summary>Adds a declaration only when the predicate returns true. A null predicate skips it.</summary>
+    public StyleBuilder AddStyle(string prop, string value, Func<bool>? when = null)
+        => AddStyle(prop, value, when?.Invoke() == true);
 
+    public StyleBuilder AddStyle(string prop, Func<string> value, Func<bool>? when = null)
+        => AddStyle(prop, value, when?.Invoke() == true);
 
-    /// <summary>
-    /// Finalize the completed Style as a string.
-    /// </summary>
-    /// <returns>string</returns>
-    public readonly string Build()
-        => stringBuffer != null
-            ? stringBuffer.Trim()
-            : string.Empty;
+    public StyleBuilder AddStyle(StyleBuilder builder) => AddRaw(builder.Build());
 
-    public override readonly string ToString()
-        => Build();
+    public StyleBuilder AddStyle(StyleBuilder builder, bool when = true)
+        => when ? AddStyle(builder) : this;
+
+    public StyleBuilder AddStyle(StyleBuilder builder, Func<bool>? when = null)
+        => AddStyle(builder, when?.Invoke() == true);
+
+    /// <summary>Invokes the value builder only when enabled, and omits declarations with no values.</summary>
+    public StyleBuilder AddStyle(string prop, Action<ValueBuilder> builder, bool when = true)
+    {
+        if (!when)
+            return this;
+
+        ArgumentNullException.ThrowIfNull(builder);
+        ValueBuilder values = new();
+        builder(values);
+        return AddStyle(prop, values.ToString(), values.HasValue);
+    }
+
+    /// <summary>Appends the style attribute, ensuring a separator before subsequent declarations.</summary>
+    public StyleBuilder AddStyleFromAttributes(IReadOnlyDictionary<string, object>? additionalAttributes)
+    {
+        if (additionalAttributes is null || !additionalAttributes.TryGetValue("style", out object? value))
+            return this;
+
+        string? style = value?.ToString();
+        if (string.IsNullOrWhiteSpace(style))
+            return this;
+
+        style = style.Trim();
+        return AddRaw(style.EndsWith(';') ? style : $"{style};");
+    }
+
+    public readonly string Build() => _stringBuffer?.Trim() ?? string.Empty;
+
+    public override readonly string ToString() => Build();
 }
 
 public static class StyleBuilderExtensions
 {
-    public static string? NullIfEmpty(this StyleBuilder styleBuilder)
-        => string.IsNullOrWhiteSpace(styleBuilder.Build())
-            ? null
-            : styleBuilder.Build();
+    extension(StyleBuilder styleBuilder)
+    {
+        public string? NullIfEmpty()
+        {
+            string value = styleBuilder.Build();
+            return value.Length == 0 ? null : value;
+        }
+    }
 }

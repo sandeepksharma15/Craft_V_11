@@ -293,8 +293,13 @@ public class TypeTests
     private interface INonGenericInterface;
 
     [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
+    [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "IDE0044:Mark members as static", Justification = "<Pending>")]
     private class MyTestClass
     {
+#pragma warning disable CS0169 // The field 'TypeTests.MyTestClass._myField' is never used
+        private int _myField;
+#pragma warning restore CS0169
+
         public string? MyProperty { get; set; }
 
         public event EventHandler? MyEvent;

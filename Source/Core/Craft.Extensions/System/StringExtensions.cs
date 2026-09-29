@@ -75,10 +75,7 @@ public static class StringExtensions
     extension(string? value)
     {
         public string? NormalizeLineEndings()
-            => value?
-                .Replace("\r\n", "\n")
-                .Replace("\r", "\n")
-                .Replace("\n", Environment.NewLine);
+            => value?.ReplaceLineEndings();
 
         public int NthIndexOf(char character, int occurrence)
         {

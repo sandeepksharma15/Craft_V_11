@@ -19,7 +19,7 @@
 
 <!-- Non-obvious technical decisions made during development. Include brief rationale. -->
 - 2026-09-08: Collection-related extensions are split by target type (`ICollection<T>`, `IEnumerable<T>`, membership-on-item) and queryable extensions live in the LINQ area to keep files cohesive and discoverable.
-- 2026-09-29: Share dependency-free test models in `Tests/Support/Craft.Testing`; keep feature-specific fixtures with their tests, and add dependency-specific support projects when cross-project reuse warrants them.
+- 2026-09-29: Keep reusable test models and EF Core fixtures in `Tests/Support/Craft.Testing`; keep fixtures requiring a Craft library with that library's test project.
 
 ## Patterns & Conventions
 

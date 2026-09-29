@@ -5,6 +5,89 @@ namespace Craft.Utilities.Tests.Builders;
 public class CssBuilderTests
 {
     [Fact]
+    public void DefaultBuilder_CanAddValueAndClasses()
+    {
+        CssBuilder builder = default;
+
+        Assert.Equal("first second", builder.AddValue("first").AddClass("second").Build());
+        Assert.Equal(string.Empty, builder.Build());
+    }
+
+    [Fact]
+    public void AddingClass_DoesNotChangeOriginalOrOtherCopies()
+    {
+        var original = new CssBuilder("base");
+        var copy = original;
+
+        var withClass = copy.AddClass("extra");
+
+        Assert.Equal("base", original.Build());
+        Assert.Equal("base", copy.Build());
+        Assert.Equal("base extra", withClass.Build());
+    }
+
+    [Fact]
+    public void AddValue_PreservesRawSpacingWithoutChangingOriginal()
+    {
+        var original = new CssBuilder("a");
+
+        Assert.Equal("ab", original.AddValue("b").Build());
+        Assert.Equal("a", original.Build());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void AddClass_IgnoresEmptyValues(string? value)
+    {
+        var builder = new CssBuilder("base");
+
+        Assert.Equal("base", builder.AddClass(value!).Build());
+    }
+
+    [Fact]
+    public void AddClass_TrimsEdgesAndSeparatesClasses()
+    {
+        var result = new CssBuilder("  first  ").AddClass("  second third  ").AddClass(" fourth ").Build();
+
+        Assert.Equal("first second third fourth", result);
+    }
+
+    [Fact]
+    public void ConditionalFactories_AreNotEvaluatedWhenFalse()
+    {
+        static string ThrowIfCalled() => throw new InvalidOperationException();
+
+        var result = new CssBuilder("base")
+            .AddClass(ThrowIfCalled, false)
+            .AddClass(ThrowIfCalled, () => false)
+            .AddClass(new CssBuilder("extra"), false)
+            .Build();
+
+        Assert.Equal("base", result);
+    }
+
+    [Fact]
+    public void AddClassFromAttributes_IgnoresMissingOrNullClass()
+    {
+        var builder = new CssBuilder("base");
+        IReadOnlyDictionary<string, object> missing = new Dictionary<string, object> { ["id"] = "x" };
+        IReadOnlyDictionary<string, object> nullClass = new Dictionary<string, object> { ["class"] = null! };
+
+        Assert.Equal("base", builder.AddClassFromAttributes(missing).Build());
+        Assert.Equal("base", builder.AddClassFromAttributes(nullClass).Build());
+    }
+
+    [Fact]
+    public void NullIfEmpty_ReturnsNullForWhitespaceAndValueForClasses()
+    {
+        Assert.Null(default(CssBuilder).NullIfEmpty());
+        Assert.Null(new CssBuilder(" \t ").NullIfEmpty());
+        Assert.Equal("a b", new CssBuilder(" a b ").NullIfEmpty());
+    }
+
+    [Fact]
     public void ShouldConstructWithDefaultValue()
     {
         // Arrange

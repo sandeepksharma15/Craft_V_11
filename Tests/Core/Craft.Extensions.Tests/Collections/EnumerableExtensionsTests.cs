@@ -1,3 +1,5 @@
+using Craft.Testing.Models;
+
 namespace Craft.Extensions.Tests.Collections;
 
 public class EnumerableExtensionsTests
@@ -131,13 +133,5 @@ public class EnumerableExtensionsTests
 
         // Act & Assert
         _ = Assert.Throws<ArgumentException>(() => items.GetListDataForSelect("Id", "Name"));
-    }
-
-    private sealed class TestItem
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-
-        public override string ToString() => $"TestItem:{Id}:{Name}";
     }
 }

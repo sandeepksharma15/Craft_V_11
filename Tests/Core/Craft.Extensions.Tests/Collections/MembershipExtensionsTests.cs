@@ -1,27 +1,9 @@
-﻿namespace Craft.Extensions.Tests.Collections;
+using Craft.Testing.Models;
+
+namespace Craft.Extensions.Tests.Collections;
 
 public class MembershipExtensionsTests
 {
-    #region Private Classes
-
-    private sealed class TestItem
-    {
-        #region Public Properties
-
-        public int Id { get; set; }
-        public string? Name { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
-        public override string ToString() => $"TestItem:{Id}:{Name}";
-
-        #endregion Public Methods
-    }
-
-    #endregion Private Classes
-
     #region Public Methods
 
     [Fact]

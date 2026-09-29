@@ -4,8 +4,6 @@
 /// </summary>
 /// The original code is from https://github.com/EdCharbeneau/BlazorComponentUtilities
 
-using System.Text;
-
 namespace Craft.Utilities.Builders;
 
 // Adapted from https://github.com/EdCharbeneau/BlazorComponentUtilities
@@ -14,7 +12,13 @@ namespace Craft.Utilities.Builders;
 /// </summary>
 public readonly struct CssBuilder(string? value)
 {
+    #region Private Fields
+
     private readonly string? _value = value;
+
+    #endregion Private Fields
+
+    #region Public Methods
 
     public static CssBuilder Default(string? value) => new(value);
 
@@ -57,13 +61,18 @@ public readonly struct CssBuilder(string? value)
     public string Build() => _value?.Trim() ?? string.Empty;
 
     public override string ToString() => Build();
+
+    #endregion Public Methods
 }
 
 public static class CssBuilderExtensions
 {
-    public static string? NullIfEmpty(this CssBuilder cssBuilder)
+    extension(CssBuilder cssBuilder)
     {
-        var value = cssBuilder.Build();
-        return value.Length == 0 ? null : value;
+        public string? NullIfEmpty()
+        {
+            var value = cssBuilder.Build();
+            return value.Length == 0 ? null : value;
+        }
     }
 }

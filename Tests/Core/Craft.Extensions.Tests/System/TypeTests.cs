@@ -4,187 +4,30 @@ namespace Craft.Extensions.Tests.System;
 
 public class TypeTests
 {
+    #region Private Enums
+
     private enum SimpleEnum
     {
         None,
         Value
     }
 
-    [Theory]
-    [InlineData(typeof(BaseClass), false)]
-    [InlineData(typeof(DerivedClass), true)]
-    [InlineData(typeof(IInterface), false)]
-    public void HasAttribute_ShouldReturnExpectedResult(Type type, bool expected)
-        => Assert.Equal(expected, type.HasAttribute<TestAttribute>());
+    #endregion Private Enums
 
-    [Fact]
-    public void HasAttribute_NullType_ShouldReturnFalse()
+    #region Private Classes
+
+    private sealed class ThrowingAssembly(ReflectionTypeLoadException exception) : Assembly
     {
-        Type? type = null;
-        Assert.False(type.HasAttribute<TestAttribute>());
+        #region Public Methods
+
+        public override Type[] GetTypes() => throw exception;
+
+        #endregion Public Methods
     }
 
-    [Theory]
-    [InlineData(typeof(int), typeof(int))]
-    [InlineData(typeof(int?), typeof(int))]
-    [InlineData(typeof(string), typeof(string))]
-    [InlineData(typeof(double?), typeof(double))]
-    [InlineData(null, null)]
-    public void GetNonNullableType_ShouldReturnExpectedType(Type? type, Type? expected)
-        => Assert.Equal(expected, type.GetNonNullableType());
+    #endregion Private Classes
 
-    [Theory]
-    [InlineData(typeof(int), false)]
-    [InlineData(typeof(int?), true)]
-    [InlineData(typeof(string), false)]
-    [InlineData(null, false)]
-    public void IsNullable_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsNullable());
-
-    [Theory]
-    [InlineData(typeof(byte), true)]
-    [InlineData(typeof(int), true)]
-    [InlineData(typeof(decimal), true)]
-    [InlineData(typeof(double?), true)]
-    [InlineData(typeof(string), false)]
-    [InlineData(typeof(bool), false)]
-    [InlineData(typeof(DateTime), false)]
-    [InlineData(null, false)]
-    public void IsNumeric_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsNumeric());
-
-    [Theory]
-    [InlineData(typeof(byte), true)]
-    [InlineData(typeof(int), true)]
-    [InlineData(typeof(ulong?), true)]
-    [InlineData(typeof(float), false)]
-    [InlineData(typeof(decimal?), false)]
-    [InlineData(typeof(string), false)]
-    [InlineData(null, false)]
-    public void IsIntegral_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsIntegral());
-
-    [Theory]
-    [InlineData(typeof(float), true)]
-    [InlineData(typeof(double?), true)]
-    [InlineData(typeof(decimal), true)]
-    [InlineData(typeof(int), false)]
-    [InlineData(typeof(int?), false)]
-    [InlineData(typeof(string), false)]
-    [InlineData(null, false)]
-    public void IsFloating_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsFloating());
-
-    [Theory]
-    [InlineData(typeof(DateTime), true)]
-    [InlineData(typeof(DateTimeOffset), true)]
-    [InlineData(typeof(DateOnly), true)]
-    [InlineData(typeof(DateTime?), true)]
-    [InlineData(typeof(int), false)]
-    [InlineData(null, false)]
-    public void IsDateTime_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsDateTime());
-
-    [Theory]
-    [InlineData(typeof(bool), true)]
-    [InlineData(typeof(bool?), true)]
-    [InlineData(typeof(int), false)]
-    [InlineData(null, false)]
-    public void IsBoolean_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsBoolean());
-
-    [Theory]
-    [InlineData(typeof(SimpleEnum), true)]
-    [InlineData(typeof(SimpleEnum?), true)]
-    [InlineData(typeof(int), false)]
-    [InlineData(null, false)]
-    public void IsEnumType_ShouldReturnExpectedResult(Type? type, bool expected)
-        => Assert.Equal(expected, type.IsEnumType());
-
-    [Theory]
-    [InlineData(typeof(BaseClass), typeof(DerivedClass), true)]
-    [InlineData(typeof(BaseClass), typeof(BaseClass), true)]
-    [InlineData(typeof(DerivedClass), typeof(BaseClass), false)]
-    [InlineData(typeof(IInterface), typeof(DerivedClass), true)]
-    public void IsDerivedFromClass_ShouldReturnExpectedResult(Type baseType, Type derivedType, bool expected)
-        => Assert.Equal(expected, derivedType.IsDerivedFromClass(baseType));
-
-    [Fact]
-    public void IsDerivedFromClass_NullArgument_ShouldThrow()
-    {
-        Type? derived = null;
-        Assert.Throws<ArgumentNullException>(() => derived.IsDerivedFromClass(typeof(BaseClass)));
-    }
-
-    [Theory]
-    [InlineData(typeof(DerivedClass), typeof(IInterface), true)]
-    [InlineData(typeof(DerivedClass), typeof(INonGenericInterface), false)]
-    [InlineData(typeof(DerivedClass), typeof(BaseClass), false)]
-    [InlineData(null, typeof(IInterface), false)]
-    [InlineData(typeof(DerivedClass), null, false)]
-    public void HasImplementedInterface_ShouldReturnExpectedResult(Type? type, Type? interfaceType, bool expected)
-        => Assert.Equal(expected, type.HasImplementedInterface(interfaceType));
-
-    [Theory]
-    [InlineData(typeof(BaseClass), typeof(DerivedClass), true)]
-    [InlineData(typeof(DerivedClass), typeof(BaseClass), true)]
-    [InlineData(typeof(BaseClass), typeof(BaseClass), true)]
-    [InlineData(typeof(string), typeof(int), false)]
-    public void IsCompatibleWith_ShouldReturnExpectedResult(Type type, Type otherType, bool expected)
-        => Assert.Equal(expected, type.IsCompatibleWith(otherType));
-
-    [Theory]
-    [InlineData(typeof(BaseClass), typeof(DerivedClass), false)]
-    [InlineData(typeof(string), typeof(int), true)]
-    public void IsNotCompatibleWith_ShouldReturnExpectedResult(Type type, Type otherType, bool expected)
-        => Assert.Equal(expected, type.IsNotCompatibleWith(otherType));
-
-    [Theory]
-    [InlineData(typeof(BaseClass), "TypeTests+BaseClass")]
-    [InlineData(typeof(DerivedClass), "TypeTests+DerivedClass")]
-    [InlineData(typeof(int), "Int32")]
-    [InlineData(typeof(string), "String")]
-    public void GetClassName_ShouldReturnExpectedResult(Type type, string expected)
-        => Assert.Equal(expected, type.GetClassName());
-
-    [Fact]
-    public void GetClassName_NullType_ShouldReturnNull()
-    {
-        Type? type = null;
-        Assert.Null(type.GetClassName());
-    }
-
-    [Fact]
-    public void GetMemberUnderlyingType_ShouldReturnFieldType()
-    {
-        var member = typeof(MyTestClass).GetField("_myField", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.Equal(typeof(int), member.GetMemberUnderlyingType());
-    }
-
-    [Fact]
-    public void GetMemberUnderlyingType_ShouldReturnPropertyType()
-    {
-        var member = typeof(MyTestClass).GetProperty(nameof(MyTestClass.MyProperty));
-        Assert.Equal(typeof(string), member.GetMemberUnderlyingType());
-    }
-
-    [Fact]
-    public void GetMemberUnderlyingType_ShouldReturnEventType()
-    {
-        var member = typeof(MyTestClass).GetEvent(nameof(MyTestClass.MyEvent));
-        Assert.Equal(typeof(EventHandler), member.GetMemberUnderlyingType());
-    }
-
-    [Fact]
-    public void GetMemberUnderlyingType_Null_ShouldReturnNull()
-    {
-        MemberInfo? member = null;
-        Assert.Null(member.GetMemberUnderlyingType());
-    }
-
-    [Fact]
-    public void GetMemberUnderlyingType_UnsupportedMember_ShouldThrow()
-        => Assert.Throws<ArgumentException>(() => typeof(MyTestClass).GetMethod(nameof(MyTestClass.Method)).GetMemberUnderlyingType());
+    #region Public Methods
 
     [Fact]
     public void GetClassesWithAttribute_ShouldReturnMatchingClasses()
@@ -208,6 +51,21 @@ public class TypeTests
     }
 
     [Fact]
+    public void GetClassName_NullType_ShouldReturnNull()
+    {
+        Type? type = null;
+        Assert.Null(type.GetClassName());
+    }
+
+    [Theory]
+    [InlineData(typeof(BaseClass), "TypeTests+BaseClass")]
+    [InlineData(typeof(DerivedClass), "TypeTests+DerivedClass")]
+    [InlineData(typeof(int), "Int32")]
+    [InlineData(typeof(string), "String")]
+    public void GetClassName_ShouldReturnExpectedResult(Type type, string expected)
+        => Assert.Equal(expected, type.GetClassName());
+
+    [Fact]
     public void GetInheritedClasses_ShouldReturnConcreteDerivedClasses()
     {
         var result = typeof(BaseClass).GetInheritedClasses();
@@ -219,6 +77,187 @@ public class TypeTests
     }
 
     [Fact]
+    public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
+    {
+        var method = typeof(global::System.TypeExtensions).GetMethod("GetLoadableTypes",
+            BindingFlags.NonPublic | BindingFlags.Static,
+            binder: null,
+            types: [typeof(IEnumerable<Assembly>)],
+            modifiers: null);
+
+        Assert.NotNull(method);
+
+        var exception = new ReflectionTypeLoadException([typeof(BaseClass), null],
+            [new TypeLoadException()]);
+
+        var assembly = new ThrowingAssembly(exception);
+        var result = (IEnumerable<Type>)method!.Invoke(null, [new Assembly[] { assembly }])!;
+
+        Assert.Contains(typeof(BaseClass), result);
+    }
+
+    [Fact]
+    public void GetMemberUnderlyingType_Null_ShouldReturnNull()
+    {
+        MemberInfo? member = null;
+        Assert.Null(member.GetMemberUnderlyingType());
+    }
+
+    [Fact]
+    public void GetMemberUnderlyingType_ShouldReturnEventType()
+    {
+        var member = typeof(MyTestClass).GetEvent(nameof(MyTestClass.MyEvent));
+        Assert.Equal(typeof(EventHandler), member.GetMemberUnderlyingType());
+    }
+
+    [Fact]
+    public void GetMemberUnderlyingType_ShouldReturnFieldType()
+    {
+        var member = typeof(MyTestClass).GetField("_myField", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.Equal(typeof(int), member.GetMemberUnderlyingType());
+    }
+
+    [Fact]
+    public void GetMemberUnderlyingType_ShouldReturnPropertyType()
+    {
+        var member = typeof(MyTestClass).GetProperty(nameof(MyTestClass.MyProperty));
+        Assert.Equal(typeof(string), member.GetMemberUnderlyingType());
+    }
+
+    [Fact]
+    public void GetMemberUnderlyingType_UnsupportedMember_ShouldThrow()
+        => Assert.Throws<ArgumentException>(() => typeof(MyTestClass).GetMethod(nameof(MyTestClass.Method)).GetMemberUnderlyingType());
+
+    [Theory]
+    [InlineData(typeof(int), typeof(int))]
+    [InlineData(typeof(int?), typeof(int))]
+    [InlineData(typeof(string), typeof(string))]
+    [InlineData(typeof(double?), typeof(double))]
+    [InlineData(null, null)]
+    public void GetNonNullableType_ShouldReturnExpectedType(Type? type, Type? expected)
+        => Assert.Equal(expected, type.GetNonNullableType());
+
+    [Fact]
+    public void HasAttribute_NullType_ShouldReturnFalse()
+    {
+        Type? type = null;
+        Assert.False(type.HasAttribute<TestAttribute>());
+    }
+
+    [Theory]
+    [InlineData(typeof(BaseClass), false)]
+    [InlineData(typeof(DerivedClass), true)]
+    [InlineData(typeof(IInterface), false)]
+    public void HasAttribute_ShouldReturnExpectedResult(Type type, bool expected)
+        => Assert.Equal(expected, type.HasAttribute<TestAttribute>());
+
+    [Theory]
+    [InlineData(typeof(DerivedClass), typeof(IInterface), true)]
+    [InlineData(typeof(DerivedClass), typeof(INonGenericInterface), false)]
+    [InlineData(typeof(DerivedClass), typeof(BaseClass), false)]
+    [InlineData(null, typeof(IInterface), false)]
+    [InlineData(typeof(DerivedClass), null, false)]
+    public void HasImplementedInterface_ShouldReturnExpectedResult(Type? type, Type? interfaceType, bool expected)
+        => Assert.Equal(expected, type.HasImplementedInterface(interfaceType));
+
+    [Theory]
+    [InlineData(typeof(bool), true)]
+    [InlineData(typeof(bool?), true)]
+    [InlineData(typeof(int), false)]
+    [InlineData(null, false)]
+    public void IsBoolean_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsBoolean());
+
+    [Theory]
+    [InlineData(typeof(BaseClass), typeof(DerivedClass), true)]
+    [InlineData(typeof(DerivedClass), typeof(BaseClass), true)]
+    [InlineData(typeof(BaseClass), typeof(BaseClass), true)]
+    [InlineData(typeof(string), typeof(int), false)]
+    public void IsCompatibleWith_ShouldReturnExpectedResult(Type type, Type otherType, bool expected)
+        => Assert.Equal(expected, type.IsCompatibleWith(otherType));
+
+    [Theory]
+    [InlineData(typeof(DateTime), true)]
+    [InlineData(typeof(DateTimeOffset), true)]
+    [InlineData(typeof(DateOnly), true)]
+    [InlineData(typeof(DateTime?), true)]
+    [InlineData(typeof(int), false)]
+    [InlineData(null, false)]
+    public void IsDateTime_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsDateTime());
+
+    [Fact]
+    public void IsDerivedFromClass_NullArgument_ShouldThrow()
+    {
+        Type? derived = null;
+        Assert.Throws<ArgumentNullException>(() => derived.IsDerivedFromClass(typeof(BaseClass)));
+    }
+
+    [Theory]
+    [InlineData(typeof(BaseClass), typeof(DerivedClass), true)]
+    [InlineData(typeof(BaseClass), typeof(BaseClass), true)]
+    [InlineData(typeof(DerivedClass), typeof(BaseClass), false)]
+    [InlineData(typeof(IInterface), typeof(DerivedClass), true)]
+    public void IsDerivedFromClass_ShouldReturnExpectedResult(Type baseType, Type derivedType, bool expected)
+        => Assert.Equal(expected, derivedType.IsDerivedFromClass(baseType));
+
+    [Theory]
+    [InlineData(typeof(SimpleEnum), true)]
+    [InlineData(typeof(SimpleEnum?), true)]
+    [InlineData(typeof(int), false)]
+    [InlineData(null, false)]
+    public void IsEnumType_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsEnumType());
+
+    [Theory]
+    [InlineData(typeof(float), true)]
+    [InlineData(typeof(double?), true)]
+    [InlineData(typeof(decimal), true)]
+    [InlineData(typeof(int), false)]
+    [InlineData(typeof(int?), false)]
+    [InlineData(typeof(string), false)]
+    [InlineData(null, false)]
+    public void IsFloating_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsFloating());
+
+    [Theory]
+    [InlineData(typeof(byte), true)]
+    [InlineData(typeof(int), true)]
+    [InlineData(typeof(ulong?), true)]
+    [InlineData(typeof(float), false)]
+    [InlineData(typeof(decimal?), false)]
+    [InlineData(typeof(string), false)]
+    [InlineData(null, false)]
+    public void IsIntegral_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsIntegral());
+
+    [Theory]
+    [InlineData(typeof(BaseClass), typeof(DerivedClass), false)]
+    [InlineData(typeof(string), typeof(int), true)]
+    public void IsNotCompatibleWith_ShouldReturnExpectedResult(Type type, Type otherType, bool expected)
+        => Assert.Equal(expected, type.IsNotCompatibleWith(otherType));
+
+    [Theory]
+    [InlineData(typeof(int), false)]
+    [InlineData(typeof(int?), true)]
+    [InlineData(typeof(string), false)]
+    [InlineData(null, false)]
+    public void IsNullable_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsNullable());
+
+    [Theory]
+    [InlineData(typeof(byte), true)]
+    [InlineData(typeof(int), true)]
+    [InlineData(typeof(decimal), true)]
+    [InlineData(typeof(double?), true)]
+    [InlineData(typeof(string), false)]
+    [InlineData(typeof(bool), false)]
+    [InlineData(typeof(DateTime), false)]
+    [InlineData(null, false)]
+    public void IsNumeric_ShouldReturnExpectedResult(Type? type, bool expected)
+        => Assert.Equal(expected, type.IsNumeric());
+
+    [Fact]
     public void TypeDiscovery_NullType_ShouldReturnEmptyLists()
     {
         Type? type = null;
@@ -227,6 +266,10 @@ public class TypeTests
         Assert.Empty(type.GetClassesWithoutAttribute<TestAttribute>());
         Assert.Empty(type.GetInheritedClasses());
     }
+
+    #endregion Public Methods
+
+    #region Test Fixtures
 
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     private sealed class TestAttribute : Attribute;
@@ -252,7 +295,6 @@ public class TypeTests
     [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
     private class MyTestClass
     {
-        private readonly int _myField;
         public string? MyProperty { get; set; }
 
         public event EventHandler? MyEvent;
@@ -260,28 +302,5 @@ public class TypeTests
         public void Method() { }
     }
 
-    [Fact]
-    public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
-    {
-        var method = typeof(global::System.TypeExtensions).GetMethod("GetLoadableTypes",
-            BindingFlags.NonPublic | BindingFlags.Static,
-            binder: null,
-            types: [typeof(IEnumerable<Assembly>)],
-            modifiers: null);
-
-        Assert.NotNull(method);
-
-        var exception = new ReflectionTypeLoadException([typeof(BaseClass), null],
-            [new TypeLoadException()]);
-
-        var assembly = new ThrowingAssembly(exception);
-        var result = (IEnumerable<Type>)method!.Invoke(null, [new Assembly[] { assembly }])!;
-
-        Assert.Contains(typeof(BaseClass), result);
-    }
-
-    private sealed class ThrowingAssembly(ReflectionTypeLoadException exception) : Assembly
-    {
-        public override Type[] GetTypes() => throw exception;
-    }
+    #endregion Test Fixtures
 }

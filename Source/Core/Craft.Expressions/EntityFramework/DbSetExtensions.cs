@@ -1,12 +1,15 @@
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Craft.Expressions.EntityFramework;
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+namespace Microsoft.EntityFrameworkCore;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class DbSetExtensions
 {
+    #region Public Methods
+
     /// <summary>
     /// Retrieves the query filter expression configured for a given entity type within the current model.
     /// </summary>
@@ -44,4 +47,6 @@ public static class DbSetExtensions
             ? dbSet.IgnoreQueryFilters()
             : dbSet.IgnoreQueryFilters().Where(newQueryFilter);
     }
+
+    #endregion Public Methods
 }

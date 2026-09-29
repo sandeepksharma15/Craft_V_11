@@ -1,102 +1,19 @@
 using System.Linq.Expressions;
-using Craft.Expressions.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Expressions.Tests.EntityFramework;
 
 public class DbSetExtensionsTests
 {
-    [Fact]
-    public void GetQueryFilter_WithNoConfiguredFilter_ReturnsNull()
+    #region Private Methods
+
+    private static CompoundQueryFilterDbContext CreateCompoundQueryFilterContext()
     {
-        using NoQueryFilterDbContext context = CreateNoQueryFilterContext();
+        DbContextOptions<CompoundQueryFilterDbContext> options = new DbContextOptionsBuilder<CompoundQueryFilterDbContext>()
+            .UseInMemoryDatabase($"DbSetExtensionsTests-CompoundFilter-{Guid.NewGuid()}")
+            .Options;
 
-        Expression<Func<QueryFilterEntity, bool>>? result = context.Entities.GetQueryFilter();
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetQueryFilter_WithConfiguredFilter_ReturnsConfiguredExpression()
-    {
-        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
-
-        Expression<Func<QueryFilterEntity, bool>>? result = context.Entities.GetQueryFilter();
-
-        Assert.NotNull(result);
-        Func<QueryFilterEntity, bool> compiledFilter = result.Compile();
-        Assert.True(compiledFilter(new QueryFilterEntity { IsActive = true }));
-    }
-
-    [Fact]
-    public void GetQueryFilter_WithNullDbSet_ThrowsArgumentNullException()
-    {
-        DbSet<QueryFilterEntity> dbSet = null!;
-
-        _ = Assert.Throws<ArgumentNullException>(() => dbSet.GetQueryFilter());
-    }
-
-    [Fact]
-    public void RemoveFromQueryFilter_WithNoConfiguredFilter_ReturnsAllEntities()
-    {
-        using NoQueryFilterDbContext context = CreateNoQueryFilterContext();
-        SeedEntities(context);
-
-        List<QueryFilterEntity> result = [.. context.Entities
-            .RemoveFromQueryFilter(entity => entity.IsActive)
-            .OrderBy(entity => entity.Id)];
-
-        Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void RemoveFromQueryFilter_WhenConditionMatchesEntireFilter_ReturnsAllEntities()
-    {
-        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
-        SeedEntities(context);
-
-        List<QueryFilterEntity> result = [.. context.Entities
-            .RemoveFromQueryFilter(entity => entity.IsActive == true)
-            .OrderBy(entity => entity.Id)];
-
-        Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void RemoveFromQueryFilter_WhenConditionIsRemoved_PreservesRemainingConditions()
-    {
-        using CompoundQueryFilterDbContext context = CreateCompoundQueryFilterContext();
-        context.Entities.AddRange(
-        [
-            new QueryFilterEntity { Id = 1, IsActive = true, IsDeleted = false },
-            new QueryFilterEntity { Id = 2, IsActive = false, IsDeleted = false },
-            new QueryFilterEntity { Id = 3, IsActive = true, IsDeleted = true }
-        ]);
-        _ = context.SaveChanges();
-
-        List<QueryFilterEntity> result = [.. context.Entities
-            .RemoveFromQueryFilter(entity => entity.IsActive == true)
-            .OrderBy(entity => entity.Id)];
-
-        Assert.Equal([1, 2], result.Select(entity => entity.Id).ToList());
-    }
-
-    [Fact]
-    public void RemoveFromQueryFilter_WithNullDbSet_ThrowsArgumentNullException()
-    {
-        DbSet<QueryFilterEntity> dbSet = null!;
-        Expression<Func<QueryFilterEntity, bool>> condition = entity => entity.IsActive;
-
-        _ = Assert.Throws<ArgumentNullException>(() => dbSet.RemoveFromQueryFilter(condition));
-    }
-
-    [Fact]
-    public void RemoveFromQueryFilter_WithNullCondition_ThrowsArgumentNullException()
-    {
-        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
-        Expression<Func<QueryFilterEntity, bool>> condition = null!;
-
-        _ = Assert.Throws<ArgumentNullException>(() => context.Entities.RemoveFromQueryFilter(condition));
+        return new CompoundQueryFilterDbContext(options);
     }
 
     private static NoQueryFilterDbContext CreateNoQueryFilterContext()
@@ -115,15 +32,6 @@ public class DbSetExtensionsTests
             .Options;
 
         return new SingleQueryFilterDbContext(options);
-    }
-
-    private static CompoundQueryFilterDbContext CreateCompoundQueryFilterContext()
-    {
-        DbContextOptions<CompoundQueryFilterDbContext> options = new DbContextOptionsBuilder<CompoundQueryFilterDbContext>()
-            .UseInMemoryDatabase($"DbSetExtensionsTests-CompoundFilter-{Guid.NewGuid()}")
-            .Options;
-
-        return new CompoundQueryFilterDbContext(options);
     }
 
     private static void SeedEntities(NoQueryFilterDbContext context)
@@ -146,4 +54,102 @@ public class DbSetExtensionsTests
         _ = context.SaveChanges();
     }
 
+    #endregion Private Methods
+
+    #region Public Methods
+
+    [Fact]
+    public void GetQueryFilter_WithConfiguredFilter_ReturnsConfiguredExpression()
+    {
+        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
+
+        Expression<Func<QueryFilterEntity, bool>>? result = context.Entities.GetQueryFilter();
+
+        Assert.NotNull(result);
+        Func<QueryFilterEntity, bool> compiledFilter = result.Compile();
+        Assert.True(compiledFilter(new QueryFilterEntity { IsActive = true }));
+    }
+
+    [Fact]
+    public void GetQueryFilter_WithNoConfiguredFilter_ReturnsNull()
+    {
+        using NoQueryFilterDbContext context = CreateNoQueryFilterContext();
+
+        Expression<Func<QueryFilterEntity, bool>>? result = context.Entities.GetQueryFilter();
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetQueryFilter_WithNullDbSet_ThrowsArgumentNullException()
+    {
+        DbSet<QueryFilterEntity> dbSet = null!;
+
+        _ = Assert.Throws<ArgumentNullException>(() => dbSet.GetQueryFilter());
+    }
+
+    [Fact]
+    public void RemoveFromQueryFilter_WhenConditionIsRemoved_PreservesRemainingConditions()
+    {
+        using CompoundQueryFilterDbContext context = CreateCompoundQueryFilterContext();
+        context.Entities.AddRange(
+        [
+            new QueryFilterEntity { Id = 1, IsActive = true, IsDeleted = false },
+            new QueryFilterEntity { Id = 2, IsActive = false, IsDeleted = false },
+            new QueryFilterEntity { Id = 3, IsActive = true, IsDeleted = true }
+        ]);
+        _ = context.SaveChanges();
+
+        List<QueryFilterEntity> result = [.. context.Entities
+            .RemoveFromQueryFilter(entity => entity.IsActive == true)
+            .OrderBy(entity => entity.Id)];
+
+        Assert.Equal([1, 2], result.Select(entity => entity.Id).ToList());
+    }
+
+    [Fact]
+    public void RemoveFromQueryFilter_WhenConditionMatchesEntireFilter_ReturnsAllEntities()
+    {
+        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
+        SeedEntities(context);
+
+        List<QueryFilterEntity> result = [.. context.Entities
+            .RemoveFromQueryFilter(entity => entity.IsActive == true)
+            .OrderBy(entity => entity.Id)];
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void RemoveFromQueryFilter_WithNoConfiguredFilter_ReturnsAllEntities()
+    {
+        using NoQueryFilterDbContext context = CreateNoQueryFilterContext();
+        SeedEntities(context);
+
+        List<QueryFilterEntity> result = [.. context.Entities
+            .RemoveFromQueryFilter(entity => entity.IsActive)
+            .OrderBy(entity => entity.Id)];
+
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void RemoveFromQueryFilter_WithNullCondition_ThrowsArgumentNullException()
+    {
+        using SingleQueryFilterDbContext context = CreateSingleQueryFilterContext();
+        Expression<Func<QueryFilterEntity, bool>> condition = null!;
+
+        _ = Assert.Throws<ArgumentNullException>(() => context.Entities.RemoveFromQueryFilter(condition));
+    }
+
+    [Fact]
+    public void RemoveFromQueryFilter_WithNullDbSet_ThrowsArgumentNullException()
+    {
+        DbSet<QueryFilterEntity> dbSet = null!;
+        Expression<Func<QueryFilterEntity, bool>> condition = entity => entity.IsActive;
+
+        _ = Assert.Throws<ArgumentNullException>(() => dbSet.RemoveFromQueryFilter(condition));
+    }
+
+    #endregion Public Methods
 }

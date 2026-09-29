@@ -1,32 +1,11 @@
 using System.Linq.Expressions;
 using Craft.Expressions.Extensions;
-using Craft.Expressions.Tests.Fixtures;
 
 namespace Craft.Expressions.Tests.Extensions;
 
 public class PredicateCompositionExtensionsTests
 {
-    [Fact]
-    public void And_WithNullExpression_ThrowsArgumentNullException()
-    {
-        Expression<Func<TestEntity, bool>> expression = null!;
-        Expression<Func<TestEntity, bool>> other = x => x.Name == "Test";
-
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.And(other));
-
-        Assert.Equal("expression", exception.ParamName);
-    }
-
-    [Fact]
-    public void And_WithNullOther_ThrowsArgumentNullException()
-    {
-        Expression<Func<TestEntity, bool>> expression = x => x.Name.Length > 3;
-        Expression<Func<TestEntity, bool>> other = null!;
-
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.And(other));
-
-        Assert.Equal("other", exception.ParamName);
-    }
+    #region Public Methods
 
     [Fact]
     public void And_ReturnsCombinedExpression()
@@ -48,8 +27,8 @@ public class PredicateCompositionExtensionsTests
     [Fact]
     public void And_WithDifferentParameterNames_RebindsToSingleParameterAndUsesAndAlso()
     {
-        Expression<Func<TestEntity, bool>> expr1 = entity => entity.Name.StartsWith("T");
-        Expression<Func<TestEntity, bool>> expr2 = item => item.Name.EndsWith("t");
+        Expression<Func<TestEntity, bool>> expr1 = entity => entity.Name.StartsWith('T');
+        Expression<Func<TestEntity, bool>> expr2 = item => item.Name.EndsWith('t');
 
         Expression<Func<TestEntity, bool>> andExpression = expr1.And(expr2);
         Func<TestEntity, bool> compiled = andExpression.Compile();
@@ -61,23 +40,23 @@ public class PredicateCompositionExtensionsTests
     }
 
     [Fact]
-    public void Or_WithNullExpression_ThrowsArgumentNullException()
+    public void And_WithNullExpression_ThrowsArgumentNullException()
     {
         Expression<Func<TestEntity, bool>> expression = null!;
         Expression<Func<TestEntity, bool>> other = x => x.Name == "Test";
 
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.Or(other));
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.And(other));
 
         Assert.Equal("expression", exception.ParamName);
     }
 
     [Fact]
-    public void Or_WithNullOther_ThrowsArgumentNullException()
+    public void And_WithNullOther_ThrowsArgumentNullException()
     {
         Expression<Func<TestEntity, bool>> expression = x => x.Name.Length > 3;
         Expression<Func<TestEntity, bool>> other = null!;
 
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.Or(other));
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.And(other));
 
         Assert.Equal("other", exception.ParamName);
     }
@@ -116,4 +95,28 @@ public class PredicateCompositionExtensionsTests
         Assert.True(compiled(new TestEntity { Name = "Hello" }));
         Assert.False(compiled(new TestEntity { Name = "No" }));
     }
+
+    [Fact]
+    public void Or_WithNullExpression_ThrowsArgumentNullException()
+    {
+        Expression<Func<TestEntity, bool>> expression = null!;
+        Expression<Func<TestEntity, bool>> other = x => x.Name == "Test";
+
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.Or(other));
+
+        Assert.Equal("expression", exception.ParamName);
+    }
+
+    [Fact]
+    public void Or_WithNullOther_ThrowsArgumentNullException()
+    {
+        Expression<Func<TestEntity, bool>> expression = x => x.Name.Length > 3;
+        Expression<Func<TestEntity, bool>> other = null!;
+
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => expression.Or(other));
+
+        Assert.Equal("other", exception.ParamName);
+    }
+
+    #endregion Public Methods
 }

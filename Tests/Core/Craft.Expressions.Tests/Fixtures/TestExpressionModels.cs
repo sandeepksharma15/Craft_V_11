@@ -5,8 +5,30 @@ namespace Craft.Expressions.Tests.Fixtures;
 
 public sealed class Company
 {
+    #region Public Properties
+
     public long CountryId { get; set; }
     public string Name { get; set; } = string.Empty;
+
+    #endregion Public Properties
+}
+
+public sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryFilterDbContext> options) : DbContext(options)
+{
+    #region Protected Methods
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
+    }
+
+    #endregion Protected Methods
+
+    #region Public Properties
+
+    public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
+
+    #endregion Public Properties
 }
 
 public sealed class Store
@@ -59,6 +81,7 @@ public sealed class TestClass
     public int ScoreField;
 }
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible", Justification = "<Pending>")]
 public sealed class MyClass
 {
     public int AnotherProperty { get; set; }
@@ -69,13 +92,19 @@ public sealed class MyClass
     public void SetPrivateField(int value) => _privateField = value;
 }
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
 public sealed class MethodHost
 {
     public string Echo(string value) => value;
+
     public string TakesObject(object value) => value.ToString() ?? string.Empty;
+
     public double DoubleInput(double value) => value;
+
     public int NeedsInt(int value) => value;
+
     public string Ambiguous(string? value) => value ?? string.Empty;
+
     public string Ambiguous(Uri? value) => value?.ToString() ?? string.Empty;
 }
 
@@ -105,16 +134,6 @@ public sealed class SingleQueryFilterDbContext(DbContextOptions<SingleQueryFilte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive);
-    }
-}
-
-public sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryFilterDbContext> options) : DbContext(options)
-{
-    public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
     }
 }
 

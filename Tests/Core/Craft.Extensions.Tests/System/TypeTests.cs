@@ -4,6 +4,12 @@ namespace Craft.Extensions.Tests.System;
 
 public class TypeTests
 {
+    private enum SimpleEnum
+    {
+        None,
+        Value
+    }
+
     [Theory]
     [InlineData(typeof(BaseClass), false)]
     [InlineData(typeof(DerivedClass), true)]
@@ -243,26 +249,21 @@ public class TypeTests
 
     private interface INonGenericInterface;
 
-    private enum SimpleEnum
-    {
-        None,
-        Value
-    }
-
-#pragma warning disable CS0169, CS0067
+    [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
     private class MyTestClass
     {
         private readonly int _myField;
         public string? MyProperty { get; set; }
+
         public event EventHandler? MyEvent;
+
         public void Method() { }
     }
-#pragma warning restore CS0169, CS0067
+
     [Fact]
     public void GetLoadableTypes_ShouldHandleReflectionTypeLoadException()
     {
-        var method = typeof(global::System.TypeExtensions).GetMethod(
-            "GetLoadableTypes",
+        var method = typeof(global::System.TypeExtensions).GetMethod("GetLoadableTypes",
             BindingFlags.NonPublic | BindingFlags.Static,
             binder: null,
             types: [typeof(IEnumerable<Assembly>)],
@@ -270,14 +271,11 @@ public class TypeTests
 
         Assert.NotNull(method);
 
-        var exception = new ReflectionTypeLoadException(
-            [typeof(BaseClass), null],
+        var exception = new ReflectionTypeLoadException([typeof(BaseClass), null],
             [new TypeLoadException()]);
 
         var assembly = new ThrowingAssembly(exception);
-        var result = (IEnumerable<Type>)method!.Invoke(
-            null,
-            new object?[] { new Assembly[] { assembly } })!;
+        var result = (IEnumerable<Type>)method!.Invoke(null, [new Assembly[] { assembly }])!;
 
         Assert.Contains(typeof(BaseClass), result);
     }
@@ -286,5 +284,4 @@ public class TypeTests
     {
         public override Type[] GetTypes() => throw exception;
     }
-
 }

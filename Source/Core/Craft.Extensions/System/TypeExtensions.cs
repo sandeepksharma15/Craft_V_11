@@ -94,12 +94,10 @@ public static class TypeExtensions
             };
     }
 
-    private static IList<string> GetDerivedClasses(
-        Type baseType,
-        Type? attributeType,
-        bool includeAttribute,
-        bool includeBaseType)
-        => GetLoadableTypes()
+    #region Private Methods
+
+    private static IList<string> GetDerivedClasses(Type baseType, Type? attributeType, bool includeAttribute, bool includeBaseType)
+        => [.. GetLoadableTypes()
             .Where(candidate =>
                 candidate.IsClass
                 && !candidate.IsAbstract
@@ -108,8 +106,7 @@ public static class TypeExtensions
                 && (attributeType is null
                     || (candidate.GetCustomAttributes(attributeType, inherit: true).Length > 0) == includeAttribute))
             .Select(candidate => candidate.Name)
-            .OrderBy(name => name, StringComparer.Ordinal)
-            .ToList();
+            .OrderBy(name => name, StringComparer.Ordinal)];
 
     private static IEnumerable<Type> GetLoadableTypes()
         => GetLoadableTypes(AppDomain.CurrentDomain.GetAssemblies());
@@ -126,7 +123,7 @@ public static class TypeExtensions
             }
             catch (ReflectionTypeLoadException exception)
             {
-                types = exception.Types.Where(static type => type is not null).Cast<Type>().ToArray();
+                types = [.. exception.Types.Where(static type => type is not null).Cast<Type>()];
             }
 
             foreach (var type in types)
@@ -159,4 +156,6 @@ public static class TypeExtensions
 
         return numericTypes.Contains(typeCode);
     }
+
+    #endregion Private Methods
 }

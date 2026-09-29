@@ -2,14 +2,35 @@
 
 public class MembershipExtensionsTests
 {
-    [Fact]
-    public void IsIn_ReturnsTrue_IfItemIsInCollection()
-    {
-        // Arrange
-        int[] collection = [1, 2, 3];
+    #region Private Classes
 
-        // Act & Assert
-        Assert.True(2.IsIn(collection));
+    private sealed class TestItem
+    {
+        #region Public Properties
+
+        public int Id { get; set; }
+        public string? Name { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
+
+        public override string ToString() => $"TestItem:{Id}:{Name}";
+
+        #endregion Public Methods
+    }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
+    [Fact]
+    public void IsIn_Enumerable_ShouldReturnExpectedResult()
+    {
+        IEnumerable<int> values = [1, 2, 3];
+
+        Assert.True(2.IsIn(values));
+        Assert.False(4.IsIn(values));
     }
 
     [Fact]
@@ -23,16 +44,13 @@ public class MembershipExtensionsTests
     }
 
     [Fact]
-    public void IsIn_WorksWithReferenceTypes()
+    public void IsIn_ReturnsTrue_IfItemIsInCollection()
     {
         // Arrange
-        TestItem a = new() { Id = 1, Name = "A" };
-        TestItem b = new() { Id = 2, Name = "B" };
-        TestItem[] collection = [a, b];
+        int[] collection = [1, 2, 3];
 
         // Act & Assert
-        Assert.True(a.IsIn(collection));
-        Assert.False(new TestItem { Id = 1, Name = "A" }.IsIn(collection));
+        Assert.True(2.IsIn(collection));
     }
 
     [Fact]
@@ -91,20 +109,18 @@ public class MembershipExtensionsTests
         Assert.True(result);
     }
 
-    private sealed class TestItem
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-
-        public override string ToString() => $"TestItem:{Id}:{Name}";
-    }
     [Fact]
-    public void IsIn_Enumerable_ShouldReturnExpectedResult()
+    public void IsIn_WorksWithReferenceTypes()
     {
-        IEnumerable<int> values = new List<int> { 1, 2, 3 };
+        // Arrange
+        TestItem a = new() { Id = 1, Name = "A" };
+        TestItem b = new() { Id = 2, Name = "B" };
+        TestItem[] collection = [a, b];
 
-        Assert.True(2.IsIn(values));
-        Assert.False(4.IsIn(values));
+        // Act & Assert
+        Assert.True(a.IsIn(collection));
+        Assert.False(new TestItem { Id = 1, Name = "A" }.IsIn(collection));
     }
 
+    #endregion Public Methods
 }

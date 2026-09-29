@@ -39,6 +39,7 @@ jobs:
         run: |
           dotnet test Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \
             --configuration Release --no-build \
+            -p:TestingPlatformDotnetTestSupport=false \
             --filter FullyQualifiedName~StyleBuilder \
             --collect:"XPlat Code Coverage" --results-directory artifacts/stylebuilder-coverage \
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*"
@@ -59,4 +60,3 @@ jobs:
           if float(report.attrib["line-rate"]) < 1 or float(report.attrib["branch-rate"]) < 1:
               raise SystemExit("StyleBuilder requires 100% line and branch coverage")
           PY
-

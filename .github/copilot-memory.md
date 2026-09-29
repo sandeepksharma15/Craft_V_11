@@ -20,6 +20,7 @@
 <!-- Non-obvious technical decisions made during development. Include brief rationale. -->
 - 2026-09-08: Collection-related extensions are split by target type (`ICollection<T>`, `IEnumerable<T>`, membership-on-item) and queryable extensions live in the LINQ area to keep files cohesive and discoverable.
 - 2026-09-29: Keep reusable test models and EF Core fixtures in `Tests/Support/Craft.Testing`; keep fixtures requiring a Craft library with that library's test project.
+- 2026-09-29: Expression extension APIs remain in Craft.Expressions but use `System.Linq.Expressions` to be available with the natural BCL namespace; keep the package's auto-using list aligned.
 
 ## Patterns & Conventions
 

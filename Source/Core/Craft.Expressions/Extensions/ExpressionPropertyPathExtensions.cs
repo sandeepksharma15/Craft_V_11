@@ -1,7 +1,6 @@
-using System.Linq.Expressions;
 using Craft.Expressions.Internal;
 
-namespace Craft.Expressions.Extensions;
+namespace System.Linq.Expressions;
 
 public static class ExpressionPropertyPathExtensions
 {

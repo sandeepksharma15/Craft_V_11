@@ -390,15 +390,13 @@ public class FileHelperTests : IDisposable
     public void SanitizeFileName_RemovesInvalidCharacters()
     {
         // Arrange
-        var fileName = "test<file>name?.txt";
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var fileName = $"test{invalidChars[0]}file{invalidChars[^1]}name.txt";
 
         // Act
         var sanitized = FileHelper.SanitizeFileName(fileName);
 
         // Assert
-        Assert.DoesNotContain("<", sanitized);
-        Assert.DoesNotContain(">", sanitized);
-        Assert.DoesNotContain("?", sanitized);
         Assert.Equal("testfilename.txt", sanitized);
     }
 
@@ -785,4 +783,3 @@ public class FileHelperTests : IDisposable
 
     #endregion
 }
-

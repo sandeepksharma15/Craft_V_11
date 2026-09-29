@@ -1,6 +1,6 @@
 # Copilot Instructions
 
-> **Stack:** .NET 10 · C# latest · ASP.NET Core · Blazor · EF Core
+> **Stack:** .NET 11 · C# latest · ASP.NET Core · Blazor · EF Core
 > **Memory:** When `.github/copilot-memory.md` exists, read it before substantive work.
 
 ## 1. Core Behavior

@@ -27,6 +27,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\..\Source\Core\Craft.Extensions\Craft.Extensions.csproj" />
+		<ProjectReference Include="..\..\Support\Craft.Testing\Craft.Testing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

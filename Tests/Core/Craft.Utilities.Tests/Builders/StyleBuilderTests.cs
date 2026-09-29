@@ -5,6 +5,257 @@ namespace Craft.Utilities.Tests.Builders;
 public class StyleBuilderTests
 {
     [Fact]
+    public void Build_DefaultInstances_ReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(StyleBuilder).Build());
+        Assert.Equal(string.Empty, new StyleBuilder().ToString());
+        Assert.Null(default(StyleBuilder).NullIfEmpty());
+    }
+
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData(" \t\r\n ", "")]
+    [InlineData("color:red", "color:red;")]
+    [InlineData("color:red;", "color:red;;")]
+    public void Default_StyleFragment_PreservesExistingSemicolonBehavior(string? style, string expected)
+    {
+        StyleBuilder builder = StyleBuilder.Default(style);
+
+        Assert.Equal(expected, builder.Build());
+        Assert.Equal(expected, builder.ToString());
+        Assert.Equal(expected.Length == 0 ? null : expected, builder.NullIfEmpty());
+    }
+
+    [Fact]
+    public void AddStyle_DefaultValue_CanBeMutated()
+    {
+        StyleBuilder builder = default;
+
+        builder.AddStyle("color", "red");
+        builder.AddStyle("padding", "0");
+
+        Assert.Equal("color:red;padding:0;", builder.Build());
+    }
+
+    [Fact]
+    public void AddStyle_CopiesAndNestedBuilders_AreIndependent()
+    {
+        StyleBuilder original = new("color", "red");
+        StyleBuilder copy = original;
+        StyleBuilder parent = StyleBuilder.Empty().AddStyle(original);
+
+        copy.AddStyle("padding", "0");
+        original.AddStyle("margin", "0");
+
+        Assert.Equal("color:red;margin:0;", original.Build());
+        Assert.Equal("color:red;padding:0;", copy.Build());
+        Assert.Equal("color:red;", parent.Build());
+        Assert.Equal("color:red;", parent.AddStyle(default(StyleBuilder)).Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddStyle_ValueFactoryAndBoolean_EvaluatesOnlyWhenEnabled(bool when)
+    {
+        StyleBuilder builder = new("color", "red");
+        int calls = 0;
+
+        builder.AddStyle("padding", () =>
+        {
+            calls++;
+            return "0";
+        }, when);
+
+        Assert.Equal(when ? 1 : 0, calls);
+        Assert.Equal(when ? "color:red;padding:0;" : "color:red;", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void AddStyle_StringAndPredicate_AddsOnlyWhenTrue(bool? condition)
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+        int calls = 0;
+        Func<bool>? when = condition.HasValue ? () => { calls++; return condition.Value; } : null;
+
+        builder.AddStyle("color", "red", when);
+
+        Assert.Equal(condition.HasValue ? 1 : 0, calls);
+        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void AddStyle_ValueFactoryAndPredicate_EvaluatesConditionBeforeValue(bool? condition)
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+        List<string> calls = [];
+        Func<bool>? when = condition.HasValue
+            ? () => { calls.Add("condition"); return condition.Value; }
+            : null;
+
+        builder.AddStyle("color", () =>
+        {
+            calls.Add("value");
+            return "red";
+        }, when);
+
+        string[] expectedCalls = condition switch
+        {
+            true => ["condition", "value"],
+            false => ["condition"],
+            null => []
+        };
+        Assert.Equal(expectedCalls, calls);
+        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddStyle_NestedBuilderAndBoolean_AddsOnlyWhenTrue(bool when)
+    {
+        StyleBuilder builder = new("color", "red");
+        StyleBuilder child = new("padding", "0");
+
+        builder.AddStyle(child, when);
+
+        Assert.Equal(when ? "color:red;padding:0;" : "color:red;", builder.Build());
+        Assert.Equal("padding:0;", child.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void AddStyle_NestedBuilderAndPredicate_AddsOnlyWhenTrue(bool? condition)
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+        StyleBuilder child = new("color", "red");
+        int calls = 0;
+        Func<bool>? when = condition.HasValue ? () => { calls++; return condition.Value; } : null;
+
+        builder.AddStyle(child, when);
+
+        Assert.Equal(condition.HasValue ? 1 : 0, calls);
+        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void AddStyle_ValueBuilder_InvokesOnlyWhenEnabledAndOmitsEmptyValues(bool when, bool addValue)
+    {
+        StyleBuilder builder = new("color", "red");
+        int calls = 0;
+
+        builder.AddStyle("text-decoration", values =>
+        {
+            calls++;
+            values.AddValue("underline", addValue);
+        }, when);
+
+        Assert.Equal(when ? 1 : 0, calls);
+        Assert.Equal(when && addValue ? "color:red;text-decoration:underline;" : "color:red;", builder.Build());
+    }
+
+    [Fact]
+    public void AddStyle_NullCallbacks_ThrowOnlyWhenEnabled()
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+
+        Assert.Throws<ArgumentNullException>("value", () => builder.AddStyle("color", (Func<string>)null!));
+        Assert.Throws<ArgumentNullException>("builder", () => builder.AddStyle("color", (Action<ValueBuilder>)null!));
+        builder.AddStyle("color", (Func<string>)null!, false);
+        builder.AddStyle("color", (Action<ValueBuilder>)null!, false);
+
+        Assert.Equal(string.Empty, builder.Build());
+    }
+
+    [Fact]
+    public void AddStyle_ThrowingCallback_PropagatesExceptionWithoutAddingDeclaration()
+    {
+        StyleBuilder builder = new("color", "red");
+        InvalidOperationException error = new("callback failed");
+
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", () => throw error, true)));
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", "0", () => throw error)));
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", (ValueBuilder _) => throw error)));
+        Assert.Equal("color:red;", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t\r\n ")]
+    public void AddStyleFromAttributes_EmptyStyle_DoesNotChangeBuilder(string? style)
+    {
+        StyleBuilder builder = new("color", "red");
+        Dictionary<string, object> attributes = new() { ["style"] = style! };
+
+        builder.AddStyleFromAttributes(attributes);
+
+        Assert.Equal("color:red;", builder.Build());
+    }
+
+    [Fact]
+    public void AddStyleFromAttributes_NullOrMissingAttribute_DoesNotChangeBuilder()
+    {
+        StyleBuilder builder = new("color", "red");
+
+        builder.AddStyleFromAttributes(null);
+        builder.AddStyleFromAttributes(new Dictionary<string, object> { ["class"] = "example" });
+
+        Assert.Equal("color:red;", builder.Build());
+    }
+
+    [Theory]
+    [InlineData("color:red")]
+    [InlineData("color:red;")]
+    [InlineData("  color:red; \t")]
+    public void AddStyleFromAttributes_WithFollowingDeclaration_EnsuresSeparator(string style)
+    {
+        Dictionary<string, object> attributes = new() { ["style"] = style };
+
+        string result = StyleBuilder.Empty().AddStyleFromAttributes(attributes).AddStyle("padding", "0").Build();
+
+        Assert.Equal("color:red;padding:0;", result);
+        Assert.Equal(style, attributes["style"]);
+    }
+
+    [Fact]
+    public void AddStyleFromAttributes_ObjectValue_UsesToString()
+    {
+        Dictionary<string, object> attributes = new() { ["style"] = new StyleBuilder("color", "red") };
+
+        string result = StyleBuilder.Empty().AddStyleFromAttributes(attributes).Build();
+
+        Assert.Equal("color:red;", result);
+    }
+
+    [Fact]
+    public void Build_ComplexCssValues_PreservesContentAndDeclarationOrder()
+    {
+        string result = StyleBuilder.Default("--accent", "var(--brand, red)")
+            .AddStyle("background-image", "url('data:image/svg+xml;base64,PHN2Zz4=')")
+            .AddStyle("content", "'a;b:c'")
+            .AddStyle("--accent", "blue !important")
+            .Build();
+
+        Assert.Equal("--accent:var(--brand, red);background-image:url('data:image/svg+xml;base64,PHN2Zz4=');content:'a;b:c';--accent:blue !important;", result);
+    }
+
+    [Fact]
     public void ShouldBulidConditionalInlineStyles()
     {
         // Arrange
@@ -196,3 +447,4 @@ public class StyleBuilderTests
         Assert.Equal(string.Empty, result);
     }
 }
+

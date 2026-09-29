@@ -54,6 +54,16 @@ public class StyleBuilderTests
         Assert.Equal("color:red;", parent.AddStyle(default(StyleBuilder)).Build());
     }
 
+    [Fact]
+    public void AddStyle_ValueFactoryWithoutCondition_AddsStyle()
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+
+        builder.AddStyle("color", () => "red");
+
+        Assert.Equal("color:red;", builder.Build());
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -447,4 +457,3 @@ public class StyleBuilderTests
         Assert.Equal(string.Empty, result);
     }
 }
-

@@ -1,6 +1,8 @@
 using Craft.Expressions.Internal;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace System.Linq.Expressions;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class ExpressionMemberAccessExtensions
 {
@@ -13,7 +15,8 @@ public static class ExpressionMemberAccessExtensions
             => ExpressionMemberAccessFactory.CreateMemberExpression(typeof(T), propertyOrFieldName);
 
         /// <summary>
-        /// Creates a strongly typed lambda expression for accessing a specified instance property or field.
+        /// Creates a strongly typed lambda expression for accessing a specified instance property
+        /// or field.
         /// </summary>
         public Expression<Func<T, TResult>> CreateMemberExpression<T, TResult>()
             => ExpressionMemberAccessFactory.CreateInstanceMemberExpression<T, TResult>(propertyOrFieldName);

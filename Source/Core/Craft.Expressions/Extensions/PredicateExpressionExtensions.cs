@@ -1,7 +1,9 @@
 using Craft.Expressions.Comparison;
 using Craft.Expressions.Rewriting;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace System.Linq.Expressions;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class PredicateExpressionExtensions
 {
@@ -84,6 +86,8 @@ public static class PredicateExpressionExtensions
         }
     }
 
+    #region Private Methods
+
     private static Expression AlignConditionBody<T>(Expression<Func<T, bool>> condition, ParameterExpression targetParameter)
     {
         ArgumentNullException.ThrowIfNull(condition);
@@ -94,8 +98,14 @@ public static class PredicateExpressionExtensions
             : ExpressionParameterRebinder.Rebind(condition.Body, condition.Parameters[0], targetParameter);
     }
 
+    #endregion Private Methods
+
+    #region Private Classes
+
     private sealed class ConditionRemovingVisitor(Expression conditionToRemove) : ExpressionVisitor
     {
+        #region Protected Methods
+
         protected override Expression VisitBinary(BinaryExpression node)
         {
             if (node.NodeType == ExpressionType.AndAlso)
@@ -109,10 +119,14 @@ public static class PredicateExpressionExtensions
 
             return base.VisitBinary(node);
         }
+
+        #endregion Protected Methods
     }
 
     private sealed class ConditionReplacingVisitor(Expression oldCondition, Expression newCondition) : ExpressionVisitor
     {
+        #region Protected Methods
+
         protected override Expression VisitBinary(BinaryExpression node)
         {
             if (node.NodeType == ExpressionType.AndAlso)
@@ -126,5 +140,9 @@ public static class PredicateExpressionExtensions
 
             return base.VisitBinary(node);
         }
+
+        #endregion Protected Methods
     }
+
+    #endregion Private Classes
 }

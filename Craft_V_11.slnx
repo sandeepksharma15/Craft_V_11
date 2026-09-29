@@ -16,7 +16,7 @@
     <Project Path="Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/Support/">
+  <Folder Name="/Tests/Support/" Id="d51a40ec-aa25-aa80-ff9d-a6cfe0dc4779">
     <Project Path="Tests/Support/Craft.Testing/Craft.Testing.csproj" />
   </Folder>
 </Solution>

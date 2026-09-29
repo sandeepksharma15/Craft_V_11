@@ -1,4 +1,4 @@
-using Craft.Expressions.Extensions;
+using System.Linq.Expressions;
 
 namespace Craft.Expressions.Tests.Extensions;
 

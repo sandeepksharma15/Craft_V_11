@@ -1,7 +1,6 @@
-using Craft.Expressions.Ast;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Expressions.Tests.Fixtures;
+namespace Craft.Testing.EntityFramework;
 
 public sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryFilterDbContext> options) : DbContext(options)
 {
@@ -12,8 +11,6 @@ public sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryF
 
     public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
 }
-
-public sealed class DummyAstNode : AstNode;
 
 public sealed class QueryFilterEntity
 {

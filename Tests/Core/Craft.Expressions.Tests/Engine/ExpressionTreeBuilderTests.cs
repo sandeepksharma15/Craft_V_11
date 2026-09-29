@@ -5,6 +5,8 @@ using Craft.Expressions.Exceptions;
 
 namespace Craft.Expressions.Tests.Engine;
 
+public sealed class DummyAstNode : AstNode;
+
 public class ExpressionTreeBuilderTests
 {
     private static ParameterExpression Param => Expression.Parameter(typeof(TestClass), "x");
@@ -345,5 +347,4 @@ public class ExpressionTreeBuilderTests
         // Act & Assert
         Assert.Throws<NotSupportedException>(() => Builder.Build(node, Param));
     }
-
 }

@@ -5,12 +5,14 @@ on:
     paths:
       - 'Source/Core/Craft.Extensions/**'
       - 'Tests/Core/Craft.Extensions.Tests/**'
+      - 'Tests/Support/Craft.Testing/**'
       - '.github/workflows/craft-extensions.yml'
   pull_request:
     branches: [master]
     paths:
       - 'Source/Core/Craft.Extensions/**'
       - 'Tests/Core/Craft.Extensions.Tests/**'
+      - 'Tests/Support/Craft.Testing/**'
       - '.github/workflows/craft-extensions.yml'
   workflow_dispatch:
   merge_group:

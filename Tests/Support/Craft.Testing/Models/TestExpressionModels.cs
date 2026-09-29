@@ -1,34 +1,9 @@
-using Craft.Expressions.Ast;
-using Microsoft.EntityFrameworkCore;
-
-namespace Craft.Expressions.Tests.Fixtures;
+namespace Craft.Testing.Models;
 
 public sealed class Company
 {
-    #region Public Properties
-
     public long CountryId { get; set; }
     public string Name { get; set; } = string.Empty;
-
-    #endregion Public Properties
-}
-
-public sealed class CompoundQueryFilterDbContext(DbContextOptions<CompoundQueryFilterDbContext> options) : DbContext(options)
-{
-    #region Protected Methods
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive && !entity.IsDeleted);
-    }
-
-    #endregion Protected Methods
-
-    #region Public Properties
-
-    public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-
-    #endregion Public Properties
 }
 
 public sealed class Store
@@ -96,65 +71,14 @@ public sealed class MyClass
 public sealed class MethodHost
 {
     public string Echo(string value) => value;
-
     public string TakesObject(object value) => value.ToString() ?? string.Empty;
-
     public double DoubleInput(double value) => value;
-
     public int NeedsInt(int value) => value;
-
     public string Ambiguous(string? value) => value ?? string.Empty;
-
     public string Ambiguous(Uri? value) => value?.ToString() ?? string.Empty;
 }
 
 public sealed class MethodTargetContainer
 {
     public MethodHost Target { get; set; } = new();
-}
-
-public sealed class DummyAstNode : AstNode;
-
-public sealed class QueryFilterEntity
-{
-    public int Id { get; init; }
-    public bool IsActive { get; init; }
-    public bool IsDeleted { get; init; }
-}
-
-public sealed class NoQueryFilterDbContext(DbContextOptions<NoQueryFilterDbContext> options) : DbContext(options)
-{
-    public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-}
-
-public sealed class SingleQueryFilterDbContext(DbContextOptions<SingleQueryFilterDbContext> options) : DbContext(options)
-{
-    public DbSet<QueryFilterEntity> Entities => Set<QueryFilterEntity>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        _ = modelBuilder.Entity<QueryFilterEntity>().HasQueryFilter(entity => entity.IsActive);
-    }
-}
-
-public sealed class FilteredQueryEntity
-{
-    public int Id { get; init; }
-    public bool IsActive { get; init; }
-    public required string Name { get; init; }
-}
-
-public sealed class FilteredQueryDbContext(DbContextOptions<FilteredQueryDbContext> options) : DbContext(options)
-{
-    public DbSet<FilteredQueryEntity> Entities => Set<FilteredQueryEntity>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        _ = modelBuilder.Entity<FilteredQueryEntity>().HasQueryFilter(entity => entity.IsActive);
-    }
-}
-
-public sealed class UnfilteredQueryDbContext(DbContextOptions<UnfilteredQueryDbContext> options) : DbContext(options)
-{
-    public DbSet<FilteredQueryEntity> Entities => Set<FilteredQueryEntity>();
 }

@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+
+if ! command -v dotnet >/dev/null 2>&1; then
+    echo 'Push blocked: .NET SDK is not available on PATH.' >&2
+    exit 1
+fi
+
+echo 'Building Craft_V_11 before push...'
+cd "$repo_root"
+dotnet build Craft_V_11.slnx --configuration Release --nologo

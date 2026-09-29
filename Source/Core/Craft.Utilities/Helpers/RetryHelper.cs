@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Craft.Utilities.Helpers;
+﻿namespace Craft.Utilities.Helpers;
 
 /// <summary>
 /// Provides helper methods for retrying operations with various strategies.
@@ -37,13 +33,13 @@ public static class RetryHelper
             catch (Exception ex)
             {
                 lastException = ex;
+
                 if (attempt < maxAttempts)
                     Thread.Sleep(delayMs);
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -78,8 +74,7 @@ public static class RetryHelper
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -114,13 +109,13 @@ public static class RetryHelper
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
+
                 if (attempt < maxAttempts)
                     await Task.Delay(delayMs, cancellationToken);
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -155,13 +150,13 @@ public static class RetryHelper
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
+
                 if (attempt < maxAttempts)
                     await Task.Delay(delayMs, cancellationToken);
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -194,13 +189,13 @@ public static class RetryHelper
             catch (TException ex)
             {
                 lastException = ex;
+
                 if (attempt < maxAttempts)
                     Thread.Sleep(delayMs);
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -237,13 +232,13 @@ public static class RetryHelper
             catch (TException ex)
             {
                 lastException = ex;
+
                 if (attempt < maxAttempts)
                     await Task.Delay(delayMs, cancellationToken);
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -278,16 +273,13 @@ public static class RetryHelper
                 lastException = ex;
                 if (attempt < maxAttempts)
                 {
-                    var delayMs = Math.Min(
-                        (long)initialDelayMs * (long)Math.Pow(2, attempt - 1),
-                        maxDelayMs);
+                    var delayMs = Math.Min((long)initialDelayMs * (long)Math.Pow(2, attempt - 1), maxDelayMs);
                     Thread.Sleep((int)delayMs);
                 }
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
     /// <summary>
@@ -304,7 +296,7 @@ public static class RetryHelper
     /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1, initialDelayMs is negative, or maxDelayMs is less than initialDelayMs.</exception>
     /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
     /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
-    public static async Task<T> RetryWithExponentialBackoffAsync<T>(Func<Task<T>> action, int maxAttempts = 3, int initialDelayMs = 1000, 
+    public static async Task<T> RetryWithExponentialBackoffAsync<T>(Func<Task<T>> action, int maxAttempts = 3, int initialDelayMs = 1000,
         int maxDelayMs = 30000, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -327,15 +319,12 @@ public static class RetryHelper
                 lastException = ex;
                 if (attempt < maxAttempts)
                 {
-                    var delayMs = Math.Min(
-                        (long)initialDelayMs * (long)Math.Pow(2, attempt - 1),
-                        maxDelayMs);
+                    var delayMs = Math.Min((long)initialDelayMs * (long)Math.Pow(2, attempt - 1), maxDelayMs);
                     await Task.Delay((int)delayMs, cancellationToken);
                 }
             }
         }
 
-        throw new InvalidOperationException(
-            $"Operation failed after {maxAttempts} attempts.", lastException);
+        throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 }

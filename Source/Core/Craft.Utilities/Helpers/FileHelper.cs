@@ -40,6 +40,7 @@ public static class FileHelper
     public static long GetFileSize(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+
         return new FileInfo(path).Length;
     }
 
@@ -53,6 +54,7 @@ public static class FileHelper
     public static Task<long> GetFileSizeAsync(string path, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(new FileInfo(path).Length);
     }
@@ -70,7 +72,6 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(path);
 
         var algorithmName = algorithm == default ? HashAlgorithmName.SHA256 : algorithm;
-
         using var stream = File.OpenRead(path);
         using var hashAlgorithm = CreateHashAlgorithm(algorithmName);
 
@@ -138,6 +139,7 @@ public static class FileHelper
     public static void EnsureDirectoryExists(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+
         Directory.CreateDirectory(path);
     }
 
@@ -151,6 +153,7 @@ public static class FileHelper
     public static IEnumerable<string> GetFilesRecursive(string directory, string pattern = "*.*")
     {
         ArgumentException.ThrowIfNullOrEmpty(directory);
+
         return Directory.EnumerateFiles(directory, pattern, SearchOption.AllDirectories);
     }
 

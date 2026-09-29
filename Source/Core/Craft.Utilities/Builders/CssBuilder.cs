@@ -1,4 +1,4 @@
-﻿/// <summary>
+/// <summary>
 /// A builder for constructing CSS class strings. This class allows for fluent construction of CSS
 /// class names, supporting conditional addition of classes.
 /// </summary>
@@ -8,70 +8,62 @@ using System.Text;
 
 namespace Craft.Utilities.Builders;
 
-public readonly struct CssBuilder(string value)
+// Adapted from https://github.com/EdCharbeneau/BlazorComponentUtilities
+/// <summary>
+/// Builds a space-separated list of CSS classes.
+/// </summary>
+public readonly struct CssBuilder(string? value)
 {
-    #region Private Fields
+    private readonly string? _value = value;
 
-    private readonly StringBuilder stringBuffer = new(value);
+    public static CssBuilder Default(string? value) => new(value);
 
-    #endregion Private Fields
-
-    #region Public Methods
-
-    public static CssBuilder Default(string value) => new(value);
-
-    public readonly CssBuilder AddClass(string value) => AddValue(" " + value);
-
-    public readonly CssBuilder AddClass(string value, bool when = true)
-        => when ? AddClass(value) : this;
-
-    public readonly CssBuilder AddClass(string value, Func<bool> when = null!)
-        => AddClass(value, when != null && when());
-
-    public readonly CssBuilder AddClass(Func<string> value, bool when = true)
-        => when ? AddClass(value()) : this;
-
-    public readonly CssBuilder AddClass(Func<string> value, Func<bool> when = null!)
-        => AddClass(value, when != null && when());
-
-    public readonly CssBuilder AddClass(CssBuilder builder, bool when = true)
-        => when ? AddClass(builder.Build()) : this;
-
-    public readonly CssBuilder AddClass(CssBuilder builder, Func<bool> when = null!)
-        => AddClass(builder, when != null && when());
-
-    public readonly CssBuilder AddClassFromAttributes(IReadOnlyDictionary<string, object> additionalAttributes)
-        => additionalAttributes == null
-        ? this
-        : additionalAttributes.TryGetValue("class", out var c)
-            ? AddClass(c?.ToString() ?? string.Empty)
-            : this;
-
-    public readonly CssBuilder AddValue(string value)
+    public CssBuilder AddClass(string value)
     {
-        stringBuffer.Append(value);
-        return this;
+        if (string.IsNullOrWhiteSpace(value))
+            return this;
+
+        var current = Build();
+        var className = value.Trim();
+        return new CssBuilder(current.Length == 0 ? className : $"{current} {className}");
     }
 
-    public readonly string Build()
-        => stringBuffer != null ? stringBuffer.ToString().Trim() : string.Empty;
+    public CssBuilder AddClass(string value, bool when = true)
+        => when ? AddClass(value) : this;
 
-    public override readonly string ToString()
-        => Build();
+    public CssBuilder AddClass(string value, Func<bool>? when = null)
+        => AddClass(value, when?.Invoke() == true);
 
-    #endregion Public Methods
+    public CssBuilder AddClass(Func<string> value, bool when = true)
+        => when ? AddClass(value()) : this;
+
+    public CssBuilder AddClass(Func<string> value, Func<bool>? when = null)
+        => AddClass(value, when?.Invoke() == true);
+
+    public CssBuilder AddClass(CssBuilder builder, bool when = true)
+        => when ? AddClass(builder.Build()) : this;
+
+    public CssBuilder AddClass(CssBuilder builder, Func<bool>? when = null)
+        => AddClass(builder, when?.Invoke() == true);
+
+    public CssBuilder AddClassFromAttributes(IReadOnlyDictionary<string, object>? additionalAttributes)
+        => additionalAttributes?.TryGetValue("class", out var value) == true
+            ? AddClass(value?.ToString() ?? string.Empty)
+            : this;
+
+    public CssBuilder AddValue(string? value)
+        => new((_value ?? string.Empty) + value);
+
+    public string Build() => _value?.Trim() ?? string.Empty;
+
+    public override string ToString() => Build();
 }
 
 public static class CssBuilderExtensions
 {
-    extension(CssBuilder cssBuilder)
+    public static string? NullIfEmpty(this CssBuilder cssBuilder)
     {
-        /// <summary>
-        /// Returns null if the built CSS string is empty or whitespace; otherwise, returns the
-        /// built CSS string.
-        /// </summary>
-        /// <returns> </returns>
-        public string? NullIfEmpty()
-            => string.IsNullOrWhiteSpace(cssBuilder.Build()) ? null : cssBuilder.Build();
+        var value = cssBuilder.Build();
+        return value.Length == 0 ? null : value;
     }
 }

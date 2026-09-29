@@ -1,8 +1,7 @@
-using System.Linq.Expressions;
 using Craft.Expressions.Comparison;
 using Craft.Expressions.Rewriting;
 
-namespace Craft.Expressions.Extensions;
+namespace System.Linq.Expressions;
 
 public static class PredicateExpressionExtensions
 {

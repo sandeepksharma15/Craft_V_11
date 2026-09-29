@@ -13,7 +13,7 @@ dotnet add package Craft.Expressions
 When referenced as a package, `Craft.Expressions` adds transitive global usings for:
 
 - `Craft.Expressions.Engine`
-- `Craft.Expressions.Extensions`
+- `System.Linq.Expressions`
 - `Craft.Expressions.Linq`
 - `Craft.Expressions.EntityFramework`
 - `Craft.Expressions.Comparison`
@@ -81,7 +81,7 @@ Expression<Func<Person, bool>> restored = serializer.Deserialize(stored);
 ### 4) Compose predicates with `And` / `Or`
 
 ```csharp
-using Craft.Expressions.Extensions;
+using System.Linq.Expressions;
 
 Expression<Func<Person, bool>> adults = p => p.Age >= 18;
 Expression<Func<Person, bool>> active = p => p.IsActive;
@@ -93,7 +93,7 @@ var adultsOrActive = adults.Or(active);
 ### 5) Remove or replace conditions in a predicate
 
 ```csharp
-using Craft.Expressions.Extensions;
+using System.Linq.Expressions;
 
 Expression<Func<Person, bool>> filter = p => p.IsActive && p.Age >= 18;
 
@@ -104,7 +104,7 @@ var stricterAge = filter.ReplaceCondition(p => p.Age >= 18, p => p.Age >= 21);
 ### 6) Compare expression meaning (semantic equality)
 
 ```csharp
-using Craft.Expressions.Extensions;
+using System.Linq.Expressions;
 
 Expression<Func<Person, bool>> a = x => x.IsActive && x.Age >= 18;
 Expression<Func<Person, bool>> b = p => p.Age >= 18 && p.IsActive;
@@ -115,7 +115,7 @@ bool same = a.Body.IsSemanticallyEquivalentTo(b.Body); // true
 ### 7) Create member access expressions and extract property paths
 
 ```csharp
-using Craft.Expressions.Extensions;
+using System.Linq.Expressions;
 
 var selector = "Name".CreateMemberExpression<Person, string>();
 string path = ((Expression<Func<Person, object>>)(p => p.Address.City)).GetFullPropertyPath();

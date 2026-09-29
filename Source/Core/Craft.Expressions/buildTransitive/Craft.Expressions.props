@@ -2,7 +2,7 @@
 
 	<ItemGroup Condition="'$(CraftExpressionsDisableAutoUsings)' != 'true' and '$(CraftDisableAutoUsings)' != 'true'">
 		<Using Include="Craft.Expressions.Engine" />
-		<Using Include="Craft.Expressions.Extensions" />
+		<Using Include="System.Linq.Expressions" />
 		<Using Include="Craft.Expressions.Linq" />
 		<Using Include="Craft.Expressions.EntityFramework" />
 		<Using Include="Craft.Expressions.Comparison" />

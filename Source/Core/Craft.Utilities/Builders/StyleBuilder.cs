@@ -44,7 +44,7 @@ public struct StyleBuilder
     public StyleBuilder AddStyle(string prop, string value, Func<bool>? when = null)
         => AddStyle(prop, value, when?.Invoke() == true);
 
-    public StyleBuilder AddStyle(string prop, Func<string> value, Func<bool>? when = null)
+    public StyleBuilder AddStyle(string prop, Func<string> value, Func<bool>? when)
         => AddStyle(prop, value, when?.Invoke() == true);
 
     public StyleBuilder AddStyle(StyleBuilder builder) => AddRaw(builder.Build());

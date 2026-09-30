@@ -6,6 +6,24 @@ public class TextExtractorTests
 {
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExtractTextFromDocOrPdf_MissingWordPartOrDocument_ReturnsEmpty(bool addPart)
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+        try
+        {
+            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
+                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            {
+                if (addPart) document.AddMainDocumentPart();
+            }
+            Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Theory]
     [InlineData("legacy.doc")]
     [InlineData("legacy.DOC")]
     public void ExtractTextFromDocOrPdf_LegacyBinaryWord_IsExplicitlyUnsupported(string path)

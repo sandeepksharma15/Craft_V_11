@@ -376,12 +376,6 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(path1);
         ArgumentException.ThrowIfNullOrEmpty(path2);
 
-        var file1Info = new FileInfo(path1);
-        var file2Info = new FileInfo(path2);
-
-        if (file1Info.Length != file2Info.Length)
-            return false;
-
         using var stream1 = File.OpenRead(path1);
         using var stream2 = File.OpenRead(path2);
 
@@ -420,12 +414,6 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(path2);
 
         cancellationToken.ThrowIfCancellationRequested();
-
-        var file1Info = new FileInfo(path1);
-        var file2Info = new FileInfo(path2);
-
-        if (file1Info.Length != file2Info.Length)
-            return false;
 
         using var stream1 = new FileStream(path1, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
         using var stream2 = new FileStream(path2, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);

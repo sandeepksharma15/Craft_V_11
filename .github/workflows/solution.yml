@@ -49,7 +49,7 @@ jobs:
             -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
             --filter "FullyQualifiedName~StyleBuilder|FullyQualifiedName~ValueBuilder|FullyQualifiedName~Craft.Utilities.Tests.Passwords|FullyQualifiedName~Craft.Utilities.Tests.Helpers" \
             --collect:"XPlat Code Coverage" --results-directory artifacts/utility-coverage \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder,[Craft.Utilities]Craft.Utilities.Passwords.*,[Craft.Utilities]Craft.Utilities.Helpers.*"
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="cobertura,opencover" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder,[Craft.Utilities]Craft.Utilities.Passwords.*,[Craft.Utilities]Craft.Utilities.Helpers.*"
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
@@ -68,7 +68,7 @@ jobs:
               print(f"{item.attrib['name']}: lines={item.attrib['line-rate']}, branches={item.attrib['branch-rate']}")
               missing = [line.attrib["number"] for line in item.findall("./lines/line") if int(line.attrib["hits"]) == 0]
               partial = [(line.attrib["number"], line.attrib.get("condition-coverage")) for line in item.findall("./lines/line")
-                  if line.attrib.get("branch") == "true" and not line.attrib.get("condition-coverage", "").startswith("100%")]
+                  if line.attrib.get("branch", "").lower() == "true" and not line.attrib.get("condition-coverage", "").startswith("100%")]
               print(f"  Uncovered lines: {missing}; partial branches: {partial}")
               if item.attrib["name"] in expected and (float(item.attrib["line-rate"]) < 1 or float(item.attrib["branch-rate"]) < 1):
                   raise SystemExit("Previously reviewed utilities require 100% line and branch coverage")
@@ -79,4 +79,22 @@ jobs:
 
           PY
 
+      - name: Upload utility coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: utility-coverage-${{ matrix.os }}
+          path: artifacts/utility-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
 
+  helper-coverage:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: utility-coverage-*
+          path: artifacts/combined-coverage
+      - name: Enforce complete cross-platform helper coverage
+        run: python3 .github/scripts/verify-helper-coverage.py artifacts/combined-coverage

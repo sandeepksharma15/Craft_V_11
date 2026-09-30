@@ -108,9 +108,6 @@ public static class TextConverters
                     AppendText(rtf, link.Url);
                     rtf.Append("}}");
                     break;
-                case ContainerInline nested:
-                    RenderInlines(rtf, nested);
-                    break;
             }
         }
     }
@@ -144,7 +141,7 @@ public static class TextConverters
                     break;
                 default:
                     if (character > 127)
-                        rtf.Append(@"\u").Append((short)character).Append('?');
+                        rtf.Append(@"\u").Append(((short)character).ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('?');
                     else
                         rtf.Append(character);
                     break;

@@ -4,15 +4,30 @@ namespace Craft.Utilities.Passwords;
 
 public static class PasswordGenerator
 {
+    #region Private Fields
+
+    private const string AllChars = UppercaseChars + LowercaseChars + NumericChars + SpecialChars;
     private const string LowercaseChars = "abcdefghijklmnopqrstuvwxyz";
     private const string NumericChars = "0123456789";
     private const string SpecialChars = "!@#$%^&*()_+[]{}|;:,.<>?";
     private const string UppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private const string AllChars = UppercaseChars + LowercaseChars + NumericChars + SpecialChars;
 
-    /// <summary>Generates a cryptographically random password with all four character categories.</summary>
-    /// <param name="length">The password length. Must be at least 6; defaults to 8 for compatibility.</param>
-    /// <exception cref="ArgumentOutOfRangeException">The length is less than 6.</exception>
+    #endregion Private Fields
+
+    #region Private Methods
+
+    private static char GetRandomChar(string pool)
+            => pool[RandomNumberGenerator.GetInt32(pool.Length)];
+
+    #endregion Private Methods
+
+    #region Public Methods
+
+    /// <summary>
+    /// Generates a cryptographically random password with all four character categories.
+    /// </summary>
+    /// <param name="length"> The password length. Must be at least 6; defaults to 8 for compatibility. </param>
+    /// <exception cref="ArgumentOutOfRangeException"> The length is less than 6. </exception>
     public static string GeneratePassword(int length = 8)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(length, 6);
@@ -28,6 +43,5 @@ public static class PasswordGenerator
         });
     }
 
-    private static char GetRandomChar(string pool)
-        => pool[RandomNumberGenerator.GetInt32(pool.Length)];
+    #endregion Public Methods
 }

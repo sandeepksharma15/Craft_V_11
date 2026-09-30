@@ -7,11 +7,13 @@ public static class PasswordGeneratorServiceExtensions
 {
     extension(IServiceCollection services)
     {
-        /// <summary>Registers the default singleton password generator if no implementation is registered.</summary>
+        /// <summary>
+        /// Registers the default singleton password generator if no implementation is registered.
+        /// </summary>
         public IServiceCollection AddPasswordGeneratorService()
         {
-            ArgumentNullException.ThrowIfNull(services);
             services.TryAddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
+
             return services;
         }
     }

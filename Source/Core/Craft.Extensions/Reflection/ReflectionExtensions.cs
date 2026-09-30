@@ -110,8 +110,11 @@ public static class ReflectionExtensions
 
     extension(object obj)
     {
-        /// <summary>Reads a case-sensitive, dotted instance property path. Non-public access requires explicit opt-in.</summary>
-        /// <exception cref="InvalidOperationException">An intermediate property is null.</exception>
+        /// <summary>
+        /// Reads a case-sensitive, dotted instance property path. Non-public access requires
+        /// explicit opt-in.
+        /// </summary>
+        /// <exception cref="InvalidOperationException"> An intermediate property is null. </exception>
         public object? GetValue(string propertyPath, bool includeNonPublic = false)
         {
             ArgumentNullException.ThrowIfNull(obj);
@@ -131,7 +134,9 @@ public static class ReflectionExtensions
             return current;
         }
 
-        /// <summary>Reads a property path without converting its value. Null requires a nullable result type.</summary>
+        /// <summary>
+        /// Reads a property path without converting its value. Null requires a nullable result type.
+        /// </summary>
         public T? GetValue<T>(string propertyPath, bool includeNonPublic = false)
         {
             var value = obj.GetValue(propertyPath, includeNonPublic);
@@ -146,10 +151,12 @@ public static class ReflectionExtensions
         }
 
         /// <summary>
-        /// Sets a case-sensitive, dotted instance property path without value conversion or intermediate creation.
-        /// Nested structs are written back. The root must be a reference type; init-only properties are read-only.
-        /// Non-public access requires explicit opt-in. Accessor exceptions propagate without rollback.
+        /// Sets a case-sensitive, dotted instance property path without value conversion or
+        /// intermediate creation. Nested structs are written back. The root must be a reference
+        /// type; init-only properties are read-only. Non-public access requires explicit opt-in.
+        /// Accessor exceptions propagate without rollback.
         /// </summary>
+        [Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2208:Instantiate argument exceptions correctly", Justification = "<Pending>")]
         public void SetValue(string propertyPath, object? value, bool includeNonPublic = false)
         {
             ArgumentNullException.ThrowIfNull(obj);
@@ -195,11 +202,15 @@ public static class ReflectionExtensions
                 path[index].Property.SetValue(path[index].Owner, path[index + 1].Owner);
         }
 
-        /// <summary>Alias for SetValue, including nested paths and explicit non-public access.</summary>
+        /// <summary>
+        /// Alias for SetValue, including nested paths and explicit non-public access.
+        /// </summary>
         public void SetPropertyValue(string propertyName, object? value, bool includeNonPublic = false)
             => obj.SetValue(propertyName, value, includeNonPublic);
 
-        /// <summary>Alias for GetValue, including nested paths and explicit non-public access.</summary>
+        /// <summary>
+        /// Alias for GetValue, including nested paths and explicit non-public access.
+        /// </summary>
         public object? GetPropertyValue(string propertyName, bool includeNonPublic = false)
             => obj.GetValue(propertyName, includeNonPublic);
     }
@@ -258,6 +269,14 @@ public static class ReflectionExtensions
         return names;
     }
 
+    private static void RequireAccessor(PropertyInfo property, bool write, bool includeNonPublic, string propertyPath)
+    {
+        var accessor = write ? property.GetSetMethod(includeNonPublic) : property.GetGetMethod(includeNonPublic);
+
+        if (accessor is null || (write && accessor.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit))))
+            throw new ArgumentException($"Property '{property.Name}' in '{propertyPath}' has no permitted {(write ? "setter" : "getter")}.", nameof(propertyPath));
+    }
+
     private static PropertyInfo ResolveProperty(Type type, string name, string propertyPath)
     {
         for (var current = type; current is not null; current = current.BaseType)
@@ -275,14 +294,6 @@ public static class ReflectionExtensions
         }
 
         throw new ArgumentException($"Property segment '{name}' in '{propertyPath}' was not found on '{type}'.", nameof(propertyPath));
-    }
-
-    private static void RequireAccessor(PropertyInfo property, bool write, bool includeNonPublic, string propertyPath)
-    {
-        var accessor = write ? property.GetSetMethod(includeNonPublic) : property.GetGetMethod(includeNonPublic);
-
-        if (accessor is null || (write && accessor.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit))))
-            throw new ArgumentException($"Property '{property.Name}' in '{propertyPath}' has no permitted {(write ? "setter" : "getter")}.", nameof(propertyPath));
     }
 
     #endregion Private Methods

@@ -2,7 +2,7 @@ namespace Craft.Utilities.Helpers;
 
 /// <summary>
 /// A shortcut to use <see cref="Random"/> class.
-/// Also provides some useful methods.
+/// Provides selection and permutation helpers for non-security-sensitive use.
 /// </summary>
 public static class RandomHelper
 {
@@ -15,17 +15,9 @@ public static class RandomHelper
     {
         ArgumentNullException.ThrowIfNull(items, nameof(items));
 
-        var currentList = new List<T>(items);
-        var randomList = new List<T>(currentList.Count);
-
-        while (currentList.Count != 0)
-        {
-            var randomIndex = GetRandom(0, currentList.Count);
-            randomList.Add(currentList[randomIndex]);
-            currentList.RemoveAt(randomIndex);
-        }
-
-        return randomList;
+        List<T> result = [.. items];
+        Random.Shared.Shuffle(System.Runtime.InteropServices.CollectionsMarshal.AsSpan(result));
+        return result;
     }
 
     /// <summary>

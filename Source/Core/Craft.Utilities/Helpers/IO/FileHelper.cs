@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 
 namespace Craft.Utilities.Helpers;
@@ -11,18 +12,21 @@ public static class FileHelper
     /// </summary>
     /// <param name="directory">The directory to check for existing files.</param>
     /// <param name="fileName">The original file name.</param>
-    /// <returns>A unique file name that does not exist in the directory.</returns>
+    /// <returns>An available file name. This check does not reserve the name; use CreateNew when creating the file.</returns>
     public static string GetUniqueFileName(string directory, string fileName)
     {
         ArgumentException.ThrowIfNullOrEmpty(directory);
         ArgumentException.ThrowIfNullOrEmpty(fileName);
+
+        if (Path.GetFileName(fileName) != fileName || fileName is "." or "..")
+            throw new ArgumentException("A file name without a directory is required.", nameof(fileName));
 
         var name = Path.GetFileNameWithoutExtension(fileName);
         var extension = Path.GetExtension(fileName);
         var uniqueName = fileName;
         var counter = 1;
 
-        while (File.Exists(Path.Combine(directory, uniqueName)))
+        while (Path.Exists(Path.Combine(directory, uniqueName)))
         {
             uniqueName = $"{name}_{counter}{extension}";
             counter++;
@@ -95,10 +99,11 @@ public static class FileHelper
 
         var algorithmName = algorithm == default ? HashAlgorithmName.SHA256 : algorithm;
 
-        using var stream = File.OpenRead(path);
+        cancellationToken.ThrowIfCancellationRequested();
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
         using var hashAlgorithm = CreateHashAlgorithm(algorithmName);
 
-        var hash = await hashAlgorithm.ComputeHashAsync(stream, cancellationToken);
+        var hash = await hashAlgorithm.ComputeHashAsync(stream, cancellationToken).ConfigureAwait(false);
 
         return Convert.ToHexString(hash);
     }
@@ -193,7 +198,8 @@ public static class FileHelper
     /// <returns>A formatted string representing the file size with appropriate unit.</returns>
     public static string GetReadableFileSize(long bytes)
     {
-        string[] sizes = ["B", "KB", "MB", "GB", "TB"];
+        ArgumentOutOfRangeException.ThrowIfNegative(bytes);
+        string[] sizes = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
         double len = bytes;
         int order = 0;
 
@@ -203,7 +209,7 @@ public static class FileHelper
             len /= BytesInKilobyte;
         }
 
-        return $"{len:0.##} {sizes[order]}";
+        return string.Create(CultureInfo.InvariantCulture, $"{len:0.##} {sizes[order]}");
     }
 
     /// <summary>
@@ -234,13 +240,12 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(sourcePath);
         ArgumentException.ThrowIfNullOrEmpty(destinationPath);
 
-        if (!overwrite && File.Exists(destinationPath))
-            throw new IOException($"The file '{destinationPath}' already exists.");
+        cancellationToken.ThrowIfCancellationRequested();
 
         using var sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
-        using var destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
+        using var destinationStream = new FileStream(destinationPath, overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous);
 
-        await sourceStream.CopyToAsync(destinationStream, cancellationToken);
+        await sourceStream.CopyToAsync(destinationStream, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -269,19 +274,23 @@ public static class FileHelper
     public static bool DeleteFile(string path, int retryCount = 3, int retryDelayMilliseconds = 100)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentOutOfRangeException.ThrowIfNegative(retryCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(retryDelayMilliseconds);
 
         if (!File.Exists(path))
             return false;
 
-        for (int i = 0; i <= retryCount; i++)
+        for (int attempt = 0; ; attempt++)
         {
             try
             {
                 File.Delete(path);
                 return true;
             }
-            catch (IOException) when (i < retryCount)
+            catch (IOException)
             {
+                if (attempt == retryCount)
+                    return false;
                 Thread.Sleep(retryDelayMilliseconds);
             }
             catch (UnauthorizedAccessException)
@@ -289,8 +298,6 @@ public static class FileHelper
                 return false;
             }
         }
-
-        return false;
     }
 
     /// <summary>
@@ -305,28 +312,32 @@ public static class FileHelper
     public static async Task<bool> DeleteFileAsync(string path, int retryCount = 3, int retryDelayMilliseconds = 100, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentOutOfRangeException.ThrowIfNegative(retryCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(retryDelayMilliseconds);
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (!File.Exists(path))
             return false;
 
-        for (int i = 0; i <= retryCount; i++)
+        for (int attempt = 0; ; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 File.Delete(path);
                 return true;
             }
-            catch (IOException) when (i < retryCount)
+            catch (IOException)
             {
-                await Task.Delay(retryDelayMilliseconds, cancellationToken);
+                if (attempt == retryCount)
+                    return false;
+                await Task.Delay(retryDelayMilliseconds, cancellationToken).ConfigureAwait(false);
             }
             catch (UnauthorizedAccessException)
             {
                 return false;
             }
         }
-
-        return false;
     }
 
     /// <summary>
@@ -350,7 +361,7 @@ public static class FileHelper
     public static TimeSpan GetFileAge(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
-        return DateTime.Now - File.GetLastWriteTime(path);
+        return DateTime.UtcNow - File.GetLastWriteTimeUtc(path);
     }
 
     /// <summary>
@@ -365,12 +376,6 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(path1);
         ArgumentException.ThrowIfNullOrEmpty(path2);
 
-        var file1Info = new FileInfo(path1);
-        var file2Info = new FileInfo(path2);
-
-        if (file1Info.Length != file2Info.Length)
-            return false;
-
         using var stream1 = File.OpenRead(path1);
         using var stream2 = File.OpenRead(path2);
 
@@ -381,8 +386,8 @@ public static class FileHelper
         int bytesRead1, bytesRead2;
         do
         {
-            bytesRead1 = stream1.Read(buffer1, 0, bufferSize);
-            bytesRead2 = stream2.Read(buffer2, 0, bufferSize);
+            bytesRead1 = stream1.ReadAtLeast(buffer1, bufferSize, throwOnEndOfStream: false);
+            bytesRead2 = stream2.ReadAtLeast(buffer2, bufferSize, throwOnEndOfStream: false);
 
             if (bytesRead1 != bytesRead2)
                 return false;
@@ -408,11 +413,7 @@ public static class FileHelper
         ArgumentException.ThrowIfNullOrEmpty(path1);
         ArgumentException.ThrowIfNullOrEmpty(path2);
 
-        var file1Info = new FileInfo(path1);
-        var file2Info = new FileInfo(path2);
-
-        if (file1Info.Length != file2Info.Length)
-            return false;
+        cancellationToken.ThrowIfCancellationRequested();
 
         using var stream1 = new FileStream(path1, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
         using var stream2 = new FileStream(path2, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.Asynchronous);
@@ -424,8 +425,8 @@ public static class FileHelper
         int bytesRead1, bytesRead2;
         do
         {
-            bytesRead1 = await stream1.ReadAsync(buffer1, cancellationToken);
-            bytesRead2 = await stream2.ReadAsync(buffer2, cancellationToken);
+            bytesRead1 = await stream1.ReadAtLeastAsync(buffer1, bufferSize, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
+            bytesRead2 = await stream2.ReadAtLeastAsync(buffer2, bufferSize, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
 
             if (bytesRead1 != bytesRead2)
                 return false;

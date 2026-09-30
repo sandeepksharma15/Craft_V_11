@@ -12,6 +12,7 @@ public static class PasswordGeneratorServiceExtensions
         /// </summary>
         public IServiceCollection AddPasswordGeneratorService()
         {
+            ArgumentNullException.ThrowIfNull(services);
             services.TryAddSingleton<IPasswordGeneratorService, PasswordGeneratorService>();
 
             return services;

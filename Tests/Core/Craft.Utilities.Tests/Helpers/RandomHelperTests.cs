@@ -1,130 +1,85 @@
-﻿using Craft.Utilities.Helpers;
+using Craft.Utilities.Helpers;
 
 namespace Craft.Utilities.Tests.Helpers;
 
 public class RandomHelperTests
 {
-    [Fact]
-    public void GenerateRandomizedList_ReturnsPermutationOfInput()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(10000)]
+    public void GenerateRandomizedList_PreservesInputAndAllOccurrences(int count)
     {
-        // Arrange
-        var input = Enumerable.Range(1, 10).ToList();
-
-        // Act
-        var result = RandomHelper.GenerateRandomizedList(input);
-
-        // Assert
-        Assert.Equal(input.Count, result.Count);
-        Assert.True(input.All(result.Contains));
-        Assert.False(input.SequenceEqual(result));
+        int[] input = Enumerable.Range(0, count).Select(i => i % 3).ToArray();
+        int[] original = [.. input];
+        List<int> result = RandomHelper.GenerateRandomizedList(input);
+        Assert.Equal(original, input);
+        Assert.Equal(original.Order(), result.Order());
+        Assert.NotSame(input, result);
     }
 
     [Fact]
-    public void GenerateRandomizedList_ThrowsOnNull()
+    public void GenerateRandomizedList_EnumeratesInputOnce()
     {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => RandomHelper.GenerateRandomizedList<int>(null!));
+        int enumerations = 0;
+        IEnumerable<int> Items()
+        {
+            enumerations++;
+            yield return 1;
+            yield return 2;
+        }
+        Assert.Equal([1, 2], RandomHelper.GenerateRandomizedList(Items()).Order());
+        Assert.Equal(1, enumerations);
     }
 
     [Fact]
-    public void GetRandom_MinMax_ReturnsInRange()
+    public void GenerateRandomizedList_Null_Throws()
+        => Assert.Throws<ArgumentNullException>("items", () => RandomHelper.GenerateRandomizedList<int>(null!));
+
+    [Theory]
+    [InlineData(5, 10)]
+    [InlineData(-10, -5)]
+    [InlineData(int.MinValue, int.MaxValue)]
+    public void GetRandom_MinMax_StaysInRange(int min, int max)
     {
-        // Test multiple times to ensure randomness
+        for (int i = 0; i < 100; i++)
+            Assert.InRange(RandomHelper.GetRandom(min, max), min, max - 1);
+    }
+
+    [Fact]
+    public void GetRandom_BoundaryArguments_PreserveRandomContract()
+    {
+        Assert.Equal(5, RandomHelper.GetRandom(5, 5));
+        Assert.Equal(0, RandomHelper.GetRandom(0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RandomHelper.GetRandom(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RandomHelper.GetRandom(2, 1));
         for (int i = 0; i < 100; i++)
         {
-            int value = RandomHelper.GetRandom(5, 10);
-            Assert.InRange(value, 5, 9);
+            Assert.InRange(RandomHelper.GetRandom(10), 0, 9);
+            Assert.InRange(RandomHelper.GetRandom(), 0, int.MaxValue - 1);
         }
     }
 
     [Fact]
-    public void GetRandom_Max_ReturnsInRange()
+    public void GetRandomOf_Collections_SelectOnlyExistingItems()
     {
-        // Test multiple times to ensure randomness
+        string?[] items = ["a", "b", null];
         for (int i = 0; i < 100; i++)
         {
-            int value = RandomHelper.GetRandom(10);
-            Assert.InRange(value, 0, 9);
+            Assert.Contains(RandomHelper.GetRandomOf(items), items);
+            Assert.Contains(RandomHelper.GetRandomOfList(items), items);
         }
+        Assert.Equal("only", RandomHelper.GetRandomOf("only"));
+        Assert.Equal("only", RandomHelper.GetRandomOfList(new[] { "only" }));
     }
 
     [Fact]
-    public void GetRandom_NoArgs_ReturnsNonNegative()
+    public void GetRandomOf_NullOrEmpty_ThrowsWithParameter()
     {
-        // Test multiple times to ensure randomness
-        for (int i = 0; i < 100; i++)
-        {
-            int value = RandomHelper.GetRandom();
-            Assert.InRange(value, 0, int.MaxValue);
-        }
-    }
-
-    [Fact]
-    public void GetRandomOf_ReturnsOneOfValues()
-    {
-        // Test multiple times to ensure randomness
-        var values = new[] { "a", "b", "c" };
-        var result = RandomHelper.GetRandomOf(values);
-
-        // Assert that the result is one of the values
-        Assert.Contains(result, values);
-    }
-
-    [Fact]
-    public void GetRandomOf_ThrowsOnNullOrEmpty()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentException>(() => RandomHelper.GetRandomOf<string>(null!));
-        Assert.Throws<ArgumentException>(() => RandomHelper.GetRandomOf<string>());
-    }
-
-    [Fact]
-    public void GetRandomOfList_ReturnsOneOfList()
-    {
-        // Arrange
-        var list = new List<int> { 1, 2, 3 };
-
-        // Act
-        var result = RandomHelper.GetRandomOfList(list);
-
-        // Assert
-        Assert.Contains(result, list);
-    }
-
-    [Fact]
-    public void GetRandomOfList_ThrowsOnNullOrEmpty()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentException>(() => RandomHelper.GetRandomOfList<int>(null!));
-        Assert.Throws<ArgumentException>(() => RandomHelper.GetRandomOfList(new List<int>()));
-    }
-
-    [Fact]
-    public void GenerateRandomizedList_IsRandom()
-    {
-        // Arrange
-        var input = Enumerable.Range(1, 20).ToList();
-
-        // Act
-        var r1 = RandomHelper.GenerateRandomizedList(input);
-        var r2 = RandomHelper.GenerateRandomizedList(input);
-
-        // Assert
-        Assert.False(r1.SequenceEqual(r2));
-    }
-
-    [Fact]
-    public void GetRandomOf_IsRandom()
-    {
-        // Arrange
-        var values = new[] { 1, 2, 3, 4, 5 };
-        var results = new HashSet<int>();
-
-        // Act
-        for (int i = 0; i < 20; i++)
-            results.Add(RandomHelper.GetRandomOf(values));
-
-        // Assert
-        Assert.True(results.Count > 1);
+        Assert.Throws<ArgumentException>("objs", () => RandomHelper.GetRandomOf<string>(null!));
+        Assert.Throws<ArgumentException>("objs", () => RandomHelper.GetRandomOf<string>());
+        Assert.Throws<ArgumentException>("list", () => RandomHelper.GetRandomOfList<string>(null!));
+        Assert.Throws<ArgumentException>("list", () => RandomHelper.GetRandomOfList(Array.Empty<string>()));
     }
 }

@@ -1,4 +1,4 @@
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.Timing;
 
 /// <summary>
 /// A pausable countdown that emits numbered ticks and one completion notification.

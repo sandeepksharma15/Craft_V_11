@@ -1,4 +1,4 @@
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.Text;
 
 /// <summary>
 /// Provides case-sensitive edit distance over UTF-16 code units.

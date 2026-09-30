@@ -1,4 +1,4 @@
-﻿namespace Craft.Utilities.Helpers;
+﻿namespace Craft.Utilities.Helpers.Resilience;
 
 /// <summary>
 /// Provides helper methods for retrying operations with various strategies.

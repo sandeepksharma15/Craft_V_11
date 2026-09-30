@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.IO;
 
 public static class FileHelper
 {
@@ -115,9 +115,7 @@ public static class FileHelper
     /// </summary>
     /// <param name="sourcePath">      The source file path. </param>
     /// <param name="destinationPath"> The destination file path. </param>
-    /// <param name="overwrite">      
-    /// Whether to overwrite the destination file if it exists.
-    /// </param>
+    /// <param name="overwrite">       Whether to overwrite the destination file if it exists. </param>
     /// <exception cref="ArgumentException"> Thrown when either path is null or empty. </exception>
     public static void CopyFile(string sourcePath, string destinationPath, bool overwrite = false)
     {
@@ -132,9 +130,7 @@ public static class FileHelper
     /// </summary>
     /// <param name="sourcePath">        The source file path. </param>
     /// <param name="destinationPath">   The destination file path. </param>
-    /// <param name="overwrite">        
-    /// Whether to overwrite the destination file if it exists.
-    /// </param>
+    /// <param name="overwrite">         Whether to overwrite the destination file if it exists. </param>
     /// <param name="cancellationToken"> The cancellation token. </param>
     /// <exception cref="ArgumentException"> Thrown when either path is null or empty. </exception>
     public static async Task CopyFileAsync(string sourcePath, string destinationPath, bool overwrite = false, CancellationToken cancellationToken = default)
@@ -154,9 +150,7 @@ public static class FileHelper
     /// Safely deletes a file with optional retry logic for locked files.
     /// </summary>
     /// <param name="path">                   The path to the file to delete. </param>
-    /// <param name="retryCount">            
-    /// The number of retry attempts if the file is locked.
-    /// </param>
+    /// <param name="retryCount">             The number of retry attempts if the file is locked. </param>
     /// <param name="retryDelayMilliseconds"> The delay in milliseconds between retry attempts. </param>
     /// <returns>
     /// True if the file was deleted; false if it does not exist or could not be deleted after retries.
@@ -195,9 +189,7 @@ public static class FileHelper
     /// Asynchronously and safely deletes a file with optional retry logic for locked files.
     /// </summary>
     /// <param name="path">                   The path to the file to delete. </param>
-    /// <param name="retryCount">            
-    /// The number of retry attempts if the file is locked.
-    /// </param>
+    /// <param name="retryCount">             The number of retry attempts if the file is locked. </param>
     /// <param name="retryDelayMilliseconds"> The delay in milliseconds between retry attempts. </param>
     /// <param name="cancellationToken">      The cancellation token. </param>
     /// <returns>
@@ -336,9 +328,7 @@ public static class FileHelper
     /// Gets all files recursively from a directory matching the specified pattern.
     /// </summary>
     /// <param name="directory"> The directory to search. </param>
-    /// <param name="pattern">  
-    /// The search pattern to match against file names. Defaults to "*.*".
-    /// </param>
+    /// <param name="pattern">   The search pattern to match against file names. Defaults to "*.*". </param>
     /// <returns> An enumerable collection of file paths. </returns>
     /// <exception cref="ArgumentException"> Thrown when the directory is null or empty. </exception>
     public static IEnumerable<string> GetFilesRecursive(string directory, string pattern = "*.*")
@@ -461,9 +451,7 @@ public static class FileHelper
     /// </summary>
     /// <param name="sourcePath">      The source file path. </param>
     /// <param name="destinationPath"> The destination file path. </param>
-    /// <param name="overwrite">      
-    /// Whether to overwrite the destination file if it exists.
-    /// </param>
+    /// <param name="overwrite">       Whether to overwrite the destination file if it exists. </param>
     /// <exception cref="ArgumentException"> Thrown when either path is null or empty. </exception>
     public static void MoveFile(string sourcePath, string destinationPath, bool overwrite = false)
     {

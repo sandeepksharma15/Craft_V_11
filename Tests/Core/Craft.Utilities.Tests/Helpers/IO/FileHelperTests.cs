@@ -1,23 +1,157 @@
 using System.Security.Cryptography;
-using Craft.Utilities.Helpers;
+using Craft.Utilities.Helpers.IO;
 
-namespace Craft.Utilities.Tests.Helpers;
+namespace Craft.Utilities.Tests.Helpers.IO;
 
 public class FileHelperTests : IDisposable
 {
+    #region Private Fields
 
-    [Theory]
-    [InlineData(".")]
-    [InlineData("..")]
-    [InlineData("folder/test.txt")]
-    public void GetUniqueFileName_PathInsteadOfName_Throws(string name)
-        => Assert.Throws<ArgumentException>("fileName", () => FileHelper.GetUniqueFileName(_testDirectory, name));
+    private readonly string _testDirectory;
+
+    #endregion Private Fields
+
+    #region Public Constructors
+
+    public FileHelperTests()
+    {
+        _testDirectory = Path.Combine(Path.GetTempPath(), $"FileHelperTests_{Guid.NewGuid()}");
+        Directory.CreateDirectory(_testDirectory);
+    }
+
+    #endregion Public Constructors
+
+    #region Public Methods
 
     [Fact]
-    public void GetUniqueFileName_DirectoryCollision_UsesCounter()
+    public async Task AsyncFileOperations_NullArguments_Throw()
     {
-        Directory.CreateDirectory(Path.Combine(_testDirectory, "report"));
-        Assert.Equal("report_1", FileHelper.GetUniqueFileName(_testDirectory, "report"));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync("source", null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.DeleteFileAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync(null!, "second", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync("first", null!, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AsyncFileOperations_PreCancelled_DoNotTouchFiles()
+    {
+        string source = Path.Combine(_testDirectory, "source");
+        string destination = Path.Combine(_testDirectory, "destination");
+        File.WriteAllText(source, "source");
+        File.WriteAllText(destination, "keep");
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+        CancellationToken token = cancellation.Token;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.CopyFileAsync(source, destination, true, token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.GetFileHashAsync(source, cancellationToken: token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.GetFileSizeAsync(source, token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.DeleteFileAsync(source, cancellationToken: token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.CompareFilesAsync(source, destination, token));
+        Assert.Equal("source", File.ReadAllText(source));
+        Assert.Equal("keep", File.ReadAllText(destination));
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(4096, false)]
+    [InlineData(10001, false)]
+    [InlineData(10001, true)]
+    public async Task CompareFiles_EmptyAndMultipleBuffers_AgreeSynchronouslyAndAsynchronously(int size, bool change)
+    {
+        string first = Path.Combine(_testDirectory, "first");
+        string second = Path.Combine(_testDirectory, "second");
+        byte[] content = [.. Enumerable.Range(0, size).Select(i => (byte)i)];
+        File.WriteAllBytes(first, content);
+        if (change) content[^1]++;
+        File.WriteAllBytes(second, content);
+        Assert.Equal(!change, FileHelper.CompareFiles(first, second));
+        Assert.Equal(!change, await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task CompareFilesAsync_DifferentLengths_ReturnsFalse()
+    {
+        string first = Path.Combine(_testDirectory, "first");
+        string second = Path.Combine(_testDirectory, "second");
+        File.WriteAllText(first, "a");
+        File.WriteAllText(second, "ab");
+        Assert.False(await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task CopyFileAsync_ConcurrentWriters_OnlyOneCreatesDestination()
+    {
+        string source = Path.Combine(_testDirectory, "source");
+        string destination = Path.Combine(_testDirectory, "destination");
+        File.WriteAllText(source, new string('x', 100000));
+        async Task<bool> Copy()
+        {
+            try { await FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken); return true; }
+            catch (IOException) { return false; }
+        }
+        bool[] results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Copy()));
+        Assert.Single(results, success => success);
+        Assert.Equal(File.ReadAllBytes(source), File.ReadAllBytes(destination));
+    }
+
+    [Fact]
+    public async Task CopyFileAsync_ExistingDestination_RespectsOverwrite()
+    {
+        string source = Path.Combine(_testDirectory, "source");
+        string destination = Path.Combine(_testDirectory, "destination");
+        File.WriteAllText(source, "new");
+        File.WriteAllText(destination, "old");
+        await Assert.ThrowsAsync<IOException>(() => FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Equal("old", File.ReadAllText(destination));
+        await FileHelper.CopyFileAsync(source, destination, overwrite: true, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.Equal("new", File.ReadAllText(destination));
+    }
+
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(0, -1)]
+    public async Task DeleteFile_InvalidRetryArguments_Throw(int count, int delay)
+    {
+        string path = Path.Combine(_testDirectory, "missing");
+        Assert.Throws<ArgumentOutOfRangeException>(() => FileHelper.DeleteFile(path, count, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => FileHelper.DeleteFileAsync(path, count, delay, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task DeleteFile_UnixDeniedDirectory_ReturnsFalse()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        string directory = Path.Combine(_testDirectory, "denied");
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "file");
+        File.WriteAllText(path, "content");
+        UnixFileMode original = File.GetUnixFileMode(directory);
+        try
+        {
+            File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
+            Assert.False(FileHelper.DeleteFile(path));
+            Assert.False(await FileHelper.DeleteFileAsync(path, cancellationToken: TestContext.Current.CancellationToken));
+        }
+        finally { File.SetUnixFileMode(directory, original); }
+    }
+
+    [Fact]
+    public async Task DeleteFile_WindowsLockedFile_ReturnsFalseAfterRetries()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        string path = Path.Combine(_testDirectory, "locked");
+        File.WriteAllText(path, "locked");
+        using FileStream handle = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        Assert.False(FileHelper.DeleteFile(path, retryCount: 1, retryDelayMilliseconds: 0));
+        Assert.False(await FileHelper.DeleteFileAsync(path, retryCount: 1, retryDelayMilliseconds: 0, cancellationToken: TestContext.Current.CancellationToken));
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_testDirectory))
+            Directory.Delete(_testDirectory, true);
+
+        GC.SuppressFinalize(this);
     }
 
     [Theory]
@@ -70,118 +204,18 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyFileAsync_ExistingDestination_RespectsOverwrite()
+    public void GetUniqueFileName_DirectoryCollision_UsesCounter()
     {
-        string source = Path.Combine(_testDirectory, "source");
-        string destination = Path.Combine(_testDirectory, "destination");
-        File.WriteAllText(source, "new");
-        File.WriteAllText(destination, "old");
-        await Assert.ThrowsAsync<IOException>(() => FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken));
-        Assert.Equal("old", File.ReadAllText(destination));
-        await FileHelper.CopyFileAsync(source, destination, overwrite: true, cancellationToken: TestContext.Current.CancellationToken);
-        Assert.Equal("new", File.ReadAllText(destination));
-    }
-
-    [Fact]
-    public async Task CopyFileAsync_ConcurrentWriters_OnlyOneCreatesDestination()
-    {
-        string source = Path.Combine(_testDirectory, "source");
-        string destination = Path.Combine(_testDirectory, "destination");
-        File.WriteAllText(source, new string('x', 100000));
-        async Task<bool> Copy()
-        {
-            try { await FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken); return true; }
-            catch (IOException) { return false; }
-        }
-        bool[] results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Copy()));
-        Assert.Single(results, success => success);
-        Assert.Equal(File.ReadAllBytes(source), File.ReadAllBytes(destination));
-    }
-
-    [Fact]
-    public async Task AsyncFileOperations_PreCancelled_DoNotTouchFiles()
-    {
-        string source = Path.Combine(_testDirectory, "source");
-        string destination = Path.Combine(_testDirectory, "destination");
-        File.WriteAllText(source, "source");
-        File.WriteAllText(destination, "keep");
-        using CancellationTokenSource cancellation = new();
-        cancellation.Cancel();
-        CancellationToken token = cancellation.Token;
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.CopyFileAsync(source, destination, true, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.GetFileHashAsync(source, cancellationToken: token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.GetFileSizeAsync(source, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.DeleteFileAsync(source, cancellationToken: token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => FileHelper.CompareFilesAsync(source, destination, token));
-        Assert.Equal("source", File.ReadAllText(source));
-        Assert.Equal("keep", File.ReadAllText(destination));
+        Directory.CreateDirectory(Path.Combine(_testDirectory, "report"));
+        Assert.Equal("report_1", FileHelper.GetUniqueFileName(_testDirectory, "report"));
     }
 
     [Theory]
-    [InlineData(0, false)]
-    [InlineData(4096, false)]
-    [InlineData(10001, false)]
-    [InlineData(10001, true)]
-    public async Task CompareFiles_EmptyAndMultipleBuffers_AgreeSynchronouslyAndAsynchronously(int size, bool change)
-    {
-        string first = Path.Combine(_testDirectory, "first");
-        string second = Path.Combine(_testDirectory, "second");
-        byte[] content = Enumerable.Range(0, size).Select(i => (byte)i).ToArray();
-        File.WriteAllBytes(first, content);
-        if (change) content[^1]++;
-        File.WriteAllBytes(second, content);
-        Assert.Equal(!change, FileHelper.CompareFiles(first, second));
-        Assert.Equal(!change, await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task CompareFilesAsync_DifferentLengths_ReturnsFalse()
-    {
-        string first = Path.Combine(_testDirectory, "first");
-        string second = Path.Combine(_testDirectory, "second");
-        File.WriteAllText(first, "a");
-        File.WriteAllText(second, "ab");
-        Assert.False(await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
-    }
-
-    [Theory]
-    [InlineData(-1, 0)]
-    [InlineData(0, -1)]
-    public async Task DeleteFile_InvalidRetryArguments_Throw(int count, int delay)
-    {
-        string path = Path.Combine(_testDirectory, "missing");
-        Assert.Throws<ArgumentOutOfRangeException>(() => FileHelper.DeleteFile(path, count, delay));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => FileHelper.DeleteFileAsync(path, count, delay, cancellationToken: TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task DeleteFile_WindowsLockedFile_ReturnsFalseAfterRetries()
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        string path = Path.Combine(_testDirectory, "locked");
-        File.WriteAllText(path, "locked");
-        using FileStream handle = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-        Assert.False(FileHelper.DeleteFile(path, retryCount: 1, retryDelayMilliseconds: 0));
-        Assert.False(await FileHelper.DeleteFileAsync(path, retryCount: 1, retryDelayMilliseconds: 0, cancellationToken: TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task DeleteFile_UnixDeniedDirectory_ReturnsFalse()
-    {
-        if (OperatingSystem.IsWindows()) return;
-        string directory = Path.Combine(_testDirectory, "denied");
-        Directory.CreateDirectory(directory);
-        string path = Path.Combine(directory, "file");
-        File.WriteAllText(path, "content");
-        UnixFileMode original = File.GetUnixFileMode(directory);
-        try
-        {
-            File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
-            Assert.False(FileHelper.DeleteFile(path));
-            Assert.False(await FileHelper.DeleteFileAsync(path, cancellationToken: TestContext.Current.CancellationToken));
-        }
-        finally { File.SetUnixFileMode(directory, original); }
-    }
+    [InlineData(".")]
+    [InlineData("..")]
+    [InlineData("folder/test.txt")]
+    public void GetUniqueFileName_PathInsteadOfName_Throws(string name)
+        => Assert.Throws<ArgumentException>("fileName", () => FileHelper.GetUniqueFileName(_testDirectory, name));
 
     [Fact]
     public void IsFileLocked_UnixDeniedRead_ReturnsTrue()
@@ -198,31 +232,25 @@ public class FileHelperTests : IDisposable
         finally { File.SetUnixFileMode(path, original); }
     }
 
-    [Fact]
-    public async Task AsyncFileOperations_NullArguments_Throw()
-    {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync("source", null!, cancellationToken: TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.DeleteFileAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync(null!, "second", cancellationToken: TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync("first", null!, cancellationToken: TestContext.Current.CancellationToken));
-    }
-    private readonly string _testDirectory;
-
-    public FileHelperTests()
-    {
-        _testDirectory = Path.Combine(Path.GetTempPath(), $"FileHelperTests_{Guid.NewGuid()}");
-        Directory.CreateDirectory(_testDirectory);
-    }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_testDirectory))
-            Directory.Delete(_testDirectory, true);
-
-        GC.SuppressFinalize(this);
-    }
+    #endregion Public Methods
 
     #region GetUniqueFileName Tests
+
+    [Fact]
+    public void GetUniqueFileName_IncrementsCounter_ForMultipleExistingFiles()
+    {
+        // Arrange
+        var fileName = "test.txt";
+        File.WriteAllText(Path.Combine(_testDirectory, "test.txt"), "content");
+        File.WriteAllText(Path.Combine(_testDirectory, "test_1.txt"), "content");
+        File.WriteAllText(Path.Combine(_testDirectory, "test_2.txt"), "content");
+
+        // Act
+        var result = FileHelper.GetUniqueFileName(_testDirectory, fileName);
+
+        // Assert
+        Assert.Equal("test_3.txt", result);
+    }
 
     [Fact]
     public void GetUniqueFileName_ReturnsOriginalName_WhenFileDoesNotExist()
@@ -253,22 +281,6 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public void GetUniqueFileName_IncrementsCounter_ForMultipleExistingFiles()
-    {
-        // Arrange
-        var fileName = "test.txt";
-        File.WriteAllText(Path.Combine(_testDirectory, "test.txt"), "content");
-        File.WriteAllText(Path.Combine(_testDirectory, "test_1.txt"), "content");
-        File.WriteAllText(Path.Combine(_testDirectory, "test_2.txt"), "content");
-
-        // Act
-        var result = FileHelper.GetUniqueFileName(_testDirectory, fileName);
-
-        // Assert
-        Assert.Equal("test_3.txt", result);
-    }
-
-    [Fact]
     public void GetUniqueFileName_ThrowsArgumentException_WhenDirectoryIsNull()
     {
         // Arrange & Act & Assert
@@ -282,7 +294,7 @@ public class FileHelperTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => FileHelper.GetUniqueFileName(_testDirectory, null!));
     }
 
-    #endregion
+    #endregion GetUniqueFileName Tests
 
     #region GetFileSize Tests
 
@@ -330,7 +342,7 @@ public class FileHelperTests : IDisposable
         await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileSizeAsync(null!, TestContext.Current.CancellationToken));
     }
 
-    #endregion
+    #endregion GetFileSize Tests
 
     #region GetFileHash Tests
 
@@ -351,6 +363,23 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
+    public void GetFileHash_ReturnsDifferentHashForDifferentContent()
+    {
+        // Arrange
+        var file1 = Path.Combine(_testDirectory, "file1.txt");
+        var file2 = Path.Combine(_testDirectory, "file2.txt");
+        File.WriteAllText(file1, "Content 1");
+        File.WriteAllText(file2, "Content 2");
+
+        // Act
+        var hash1 = FileHelper.GetFileHash(file1);
+        var hash2 = FileHelper.GetFileHash(file2);
+
+        // Assert
+        Assert.NotEqual(hash1, hash2);
+    }
+
+    [Fact]
     public void GetFileHash_ReturnsSameHashForSameContent()
     {
         // Arrange
@@ -366,23 +395,6 @@ public class FileHelperTests : IDisposable
 
         // Assert
         Assert.Equal(hash1, hash2);
-    }
-
-    [Fact]
-    public void GetFileHash_ReturnsDifferentHashForDifferentContent()
-    {
-        // Arrange
-        var file1 = Path.Combine(_testDirectory, "file1.txt");
-        var file2 = Path.Combine(_testDirectory, "file2.txt");
-        File.WriteAllText(file1, "Content 1");
-        File.WriteAllText(file2, "Content 2");
-
-        // Act
-        var hash1 = FileHelper.GetFileHash(file1);
-        var hash2 = FileHelper.GetFileHash(file2);
-
-        // Assert
-        Assert.NotEqual(hash1, hash2);
     }
 
     [Fact]
@@ -414,9 +426,22 @@ public class FileHelperTests : IDisposable
         await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.GetFileHashAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
     }
 
-    #endregion
+    #endregion GetFileHash Tests
 
     #region IsFileLocked Tests
+
+    [Fact]
+    public void IsFileLocked_ReturnsFalse_WhenFileDoesNotExist()
+    {
+        // Arrange
+        var filePath = Path.Combine(_testDirectory, "nonexistent.txt");
+
+        // Act
+        var isLocked = FileHelper.IsFileLocked(filePath);
+
+        // Assert
+        Assert.False(isLocked);
+    }
 
     [Fact]
     public void IsFileLocked_ReturnsFalse_WhenFileIsNotLocked()
@@ -449,26 +474,13 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public void IsFileLocked_ReturnsFalse_WhenFileDoesNotExist()
-    {
-        // Arrange
-        var filePath = Path.Combine(_testDirectory, "nonexistent.txt");
-
-        // Act
-        var isLocked = FileHelper.IsFileLocked(filePath);
-
-        // Assert
-        Assert.False(isLocked);
-    }
-
-    [Fact]
     public void IsFileLocked_ThrowsArgumentException_WhenPathIsNull()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => FileHelper.IsFileLocked(null!));
     }
 
-    #endregion
+    #endregion IsFileLocked Tests
 
     #region EnsureDirectoryExists Tests
 
@@ -504,9 +516,25 @@ public class FileHelperTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => FileHelper.EnsureDirectoryExists(null!));
     }
 
-    #endregion
+    #endregion EnsureDirectoryExists Tests
 
     #region GetFilesRecursive Tests
+
+    [Fact]
+    public void GetFilesRecursive_FiltersFilesByPattern()
+    {
+        // Arrange
+        File.WriteAllText(Path.Combine(_testDirectory, "file1.txt"), "content");
+        File.WriteAllText(Path.Combine(_testDirectory, "file2.csv"), "content");
+        File.WriteAllText(Path.Combine(_testDirectory, "file3.txt"), "content");
+
+        // Act
+        var files = FileHelper.GetFilesRecursive(_testDirectory, "*.txt").ToList();
+
+        // Assert
+        Assert.Equal(2, files.Count);
+        Assert.All(files, f => Assert.EndsWith(".txt", f));
+    }
 
     [Fact]
     public void GetFilesRecursive_ReturnsAllFiles_InDirectoryTree()
@@ -529,29 +557,13 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public void GetFilesRecursive_FiltersFilesByPattern()
-    {
-        // Arrange
-        File.WriteAllText(Path.Combine(_testDirectory, "file1.txt"), "content");
-        File.WriteAllText(Path.Combine(_testDirectory, "file2.csv"), "content");
-        File.WriteAllText(Path.Combine(_testDirectory, "file3.txt"), "content");
-
-        // Act
-        var files = FileHelper.GetFilesRecursive(_testDirectory, "*.txt").ToList();
-
-        // Assert
-        Assert.Equal(2, files.Count);
-        Assert.All(files, f => Assert.EndsWith(".txt", f));
-    }
-
-    [Fact]
     public void GetFilesRecursive_ThrowsArgumentException_WhenDirectoryIsNull()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => FileHelper.GetFilesRecursive(null!));
     }
 
-    #endregion
+    #endregion GetFilesRecursive Tests
 
     #region GetRelativePath Tests
 
@@ -583,9 +595,22 @@ public class FileHelperTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => FileHelper.GetRelativePath("somepath", null!));
     }
 
-    #endregion
+    #endregion GetRelativePath Tests
 
     #region SanitizeFileName Tests
+
+    [Fact]
+    public void SanitizeFileName_KeepsValidCharacters()
+    {
+        // Arrange
+        var fileName = "valid_file-name.txt";
+
+        // Act
+        var sanitized = FileHelper.SanitizeFileName(fileName);
+
+        // Assert
+        Assert.Equal(fileName, sanitized);
+    }
 
     [Fact]
     public void SanitizeFileName_RemovesInvalidCharacters()
@@ -621,20 +646,7 @@ public class FileHelperTests : IDisposable
         Assert.Empty(result);
     }
 
-    [Fact]
-    public void SanitizeFileName_KeepsValidCharacters()
-    {
-        // Arrange
-        var fileName = "valid_file-name.txt";
-
-        // Act
-        var sanitized = FileHelper.SanitizeFileName(fileName);
-
-        // Assert
-        Assert.Equal(fileName, sanitized);
-    }
-
-    #endregion
+    #endregion SanitizeFileName Tests
 
     #region GetReadableFileSize Tests
 
@@ -655,7 +667,7 @@ public class FileHelperTests : IDisposable
         Assert.Equal(expected, result);
     }
 
-    #endregion
+    #endregion GetReadableFileSize Tests
 
     #region CopyFile Tests
 
@@ -692,17 +704,17 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public void CopyFile_ThrowsArgumentException_WhenSourceIsNull()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => FileHelper.CopyFile(null!, "dest"));
-    }
-
-    [Fact]
     public void CopyFile_ThrowsArgumentException_WhenDestinationIsNull()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => FileHelper.CopyFile("source", null!));
+    }
+
+    [Fact]
+    public void CopyFile_ThrowsArgumentException_WhenSourceIsNull()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentNullException>(() => FileHelper.CopyFile(null!, "dest"));
     }
 
     [Fact]
@@ -728,7 +740,7 @@ public class FileHelperTests : IDisposable
         await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync(null!, "dest", cancellationToken: TestContext.Current.CancellationToken));
     }
 
-    #endregion
+    #endregion CopyFile Tests
 
     #region MoveFile Tests
 
@@ -750,20 +762,20 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
-    public void MoveFile_ThrowsArgumentException_WhenSourceIsNull()
-    {
-        // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => FileHelper.MoveFile(null!, "dest"));
-    }
-
-    [Fact]
     public void MoveFile_ThrowsArgumentException_WhenDestinationIsNull()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => FileHelper.MoveFile("source", null!));
     }
 
-    #endregion
+    [Fact]
+    public void MoveFile_ThrowsArgumentException_WhenSourceIsNull()
+    {
+        // Arrange & Act & Assert
+        Assert.Throws<ArgumentNullException>(() => FileHelper.MoveFile(null!, "dest"));
+    }
+
+    #endregion MoveFile Tests
 
     #region DeleteFile Tests
 
@@ -830,7 +842,7 @@ public class FileHelperTests : IDisposable
         Assert.False(result);
     }
 
-    #endregion
+    #endregion DeleteFile Tests
 
     #region GetLastModified Tests
 
@@ -856,7 +868,7 @@ public class FileHelperTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => FileHelper.GetLastModified(null!));
     }
 
-    #endregion
+    #endregion GetLastModified Tests
 
     #region GetFileAge Tests
 
@@ -882,26 +894,9 @@ public class FileHelperTests : IDisposable
         Assert.Throws<ArgumentNullException>(() => FileHelper.GetFileAge(null!));
     }
 
-    #endregion
+    #endregion GetFileAge Tests
 
     #region CompareFiles Tests
-
-    [Fact]
-    public void CompareFiles_ReturnsTrue_ForIdenticalFiles()
-    {
-        // Arrange
-        var file1 = Path.Combine(_testDirectory, "file1.txt");
-        var file2 = Path.Combine(_testDirectory, "file2.txt");
-        var content = "Same content";
-        File.WriteAllText(file1, content);
-        File.WriteAllText(file2, content);
-
-        // Act
-        var result = FileHelper.CompareFiles(file1, file2);
-
-        // Assert
-        Assert.True(result);
-    }
 
     [Fact]
     public void CompareFiles_ReturnsFalse_ForDifferentFiles()
@@ -936,6 +931,23 @@ public class FileHelperTests : IDisposable
     }
 
     [Fact]
+    public void CompareFiles_ReturnsTrue_ForIdenticalFiles()
+    {
+        // Arrange
+        var file1 = Path.Combine(_testDirectory, "file1.txt");
+        var file2 = Path.Combine(_testDirectory, "file2.txt");
+        var content = "Same content";
+        File.WriteAllText(file1, content);
+        File.WriteAllText(file2, content);
+
+        // Act
+        var result = FileHelper.CompareFiles(file1, file2);
+
+        // Assert
+        Assert.True(result);
+    }
+
+    [Fact]
     public void CompareFiles_ThrowsArgumentException_WhenPath1IsNull()
     {
         // Arrange & Act & Assert
@@ -947,6 +959,22 @@ public class FileHelperTests : IDisposable
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => FileHelper.CompareFiles("file1", null!));
+    }
+
+    [Fact]
+    public async Task CompareFilesAsync_ReturnsFalse_ForDifferentFiles()
+    {
+        // Arrange
+        var file1 = Path.Combine(_testDirectory, "file1.txt");
+        var file2 = Path.Combine(_testDirectory, "file2.txt");
+        File.WriteAllText(file1, "Content 1");
+        File.WriteAllText(file2, "Content 2");
+
+        // Act
+        var result = await FileHelper.CompareFilesAsync(file1, file2, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
@@ -966,21 +994,5 @@ public class FileHelperTests : IDisposable
         Assert.True(result);
     }
 
-    [Fact]
-    public async Task CompareFilesAsync_ReturnsFalse_ForDifferentFiles()
-    {
-        // Arrange
-        var file1 = Path.Combine(_testDirectory, "file1.txt");
-        var file2 = Path.Combine(_testDirectory, "file2.txt");
-        File.WriteAllText(file1, "Content 1");
-        File.WriteAllText(file2, "Content 2");
-
-        // Act
-        var result = await FileHelper.CompareFilesAsync(file1, file2, TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    #endregion
+    #endregion CompareFiles Tests
 }

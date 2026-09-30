@@ -3,7 +3,7 @@ using Markdig;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.Text;
 
 /// <summary>
 /// Converts basic CommonMark formatting to RTF without interpreting user text as RTF controls.

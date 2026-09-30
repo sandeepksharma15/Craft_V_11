@@ -1,4 +1,4 @@
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.Timing;
 
 /// <summary>
 /// Schedules the latest asynchronous action after a quiet period or at a limited rate.

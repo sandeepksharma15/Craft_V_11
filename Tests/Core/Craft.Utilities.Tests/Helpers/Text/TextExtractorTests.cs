@@ -1,33 +1,10 @@
-﻿using Craft.Utilities.Helpers;
+﻿using Craft.Utilities.Helpers.Text;
 
-namespace Craft.Utilities.Tests.Helpers;
+namespace Craft.Utilities.Tests.Helpers.Text;
 
 public class TextExtractorTests
 {
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ExtractTextFromDocOrPdf_MissingWordPartOrDocument_ReturnsEmpty(bool addPart)
-    {
-        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
-        try
-        {
-            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
-                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
-            {
-                if (addPart) document.AddMainDocumentPart();
-            }
-            Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
-        }
-        finally { File.Delete(path); }
-    }
-
-    [Theory]
-    [InlineData("legacy.doc")]
-    [InlineData("legacy.DOC")]
-    public void ExtractTextFromDocOrPdf_LegacyBinaryWord_IsExplicitlyUnsupported(string path)
-        => Assert.Throws<NotSupportedException>(() => TextExtractor.ExtractTextFromDocOrPdf(path));
+    #region Public Methods
 
     [Fact]
     public void ExtractTextFromDocOrPdf_EmptyWordDocument_ReturnsEmptyAndReleasesFile()
@@ -47,8 +24,16 @@ public class TextExtractorTests
         finally { File.Delete(path); }
     }
 
-    [Fact]
-    public void ExtractTextFromDocOrPdf_WordWithoutBody_ReturnsEmpty()
+    [Theory]
+    [InlineData("legacy.doc")]
+    [InlineData("legacy.DOC")]
+    public void ExtractTextFromDocOrPdf_LegacyBinaryWord_IsExplicitlyUnsupported(string path)
+        => Assert.Throws<NotSupportedException>(() => TextExtractor.ExtractTextFromDocOrPdf(path));
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExtractTextFromDocOrPdf_MissingWordPartOrDocument_ReturnsEmpty(bool addPart)
     {
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
         try
@@ -56,36 +41,11 @@ public class TextExtractorTests
             using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
                 DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
             {
-                document.AddMainDocumentPart().Document = new();
+                if (addPart) document.AddMainDocumentPart();
             }
             Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
         }
         finally { File.Delete(path); }
-    }
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public void ExtractTextFromDocOrPdf_ThrowsArgumentException_WhenFileNameIsNullOrEmpty(string? fileName)
-    {
-        if (fileName is null)
-            Assert.Throws<ArgumentNullException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName!));
-        else
-            Assert.Throws<ArgumentException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName));
-    }
-
-    [Theory]
-    [InlineData("test.txt")]
-    [InlineData("test.xlsx")]
-    [InlineData("test.png")]
-    public void ExtractTextFromDocOrPdf_ThrowsNotSupportedException_ForUnsupportedExtensions(string fileName)
-    {
-        Assert.Throws<NotSupportedException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName));
-    }
-
-    [Fact]
-    public void ExtractTextFromDocOrPdf_ThrowsFileNotFoundException_WhenFileDoesNotExist()
-    {
-        Assert.Throws<FileNotFoundException>(() => TextExtractor.ExtractTextFromDocOrPdf("nonexistent.docx"));
     }
 
     [Fact]
@@ -146,4 +106,48 @@ public class TextExtractorTests
         // Assert
         Assert.Equal("Hello World", result.Trim());
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void ExtractTextFromDocOrPdf_ThrowsArgumentException_WhenFileNameIsNullOrEmpty(string? fileName)
+    {
+        if (fileName is null)
+            Assert.Throws<ArgumentNullException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName!));
+        else
+            Assert.Throws<ArgumentException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName));
+    }
+
+    [Fact]
+    public void ExtractTextFromDocOrPdf_ThrowsFileNotFoundException_WhenFileDoesNotExist()
+    {
+        Assert.Throws<FileNotFoundException>(() => TextExtractor.ExtractTextFromDocOrPdf("nonexistent.docx"));
+    }
+
+    [Theory]
+    [InlineData("test.txt")]
+    [InlineData("test.xlsx")]
+    [InlineData("test.png")]
+    public void ExtractTextFromDocOrPdf_ThrowsNotSupportedException_ForUnsupportedExtensions(string fileName)
+    {
+        Assert.Throws<NotSupportedException>(() => TextExtractor.ExtractTextFromDocOrPdf(fileName));
+    }
+
+    [Fact]
+    public void ExtractTextFromDocOrPdf_WordWithoutBody_ReturnsEmpty()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+        try
+        {
+            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
+                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            {
+                document.AddMainDocumentPart().Document = new();
+            }
+            Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
+        }
+        finally { File.Delete(path); }
+    }
+
+    #endregion Public Methods
 }

@@ -2,14 +2,165 @@
 
 public class CollectionExtensionsTests
 {
+    #region Public Methods
+
+    [Fact]
+    public void AddIfNotContains_AddsItemIfNotPresent_ReturnsTrue()
+    {
+        // Arrange
+        List<int> list = [1, 2, 3];
+
+        // Act
+        bool added = list.AddIfNotContains(4);
+
+        // Assert
+        Assert.True(added);
+        Assert.Contains(4, list);
+    }
+
+    [Fact]
+    public void AddIfNotContains_DoesNotAddIfPresent_ReturnsFalse()
+    {
+        // Arrange
+        List<int> list = [1, 2, 3];
+
+        // Act
+        bool added = list.AddIfNotContains(2);
+
+        // Assert
+        Assert.False(added);
+        Assert.Equal(3, list.Count);
+    }
+
+    [Fact]
+    public void AddIfNotContains_Enumerable_AddsNothingIfAllPresent()
+    {
+        // Arrange
+        List<int> list = [1, 2];
+
+        // Act
+        IEnumerable<int> added = list.AddIfNotContains([1, 2]);
+
+        // Assert
+        Assert.Empty(added);
+        Assert.Equal(2, list.Count);
+    }
+
+    [Fact]
+    public void AddIfNotContains_Enumerable_AddsOnlyMissingItems()
+    {
+        // Arrange
+        List<int> list = [1, 2];
+
+        // Act
+        List<int> added = [.. list.AddIfNotContains([2, 3, 4])];
+
+        // Assert
+        Assert.Contains(3, list);
+        Assert.Contains(4, list);
+        Assert.DoesNotContain(5, list);
+        Assert.Equal(new[] { 3, 4 }, added);
+    }
+
+    [Fact]
+    public void AddIfNotContains_Enumerable_ThrowsIfItemsIsNull()
+    {
+        // Arrange
+        List<int> list = [1];
+        IEnumerable<int>? items = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(items!));
+    }
+
+    [Fact]
+    public void AddIfNotContains_Enumerable_ThrowsIfSourceIsNull()
+    {
+        // Arrange
+        List<int>? list = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains([1]));
+    }
+
+    [Fact]
+    public void AddIfNotContains_Predicate_AddsIfPredicateNotSatisfied()
+    {
+        // Arrange
+        List<int> list = [1, 2, 3];
+
+        // Act
+        bool added = list.AddIfNotContains(x => x == 4, () => 4);
+
+        // Assert
+        Assert.True(added);
+        Assert.Contains(4, list);
+    }
+
+    [Fact]
+    public void AddIfNotContains_Predicate_DoesNotAddIfPredicateSatisfied()
+    {
+        // Arrange
+        List<int> list = [1, 2, 3];
+
+        // Act
+        bool added = list.AddIfNotContains(x => x == 2, () => 2);
+
+        // Assert
+        Assert.False(added);
+        Assert.Equal(3, list.Count);
+    }
+
+    [Fact]
+    public void AddIfNotContains_Predicate_ThrowsIfItemFactoryIsNull()
+    {
+        // Arrange
+        List<int> list = [1];
+        Func<int>? factory = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(x => true, factory!));
+    }
+
+    [Fact]
+    public void AddIfNotContains_Predicate_ThrowsIfPredicateIsNull()
+    {
+        // Arrange
+        List<int> list = [1];
+        Func<int, bool>? predicate = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(predicate!, () => 2));
+    }
+
+    [Fact]
+    public void AddIfNotContains_Predicate_ThrowsIfSourceIsNull()
+    {
+        // Arrange
+        List<int>? list = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(x => true, () => 1));
+    }
+
+    [Fact]
+    public void AddIfNotContains_ThrowsIfSourceIsNull()
+    {
+        // Arrange
+        List<int>? list = null;
+
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(1));
+    }
+
     [Fact]
     public void GenerateRandomizedList_Collection_ReturnsIndependentCopy()
     {
-        ICollection<int> source = new List<int> { 3, 1, 1, 2 };
+        ICollection<int> source = [3, 1, 1, 2];
 
         List<int> result = source.GenerateRandomizedList();
 
-        Assert.Equal(new[] { 3, 1, 1, 2 }, source);
+        Assert.Equal([3, 1, 1, 2], source);
         Assert.Equal([1, 1, 2, 3], result.Order());
         Assert.NotSame(source, result);
         result.Clear();
@@ -17,14 +168,22 @@ public class CollectionExtensionsTests
     }
 
     [Fact]
+    public void GenerateRandomizedList_NullCollection_Throws()
+    {
+        ICollection<int>? source = null;
+
+        Assert.Throws<ArgumentNullException>("source", () => source.GenerateRandomizedList());
+    }
+
+    [Fact]
     public void GenerateRandomizedList_ReadOnlyCollection_PreservesInput()
     {
-        ICollection<int> source = Array.AsReadOnly(new[] { 1, 2, 3 });
+        ICollection<int> source = Array.AsReadOnly([1, 2, 3]);
 
         List<int> result = source.GenerateRandomizedList();
 
         Assert.Equal([1, 2, 3], result.Order());
-        Assert.Equal(new[] { 1, 2, 3 }, source);
+        Assert.Equal([1, 2, 3], source);
     }
 
     [Fact]
@@ -36,14 +195,6 @@ public class CollectionExtensionsTests
 
         Assert.Equal([1, 2, 3], result.Order());
         Assert.Equal(3, source.Count);
-    }
-
-    [Fact]
-    public void GenerateRandomizedList_NullCollection_Throws()
-    {
-        ICollection<int>? source = null;
-
-        Assert.Throws<ArgumentNullException>("source", () => source.GenerateRandomizedList());
     }
 
     [Fact]
@@ -77,152 +228,16 @@ public class CollectionExtensionsTests
     }
 
     [Fact]
-    public void AddIfNotContains_AddsItemIfNotPresent_ReturnsTrue()
-    {
-        // Arrange
-        List<int> list = [1, 2, 3];
-
-        // Act
-        bool added = list.AddIfNotContains(4);
-
-        // Assert
-        Assert.True(added);
-        Assert.Contains(4, list);
-    }
-
-    [Fact]
-    public void AddIfNotContains_DoesNotAddIfPresent_ReturnsFalse()
-    {
-        // Arrange
-        List<int> list = [1, 2, 3];
-
-        // Act
-        bool added = list.AddIfNotContains(2);
-
-        // Assert
-        Assert.False(added);
-        Assert.Equal(3, list.Count);
-    }
-
-    [Fact]
-    public void AddIfNotContains_ThrowsIfSourceIsNull()
-    {
-        // Arrange
-        List<int>? list = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(1));
-    }
-
-    [Fact]
-    public void AddIfNotContains_Enumerable_AddsOnlyMissingItems()
+    public void RemoveAll_Enumerable_DoesNothingIfItemsNotPresent()
     {
         // Arrange
         List<int> list = [1, 2];
 
         // Act
-        List<int> added = [.. list.AddIfNotContains([2, 3, 4])];
+        list.RemoveAll([3, 4]);
 
         // Assert
-        Assert.Contains(3, list);
-        Assert.Contains(4, list);
-        Assert.DoesNotContain(5, list);
-        Assert.Equal(new[] { 3, 4 }, added);
-    }
-
-    [Fact]
-    public void AddIfNotContains_Enumerable_ThrowsIfSourceIsNull()
-    {
-        // Arrange
-        List<int>? list = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains([1]));
-    }
-
-    [Fact]
-    public void AddIfNotContains_Enumerable_ThrowsIfItemsIsNull()
-    {
-        // Arrange
-        List<int> list = [1];
-        IEnumerable<int>? items = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(items!));
-    }
-
-    [Fact]
-    public void AddIfNotContains_Enumerable_AddsNothingIfAllPresent()
-    {
-        // Arrange
-        List<int> list = [1, 2];
-
-        // Act
-        IEnumerable<int> added = list.AddIfNotContains([1, 2]);
-
-        // Assert
-        Assert.Empty(added);
-        Assert.Equal(2, list.Count);
-    }
-
-    [Fact]
-    public void AddIfNotContains_Predicate_AddsIfPredicateNotSatisfied()
-    {
-        // Arrange
-        List<int> list = [1, 2, 3];
-
-        // Act
-        bool added = list.AddIfNotContains(x => x == 4, () => 4);
-
-        // Assert
-        Assert.True(added);
-        Assert.Contains(4, list);
-    }
-
-    [Fact]
-    public void AddIfNotContains_Predicate_DoesNotAddIfPredicateSatisfied()
-    {
-        // Arrange
-        List<int> list = [1, 2, 3];
-
-        // Act
-        bool added = list.AddIfNotContains(x => x == 2, () => 2);
-
-        // Assert
-        Assert.False(added);
-        Assert.Equal(3, list.Count);
-    }
-
-    [Fact]
-    public void AddIfNotContains_Predicate_ThrowsIfSourceIsNull()
-    {
-        // Arrange
-        List<int>? list = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list!.AddIfNotContains(x => true, () => 1));
-    }
-
-    [Fact]
-    public void AddIfNotContains_Predicate_ThrowsIfPredicateIsNull()
-    {
-        // Arrange
-        List<int> list = [1];
-        Func<int, bool>? predicate = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(predicate!, () => 2));
-    }
-
-    [Fact]
-    public void AddIfNotContains_Predicate_ThrowsIfItemFactoryIsNull()
-    {
-        // Arrange
-        List<int> list = [1];
-        Func<int>? factory = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list.AddIfNotContains(x => true, factory!));
+        Assert.Equal(new[] { 1, 2 }, list);
     }
 
     [Fact]
@@ -242,16 +257,6 @@ public class CollectionExtensionsTests
     }
 
     [Fact]
-    public void RemoveAll_Enumerable_ThrowsIfSourceIsNull()
-    {
-        // Arrange
-        List<int>? list = null;
-
-        // Act & Assert
-        _ = Assert.Throws<ArgumentNullException>(() => list!.RemoveAll([1]));
-    }
-
-    [Fact]
     public void RemoveAll_Enumerable_ThrowsIfItemsIsNull()
     {
         // Arrange
@@ -263,15 +268,14 @@ public class CollectionExtensionsTests
     }
 
     [Fact]
-    public void RemoveAll_Enumerable_DoesNothingIfItemsNotPresent()
+    public void RemoveAll_Enumerable_ThrowsIfSourceIsNull()
     {
         // Arrange
-        List<int> list = [1, 2];
+        List<int>? list = null;
 
-        // Act
-        list.RemoveAll([3, 4]);
-
-        // Assert
-        Assert.Equal(new[] { 1, 2 }, list);
+        // Act & Assert
+        _ = Assert.Throws<ArgumentNullException>(() => list!.RemoveAll([1]));
     }
+
+    #endregion Public Methods
 }

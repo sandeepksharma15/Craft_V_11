@@ -4,20 +4,7 @@ namespace Craft.Utilities.Tests.Helpers;
 
 public class RandomHelperTests
 {
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(10)]
-    [InlineData(10000)]
-    public void GenerateRandomizedList_PreservesInputAndAllOccurrences(int count)
-    {
-        int[] input = Enumerable.Range(0, count).Select(i => i % 3).ToArray();
-        int[] original = [.. input];
-        List<int> result = RandomHelper.GenerateRandomizedList(input);
-        Assert.Equal(original, input);
-        Assert.Equal(original.Order(), result.Order());
-        Assert.NotSame(input, result);
-    }
+    #region Public Methods
 
     [Fact]
     public void GenerateRandomizedList_EnumeratesInputOnce()
@@ -38,13 +25,18 @@ public class RandomHelperTests
         => Assert.Throws<ArgumentNullException>("items", () => RandomHelper.GenerateRandomizedList<int>(null!));
 
     [Theory]
-    [InlineData(5, 10)]
-    [InlineData(-10, -5)]
-    [InlineData(int.MinValue, int.MaxValue)]
-    public void GetRandom_MinMax_StaysInRange(int min, int max)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(10000)]
+    public void GenerateRandomizedList_PreservesInputAndAllOccurrences(int count)
     {
-        for (int i = 0; i < 100; i++)
-            Assert.InRange(RandomHelper.GetRandom(min, max), min, max - 1);
+        int[] input = [.. Enumerable.Range(0, count).Select(i => i % 3)];
+        int[] original = [.. input];
+        List<int> result = RandomHelper.GenerateRandomizedList(input);
+        Assert.Equal(original, input);
+        Assert.Equal(original.Order(), result.Order());
+        Assert.NotSame(input, result);
     }
 
     [Fact]
@@ -61,6 +53,16 @@ public class RandomHelperTests
         }
     }
 
+    [Theory]
+    [InlineData(5, 10)]
+    [InlineData(-10, -5)]
+    [InlineData(int.MinValue, int.MaxValue)]
+    public void GetRandom_MinMax_StaysInRange(int min, int max)
+    {
+        for (int i = 0; i < 100; i++)
+            Assert.InRange(RandomHelper.GetRandom(min, max), min, max - 1);
+    }
+
     [Fact]
     public void GetRandomOf_Collections_SelectOnlyExistingItems()
     {
@@ -71,7 +73,7 @@ public class RandomHelperTests
             Assert.Contains(RandomHelper.GetRandomOfList(items), items);
         }
         Assert.Equal("only", RandomHelper.GetRandomOf("only"));
-        Assert.Equal("only", RandomHelper.GetRandomOfList(new[] { "only" }));
+        Assert.Equal("only", RandomHelper.GetRandomOfList(["only"]));
     }
 
     [Fact]
@@ -82,4 +84,6 @@ public class RandomHelperTests
         Assert.Throws<ArgumentException>("list", () => RandomHelper.GetRandomOfList<string>(null!));
         Assert.Throws<ArgumentException>("list", () => RandomHelper.GetRandomOfList(Array.Empty<string>()));
     }
+
+    #endregion Public Methods
 }

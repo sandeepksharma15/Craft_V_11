@@ -4,38 +4,34 @@ namespace Craft.Utilities.Tests.Builders;
 
 public class StyleBuilderTests
 {
+    #region Public Methods
+
     [Fact]
-    public void Build_DefaultInstances_ReturnEmptyString()
+    public void AddStyle_Conditional_WhenConditionFalse_DoesNotAddStyle()
     {
-        Assert.Equal(string.Empty, default(StyleBuilder).Build());
-        Assert.Equal(string.Empty, new StyleBuilder().ToString());
-        Assert.Null(default(StyleBuilder).NullIfEmpty());
-    }
+        // Arrange
+        var builder = StyleBuilder.Empty();
 
-    [Theory]
-    [InlineData(null, "")]
-    [InlineData("", "")]
-    [InlineData(" \t\r\n ", "")]
-    [InlineData("color:red", "color:red;")]
-    [InlineData("color:red;", "color:red;;")]
-    public void Default_StyleFragment_PreservesExistingSemicolonBehavior(string? style, string expected)
-    {
-        StyleBuilder builder = StyleBuilder.Default(style);
+        // Act
+        builder.AddStyle("padding", "5px", false);
+        var result = builder.Build();
 
-        Assert.Equal(expected, builder.Build());
-        Assert.Equal(expected, builder.ToString());
-        Assert.Equal(expected.Length == 0 ? null : expected, builder.NullIfEmpty());
+        // Assert
+        Assert.Equal(string.Empty, result);
     }
 
     [Fact]
-    public void AddStyle_DefaultValue_CanBeMutated()
+    public void AddStyle_Conditional_WhenConditionTrue_AddsStyle()
     {
-        StyleBuilder builder = default;
+        // Arrange
+        var builder = StyleBuilder.Empty();
 
-        builder.AddStyle("color", "red");
-        builder.AddStyle("padding", "0");
+        // Act
+        builder.AddStyle("margin", "10px", true);
+        var result = builder.Build();
 
-        Assert.Equal("color:red;padding:0;", builder.Build());
+        // Assert
+        Assert.Equal("margin:10px;", result);
     }
 
     [Fact]
@@ -55,75 +51,14 @@ public class StyleBuilderTests
     }
 
     [Fact]
-    public void AddStyle_ValueFactoryWithoutCondition_AddsStyle()
+    public void AddStyle_DefaultValue_CanBeMutated()
     {
-        StyleBuilder builder = StyleBuilder.Empty();
+        StyleBuilder builder = default;
 
-        builder.AddStyle("color", () => "red");
+        builder.AddStyle("color", "red");
+        builder.AddStyle("padding", "0");
 
-        Assert.Equal("color:red;", builder.Build());
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void AddStyle_ValueFactoryAndBoolean_EvaluatesOnlyWhenEnabled(bool when)
-    {
-        StyleBuilder builder = new("color", "red");
-        int calls = 0;
-
-        builder.AddStyle("padding", () =>
-        {
-            calls++;
-            return "0";
-        }, when);
-
-        Assert.Equal(when ? 1 : 0, calls);
-        Assert.Equal(when ? "color:red;padding:0;" : "color:red;", builder.Build());
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [InlineData(null)]
-    public void AddStyle_StringAndPredicate_AddsOnlyWhenTrue(bool? condition)
-    {
-        StyleBuilder builder = StyleBuilder.Empty();
-        int calls = 0;
-        Func<bool>? when = condition.HasValue ? () => { calls++; return condition.Value; } : null;
-
-        builder.AddStyle("color", "red", when);
-
-        Assert.Equal(condition.HasValue ? 1 : 0, calls);
-        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [InlineData(null)]
-    public void AddStyle_ValueFactoryAndPredicate_EvaluatesConditionBeforeValue(bool? condition)
-    {
-        StyleBuilder builder = StyleBuilder.Empty();
-        List<string> calls = [];
-        Func<bool>? when = condition.HasValue
-            ? () => { calls.Add("condition"); return condition.Value; }
-            : null;
-
-        builder.AddStyle("color", () =>
-        {
-            calls.Add("value");
-            return "red";
-        }, when);
-
-        string[] expectedCalls = condition switch
-        {
-            true => ["condition", "value"],
-            false => ["condition"],
-            null => []
-        };
-        Assert.Equal(expectedCalls, calls);
-        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
+        Assert.Equal("color:red;padding:0;", builder.Build());
     }
 
     [Theory]
@@ -157,6 +92,50 @@ public class StyleBuilderTests
         Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
     }
 
+    [Fact]
+    public void AddStyle_NullCallbacks_ThrowOnlyWhenEnabled()
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+
+        Assert.Throws<ArgumentNullException>("value", () => builder.AddStyle("color", (Func<string>)null!));
+        Assert.Throws<ArgumentNullException>("builder", () => builder.AddStyle("color", (Action<ValueBuilder>)null!));
+        builder.AddStyle("color", (Func<string>)null!, false);
+        builder.AddStyle("color", (Action<ValueBuilder>)null!, false);
+
+        Assert.Equal(string.Empty, builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void AddStyle_StringAndPredicate_AddsOnlyWhenTrue(bool? condition)
+    {
+        StyleBuilder builder = StyleBuilder.Empty();
+        int calls = 0;
+        Func<bool>? when = condition.HasValue ? () => { calls++; return condition.Value; } : null;
+
+        builder.AddStyle("color", "red", when);
+
+        Assert.Equal(condition.HasValue ? 1 : 0, calls);
+        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
+    }
+
+    [Fact]
+    public void AddStyle_ThrowingCallback_PropagatesExceptionWithoutAddingDeclaration()
+    {
+        StyleBuilder builder = new("color", "red");
+        InvalidOperationException error = new("callback failed");
+
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", () => throw error, true)));
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", "0", () => throw error)));
+        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
+            builder.AddStyle("padding", _ => throw error)));
+        Assert.Equal("color:red;", builder.Build());
+    }
+
     [Theory]
     [InlineData(true, true)]
     [InlineData(true, false)]
@@ -176,32 +155,74 @@ public class StyleBuilderTests
         Assert.Equal(when && addValue ? "color:red;text-decoration:underline;" : "color:red;", builder.Build());
     }
 
-    [Fact]
-    public void AddStyle_NullCallbacks_ThrowOnlyWhenEnabled()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AddStyle_ValueFactoryAndBoolean_EvaluatesOnlyWhenEnabled(bool when)
+    {
+        StyleBuilder builder = new("color", "red");
+        int calls = 0;
+
+        builder.AddStyle("padding", () =>
+        {
+            calls++;
+            return "0";
+        }, when);
+
+        Assert.Equal(when ? 1 : 0, calls);
+        Assert.Equal(when ? "color:red;padding:0;" : "color:red;", builder.Build());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void AddStyle_ValueFactoryAndPredicate_EvaluatesConditionBeforeValue(bool? condition)
     {
         StyleBuilder builder = StyleBuilder.Empty();
+        List<string> calls = [];
+        Func<bool>? when = condition.HasValue
+            ? () => { calls.Add("condition"); return condition.Value; }
+        : null;
 
-        Assert.Throws<ArgumentNullException>("value", () => builder.AddStyle("color", (Func<string>)null!));
-        Assert.Throws<ArgumentNullException>("builder", () => builder.AddStyle("color", (Action<ValueBuilder>)null!));
-        builder.AddStyle("color", (Func<string>)null!, false);
-        builder.AddStyle("color", (Action<ValueBuilder>)null!, false);
+        builder.AddStyle("color", () =>
+        {
+            calls.Add("value");
+            return "red";
+        }, when);
 
-        Assert.Equal(string.Empty, builder.Build());
+        string[] expectedCalls = condition switch
+        {
+            true => ["condition", "value"],
+            false => ["condition"],
+            null => []
+        };
+        Assert.Equal(expectedCalls, calls);
+        Assert.Equal(condition == true ? "color:red;" : "", builder.Build());
     }
 
     [Fact]
-    public void AddStyle_ThrowingCallback_PropagatesExceptionWithoutAddingDeclaration()
+    public void AddStyle_ValueFactoryWithoutCondition_AddsStyle()
     {
-        StyleBuilder builder = new("color", "red");
-        InvalidOperationException error = new("callback failed");
+        StyleBuilder builder = StyleBuilder.Empty();
 
-        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
-            builder.AddStyle("padding", () => throw error, true)));
-        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
-            builder.AddStyle("padding", "0", () => throw error)));
-        Assert.Same(error, Assert.Throws<InvalidOperationException>(() =>
-            builder.AddStyle("padding", (ValueBuilder _) => throw error)));
+        builder.AddStyle("color", () => "red");
+
         Assert.Equal("color:red;", builder.Build());
+    }
+
+    [Fact]
+    public void AddStyle_WithValidInput_ReturnsExpectedResult()
+    {
+        // Arrange
+        var builder = StyleBuilder.Default("color", "red");
+
+        // Act
+        builder.AddStyle("background-color", "blue");
+        var result = builder.Build();
+
+        // Assert
+        Assert.Equal("color:red;background-color:blue;", result);
     }
 
     [Theory]
@@ -229,6 +250,16 @@ public class StyleBuilderTests
         Assert.Equal("color:red;", builder.Build());
     }
 
+    [Fact]
+    public void AddStyleFromAttributes_ObjectValue_UsesToString()
+    {
+        Dictionary<string, object> attributes = new() { ["style"] = new StyleBuilder("color", "red") };
+
+        string result = StyleBuilder.Empty().AddStyleFromAttributes(attributes).Build();
+
+        Assert.Equal("color:red;", result);
+    }
+
     [Theory]
     [InlineData("color:red")]
     [InlineData("color:red;")]
@@ -244,16 +275,6 @@ public class StyleBuilderTests
     }
 
     [Fact]
-    public void AddStyleFromAttributes_ObjectValue_UsesToString()
-    {
-        Dictionary<string, object> attributes = new() { ["style"] = new StyleBuilder("color", "red") };
-
-        string result = StyleBuilder.Empty().AddStyleFromAttributes(attributes).Build();
-
-        Assert.Equal("color:red;", result);
-    }
-
-    [Fact]
     public void Build_ComplexCssValues_PreservesContentAndDeclarationOrder()
     {
         string result = StyleBuilder.Default("--accent", "var(--brand, red)")
@@ -263,6 +284,115 @@ public class StyleBuilderTests
             .Build();
 
         Assert.Equal("--accent:var(--brand, red);background-image:url('data:image/svg+xml;base64,PHN2Zz4=');content:'a;b:c';--accent:blue !important;", result);
+    }
+
+    [Fact]
+    public void Build_DefaultInstances_ReturnEmptyString()
+    {
+        Assert.Equal(string.Empty, default(StyleBuilder).Build());
+        Assert.Equal(string.Empty, new StyleBuilder().ToString());
+        Assert.Null(default(StyleBuilder).NullIfEmpty());
+    }
+
+    [Fact]
+    public void Build_WithNoStyles_ReturnsEmptyString()
+    {
+        // Arrange
+        var builder = StyleBuilder.Empty();
+
+        // Act
+        var result = builder.Build();
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
+    [InlineData(" \t\r\n ", "")]
+    [InlineData("color:red", "color:red;")]
+    [InlineData("color:red;", "color:red;;")]
+    public void Default_StyleFragment_PreservesExistingSemicolonBehavior(string? style, string expected)
+    {
+        StyleBuilder builder = StyleBuilder.Default(style);
+
+        Assert.Equal(expected, builder.Build());
+        Assert.Equal(expected, builder.ToString());
+        Assert.Equal(expected.Length == 0 ? null : expected, builder.NullIfEmpty());
+    }
+
+    [Fact]
+    public void ShouldAddComplexStyles()
+    {
+        var StyleToRender = StyleBuilder.Empty()
+            .AddStyle("text-decoration", v => v
+                        .AddValue("underline", true)
+                        .AddValue("overline", false)
+                        .AddValue("line-through", true),
+                        when: true)
+            .AddStyle("z-index", "-1")
+            .Build();
+
+        /// Double ;; is valid HTML. The CSS syntax allows for empty declarations, which means that
+        /// you can add leading and trailing semicolons as you like. For instance, this is valid CSS
+        /// .foo { ;;;display:none;;;color:black;;; } Trimming is possible, but is it worth the
+        /// operations for a non-issue?
+        Assert.Equal("text-decoration:underline line-through;z-index:-1;", StyleToRender);
+    }
+
+    [Fact]
+    public void ShouldAddExistingStyle()
+    {
+        var StyleToRender = StyleBuilder.Empty()
+            .AddStyle("background-color:DodgerBlue;")
+            .AddStyle("padding", "35px")
+            .Build();
+
+        var StyleToRenderFromDefaultConstructor = StyleBuilder.Default(StyleToRender).Build();
+
+        /// Double ;; is valid HTML. The CSS syntax allows for empty declarations, which means that
+        /// you can add leading and trailing semicolons as you like. For instance, this is valid CSS
+        /// .foo { ;;;display:none;;;color:black;;; } Trimming is possible, but is it worth the
+        /// operations for a non-issue?
+        Assert.Equal("background-color:DodgerBlue;;padding:35px;", StyleToRender);
+        Assert.Equal("background-color:DodgerBlue;;padding:35px;;", StyleToRenderFromDefaultConstructor);
+    }
+
+    [Fact]
+    public void ShouldAddNestedStyles()
+    {
+        var Child = StyleBuilder.Empty()
+            .AddStyle("background-color", "DodgerBlue")
+            .AddStyle("padding", "35px");
+
+        var StyleToRender = StyleBuilder.Empty()
+            .AddStyle(Child)
+            .AddStyle("z-index", "-1")
+            .Build();
+
+        /// Double ;; is valid HTML. The CSS syntax allows for empty declarations, which means that
+        /// you can add leading and trailing semicolons as you like. For instance, this is valid CSS
+        /// .foo { ;;;display:none;;;color:black;;; } Trimming is possible, but is it worth the
+        /// operations for a non-issue?
+        Assert.Equal("background-color:DodgerBlue;padding:35px;z-index:-1;", StyleToRender);
+    }
+
+    [Fact]
+    public void ShouldBuildStyleWithFunc()
+    {
+        {
+            // Arrange Simulates Razor Components attribute splatting feature
+            IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object> { { "class", "my-custom-class-1" } };
+
+            // Act
+            var StyleToRender = StyleBuilder.Empty()
+                            .AddStyle("background-color", () => attributes["style"].ToString()!, when: attributes.ContainsKey("style"))
+                            .AddStyle("background-color", "black")
+                            .Build();
+            // Assert
+            Assert.Equal("background-color:black;", StyleToRender);
+        }
     }
 
     [Fact]
@@ -290,7 +420,6 @@ public class StyleBuilderTests
     [Fact]
     public void ShouldBulidConditionalInlineStylesFromAttributes()
     {
-
         // Arrange
         var hasBorder = true;
         var isOnTop = false;
@@ -316,25 +445,6 @@ public class StyleBuilderTests
     }
 
     [Fact]
-    public void ShouldAddExistingStyle()
-    {
-        var StyleToRender = StyleBuilder.Empty()
-            .AddStyle("background-color:DodgerBlue;")
-            .AddStyle("padding", "35px")
-            .Build();
-
-        var StyleToRenderFromDefaultConstructor = StyleBuilder.Default(StyleToRender).Build();
-
-        /// Double ;; is valid HTML.
-        /// The CSS syntax allows for empty declarations, which means that you can add leading and trailing semicolons as you like. For instance, this is valid CSS
-        /// .foo { ;;;display:none;;;color:black;;; }
-        /// Trimming is possible, but is it worth the operations for a non-issue?
-        Assert.Equal("background-color:DodgerBlue;;padding:35px;", StyleToRender);
-        Assert.Equal("background-color:DodgerBlue;;padding:35px;;", StyleToRenderFromDefaultConstructor);
-
-    }
-
-    [Fact]
     public void ShouldNotAddEmptyStyle()
     {
         // Arrange & Act
@@ -343,117 +453,5 @@ public class StyleBuilderTests
         Assert.Null(StyleToRender.NullIfEmpty());
     }
 
-    [Fact]
-    public void ShouldAddNestedStyles()
-    {
-
-
-        var Child = StyleBuilder.Empty()
-            .AddStyle("background-color", "DodgerBlue")
-            .AddStyle("padding", "35px");
-
-        var StyleToRender = StyleBuilder.Empty()
-            .AddStyle(Child)
-            .AddStyle("z-index", "-1")
-            .Build();
-
-        /// Double ;; is valid HTML.
-        /// The CSS syntax allows for empty declarations, which means that you can add leading and trailing semicolons as you like. For instance, this is valid CSS
-        /// .foo { ;;;display:none;;;color:black;;; }
-        /// Trimming is possible, but is it worth the operations for a non-issue?
-        Assert.Equal("background-color:DodgerBlue;padding:35px;z-index:-1;", StyleToRender);
-    }
-
-    [Fact]
-    public void ShouldAddComplexStyles()
-    {
-        var StyleToRender = StyleBuilder.Empty()
-            .AddStyle("text-decoration", v => v
-                        .AddValue("underline", true)
-                        .AddValue("overline", false)
-                        .AddValue("line-through", true),
-                        when: true)
-            .AddStyle("z-index", "-1")
-            .Build();
-
-        /// Double ;; is valid HTML.
-        /// The CSS syntax allows for empty declarations, which means that you can add leading and trailing semicolons as you like. For instance, this is valid CSS
-        /// .foo { ;;;display:none;;;color:black;;; }
-        /// Trimming is possible, but is it worth the operations for a non-issue?
-        Assert.Equal("text-decoration:underline line-through;z-index:-1;", StyleToRender);
-
-    }
-
-    [Fact]
-    public void ShouldBuildStyleWithFunc()
-    {
-        {
-            // Arrange
-            // Simulates Razor Components attribute splatting feature
-            IReadOnlyDictionary<string, object> attributes = new Dictionary<string, object> { { "class", "my-custom-class-1" } };
-
-            // Act
-            var StyleToRender = StyleBuilder.Empty()
-                            .AddStyle("background-color", () => attributes["style"].ToString()!, when: attributes.ContainsKey("style"))
-                            .AddStyle("background-color", "black")
-                            .Build();
-            // Assert
-            Assert.Equal("background-color:black;", StyleToRender);
-        }
-    }
-
-    [Fact]
-    public void AddStyle_WithValidInput_ReturnsExpectedResult()
-    {
-        // Arrange
-        var builder = StyleBuilder.Default("color", "red");
-
-        // Act
-        builder.AddStyle("background-color", "blue");
-        var result = builder.Build();
-
-        // Assert
-        Assert.Equal("color:red;background-color:blue;", result);
-    }
-
-    [Fact]
-    public void AddStyle_Conditional_WhenConditionTrue_AddsStyle()
-    {
-        // Arrange
-        var builder = StyleBuilder.Empty();
-
-        // Act
-        builder.AddStyle("margin", "10px", true);
-        var result = builder.Build();
-
-        // Assert
-        Assert.Equal("margin:10px;", result);
-    }
-
-    [Fact]
-    public void AddStyle_Conditional_WhenConditionFalse_DoesNotAddStyle()
-    {
-        // Arrange
-        var builder = StyleBuilder.Empty();
-
-        // Act
-        builder.AddStyle("padding", "5px", false);
-        var result = builder.Build();
-
-        // Assert
-        Assert.Equal(string.Empty, result);
-    }
-
-    [Fact]
-    public void Build_WithNoStyles_ReturnsEmptyString()
-    {
-        // Arrange
-        var builder = StyleBuilder.Empty();
-
-        // Act
-        var result = builder.Build();
-
-        // Assert
-        Assert.Equal(string.Empty, result);
-    }
+    #endregion Public Methods
 }

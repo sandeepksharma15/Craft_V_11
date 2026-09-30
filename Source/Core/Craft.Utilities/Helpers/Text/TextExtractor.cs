@@ -2,7 +2,7 @@
 using DocumentFormat.OpenXml.Packaging;
 using UglyToad.PdfPig.Core;
 
-namespace Craft.Utilities.Helpers;
+namespace Craft.Utilities.Helpers.Text;
 
 public static class TextExtractor
 {

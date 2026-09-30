@@ -33,30 +33,35 @@ jobs:
       - name: Test
         run: dotnet test Craft_V_11.slnx --configuration Release --no-build
 
-      - name: Verify StyleBuilder coverage
+      - name: Verify builder coverage
         env:
           DOTNET_TEST_RUNNER: VSTest
         run: |
           dotnet test Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \
             --configuration Release --no-build \
             -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
-            --filter FullyQualifiedName~StyleBuilder \
-            --collect:"XPlat Code Coverage" --results-directory artifacts/stylebuilder-coverage \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*"
+            --filter "FullyQualifiedName~StyleBuilder|FullyQualifiedName~ValueBuilder" \
+            --collect:"XPlat Code Coverage" --results-directory artifacts/builder-coverage \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder"
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
-          reports = list(Path("artifacts/stylebuilder-coverage").rglob("coverage.cobertura.xml"))
+          reports = list(Path("artifacts/builder-coverage").rglob("coverage.cobertura.xml"))
           if len(reports) != 1:
               raise SystemExit(f"Expected one coverage report, found {len(reports)}")
           report = ET.parse(reports[0]).getroot()
+          expected = {"Craft.Utilities.Builders.StyleBuilder", "Craft.Utilities.Builders.StyleBuilderExtensions", "Craft.Utilities.Builders.ValueBuilder"}
+          reported = {item.attrib["name"] for item in report.findall(".//class")}
+          if not expected <= reported:
+              raise SystemExit(f"Missing builder coverage: {expected - reported}")
           for item in report.findall(".//class"):
               print(f"{item.attrib['name']}: lines={item.attrib['line-rate']}, branches={item.attrib['branch-rate']}")
           print(f"Lines: {report.attrib['lines-covered']}/{report.attrib['lines-valid']}")
           print(f"Branches: {report.attrib['branches-covered']}/{report.attrib['branches-valid']}")
           if int(report.attrib["lines-valid"]) == 0 or int(report.attrib["branches-valid"]) == 0:
-              raise SystemExit("StyleBuilder coverage is missing")
+              raise SystemExit("Builder coverage is missing")
           if float(report.attrib["line-rate"]) < 1 or float(report.attrib["branch-rate"]) < 1:
-              raise SystemExit("StyleBuilder requires 100% line and branch coverage")
+              raise SystemExit("Builders require 100% line and branch coverage")
           PY
+

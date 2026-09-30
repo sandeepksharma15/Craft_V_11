@@ -1,43 +1,39 @@
-﻿/// <summary>
-/// A builder for constructing CSS value strings.
-/// This class allows for fluent construction of CSS values,
-/// supporting conditional addition of values.
-/// </summary>  
-/// The original code is from https://github.com/EdCharbeneau/BlazorComponentUtilities
+using System.Text;
 
 namespace Craft.Utilities.Builders;
 
+// Adapted from https://github.com/EdCharbeneau/BlazorComponentUtilities
+/// <summary>Builds a space-separated list of CSS values.</summary>
 public class ValueBuilder
 {
-    private string? stringBuffer;
+    private readonly StringBuilder _buffer = new();
 
-    public bool HasValue => !string.IsNullOrWhiteSpace(stringBuffer);
+    public bool HasValue => _buffer.Length > 0;
 
-    /// <summary>
-    /// Adds a space separated conditional value to a property.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <param name="when"></param>
-    /// <returns></returns>
-    public ValueBuilder AddValue(string value, bool when = true)
-        => when
-            ? AddRaw($"{value} ")
-            : this;
-
-    public ValueBuilder AddValue(Func<string> value, bool when = true)
-        => when
-            ? AddRaw($"{value()} ")
-            : this;
-
-    private ValueBuilder AddRaw(string style)
+    /// <summary>Adds a value when enabled, ignoring blank values and trimming their outer whitespace.</summary>
+    public ValueBuilder AddValue(string? value, bool when = true)
     {
-        stringBuffer += style;
+        if (!when || string.IsNullOrWhiteSpace(value))
+            return this;
 
+        if (HasValue)
+            _buffer.Append(' ');
+
+        _buffer.Append(value.Trim());
         return this;
     }
 
-    public override string ToString()
-        => stringBuffer != null
-            ? stringBuffer.Trim()
-            : string.Empty;
+    /// <summary>Evaluates the value factory once, only when enabled.</summary>
+    public ValueBuilder AddValue(Func<string?> value, bool when = true)
+    {
+        if (!when)
+            return this;
+
+        ArgumentNullException.ThrowIfNull(value);
+        return AddValue(value());
+    }
+
+    public string Build() => _buffer.ToString();
+
+    public override string ToString() => Build();
 }

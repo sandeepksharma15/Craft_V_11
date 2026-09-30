@@ -3,6 +3,50 @@
 public class CollectionExtensionsTests
 {
     [Fact]
+    public void GenerateRandomizedList_Collection_ReturnsIndependentCopy()
+    {
+        ICollection<int> source = new List<int> { 3, 1, 1, 2 };
+
+        List<int> result = source.GenerateRandomizedList();
+
+        Assert.Equal(new[] { 3, 1, 1, 2 }, source);
+        Assert.Equal([1, 1, 2, 3], result.Order());
+        Assert.NotSame(source, result);
+        result.Clear();
+        Assert.Equal(4, source.Count);
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_ReadOnlyCollection_PreservesInput()
+    {
+        ICollection<int> source = Array.AsReadOnly(new[] { 1, 2, 3 });
+
+        List<int> result = source.GenerateRandomizedList();
+
+        Assert.Equal([1, 2, 3], result.Order());
+        Assert.Equal(new[] { 1, 2, 3 }, source);
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_Set_PreservesMembers()
+    {
+        ICollection<int> source = new HashSet<int> { 1, 2, 3 };
+
+        List<int> result = source.GenerateRandomizedList();
+
+        Assert.Equal([1, 2, 3], result.Order());
+        Assert.Equal(3, source.Count);
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_NullCollection_Throws()
+    {
+        ICollection<int>? source = null;
+
+        Assert.Throws<ArgumentNullException>("source", () => source.GenerateRandomizedList());
+    }
+
+    [Fact]
     public void IsNullOrEmpty_WithEmptyCollection_ReturnsTrue()
     {
         // Arrange

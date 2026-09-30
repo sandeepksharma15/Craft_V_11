@@ -110,33 +110,98 @@ public static class ReflectionExtensions
 
     extension(object obj)
     {
-        /// <summary>
-        /// Sets a property value.
-        /// </summary>
-        public void SetPropertyValue(string propertyName, object? value)
+        /// <summary>Reads a case-sensitive, dotted instance property path. Non-public access requires explicit opt-in.</summary>
+        /// <exception cref="InvalidOperationException">An intermediate property is null.</exception>
+        public object? GetValue(string propertyPath, bool includeNonPublic = false)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            ArgumentNullException.ThrowIfNull(obj);
+            var names = GetPropertyPath(propertyPath);
+            object? current = obj;
 
-            var property = GetInstanceProperty(obj, propertyName);
+            foreach (var name in names)
+            {
+                if (current is null)
+                    throw new InvalidOperationException($"Cannot read segment '{name}' in '{propertyPath}': its parent is null.");
 
-            if (property is null || !property.CanWrite)
-                throw new ArgumentException($"Property '{propertyName}' not found or not writable.", nameof(propertyName));
+                var property = ResolveProperty(current.GetType(), name, propertyPath);
+                RequireAccessor(property, false, includeNonPublic, propertyPath);
+                current = property.GetValue(current);
+            }
 
-            property.SetValue(obj, value);
+            return current;
+        }
+
+        /// <summary>Reads a property path without converting its value. Null requires a nullable result type.</summary>
+        public T? GetValue<T>(string propertyPath, bool includeNonPublic = false)
+        {
+            var value = obj.GetValue(propertyPath, includeNonPublic);
+
+            if (value is T result)
+                return result;
+
+            if (value is null && default(T) is null)
+                return default;
+
+            throw new InvalidCastException($"Value at '{propertyPath}' cannot be assigned to '{typeof(T)}'.");
         }
 
         /// <summary>
-        /// Gets a property value.
+        /// Sets a case-sensitive, dotted instance property path without value conversion or intermediate creation.
+        /// Nested structs are written back. The root must be a reference type; init-only properties are read-only.
+        /// Non-public access requires explicit opt-in. Accessor exceptions propagate without rollback.
         /// </summary>
-        public object? GetPropertyValue(string propertyName)
+        public void SetValue(string propertyPath, object? value, bool includeNonPublic = false)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            ArgumentNullException.ThrowIfNull(obj);
+            var names = GetPropertyPath(propertyPath);
 
-            var property = GetInstanceProperty(obj, propertyName)
-                ?? throw new ArgumentException($"Property '{propertyName}' not found.", nameof(propertyName));
+            if (obj.GetType().IsValueType)
+                throw new ArgumentException("The root must be a reference type to avoid modifying a temporary boxed copy.", nameof(obj));
 
-            return property.GetValue(obj);
+            var path = new List<(object Owner, PropertyInfo Property)>();
+            object current = obj;
+
+            for (var index = 0; index < names.Length; index++)
+            {
+                var property = ResolveProperty(current.GetType(), names[index], propertyPath);
+                path.Add((current, property));
+
+                if (index == names.Length - 1)
+                    break;
+
+                RequireAccessor(property, false, includeNonPublic, propertyPath);
+                current = property.GetValue(current)
+                    ?? throw new InvalidOperationException($"Cannot traverse '{property.Name}' in '{propertyPath}': its value is null.");
+            }
+
+            var leaf = path[^1];
+            RequireAccessor(leaf.Property, true, includeNonPublic, propertyPath);
+            var targetType = leaf.Property.PropertyType;
+            var assignableType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (value is null ? targetType.IsValueType && Nullable.GetUnderlyingType(targetType) is null
+                : !assignableType.IsInstanceOfType(value))
+                throw new ArgumentException($"Value cannot be assigned to '{leaf.Property.Name}' of type '{targetType}' in '{propertyPath}'.", nameof(value));
+
+            // Check all required write-back accessors before invoking the leaf setter.
+            var writeBackStart = path.Count - 2;
+
+            for (var index = writeBackStart; index >= 0 && path[index].Property.PropertyType.IsValueType; index--)
+                RequireAccessor(path[index].Property, true, includeNonPublic, propertyPath);
+
+            leaf.Property.SetValue(leaf.Owner, value);
+
+            for (var index = writeBackStart; index >= 0 && path[index].Property.PropertyType.IsValueType; index--)
+                path[index].Property.SetValue(path[index].Owner, path[index + 1].Owner);
         }
+
+        /// <summary>Alias for SetValue, including nested paths and explicit non-public access.</summary>
+        public void SetPropertyValue(string propertyName, object? value, bool includeNonPublic = false)
+            => obj.SetValue(propertyName, value, includeNonPublic);
+
+        /// <summary>Alias for GetValue, including nested paths and explicit non-public access.</summary>
+        public object? GetPropertyValue(string propertyName, bool includeNonPublic = false)
+            => obj.GetValue(propertyName, includeNonPublic);
     }
 
     #region Private Methods

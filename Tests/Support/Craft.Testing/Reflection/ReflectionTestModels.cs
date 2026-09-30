@@ -140,5 +140,36 @@ public static class ReflectionTestModels
         #endregion Public Properties
     }
 
+    public struct PropertyPoint
+    {
+        public int X { get; set; }
+        public Simple? Child { get; set; }
+    }
+
+    public struct PropertyEnvelope
+    {
+        public PropertyPoint Point { get; set; }
+    }
+
+    [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Reflection accessor fixtures require instance properties.")]
+    public class PropertyAccessModel
+    {
+        private int _written;
+        public int PrivateSetter { get; private set; } = 3;
+        public int PrivateGetter { private get; set; }
+        public int WriteOnly { set => _written = value; }
+        public int Written => _written;
+        public int InitOnly { get; init; }
+        public int this[int index] { get => index; set => _written = value; }
+        public int Throwing { get => throw new InvalidOperationException("getter"); set => throw new InvalidOperationException("setter"); }
+        public Span<int> Span => default;
+        public PropertyEnvelope Envelope { get; set; }
+        public PropertyPoint? NullablePoint { get; set; } = new PropertyPoint();
+        public PropertyPoint ReadOnlyPoint { get; } = new() { Child = new Simple() };
+        public PropertyPoint PrivatePoint { get; private set; }
+        public object BoxedPoint { get; } = new PropertyPoint();
+        public Simple ReadOnlyChild { get; } = new();
+    }
+
     #endregion Models
 }

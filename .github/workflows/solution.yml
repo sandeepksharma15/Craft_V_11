@@ -59,8 +59,12 @@ jobs:
               raise SystemExit(f"Expected one coverage report, found {len(reports)}")
           report = ET.parse(reports[0]).getroot()
           expected = {"Craft.Utilities.Builders.StyleBuilder", "Craft.Utilities.Builders.StyleBuilderExtensions", "Craft.Utilities.Builders.ValueBuilder", "Craft.Utilities.Passwords.PasswordGenerator", "Craft.Utilities.Passwords.PasswordGeneratorService", "Craft.Utilities.Passwords.PasswordGeneratorServiceExtensions"}
-          helpers = {"Craft.Utilities.Helpers." + name for name in
-              ("CountdownTimer", "Debouncer", "FileHelper", "RandomHelper", "RetryHelper", "TextConverters", "TextExtractor", "TextSimilarity")}
+          helpers = {
+              "Craft.Utilities.Helpers.Timing.CountdownTimer", "Craft.Utilities.Helpers.Timing.Debouncer",
+              "Craft.Utilities.Helpers.IO.FileHelper", "Craft.Utilities.Helpers.RandomHelper",
+              "Craft.Utilities.Helpers.Resilience.RetryHelper", "Craft.Utilities.Helpers.Text.TextConverters",
+              "Craft.Utilities.Helpers.Text.TextExtractor", "Craft.Utilities.Helpers.Text.TextSimilarity",
+          }
           reported = {item.attrib["name"] for item in report.findall(".//class")}
           if not expected | helpers <= reported:
               raise SystemExit(f"Missing utility coverage: {(expected | helpers) - reported}")

@@ -23,6 +23,8 @@
 - 2026-09-29: Group reflection test shapes under `Craft.Testing.Reflection.ReflectionTestModels` so multiple test suites can reuse inheritance, nested properties, clone graphs, and private-constructor cases.
 - 2026-09-29: Expression extension APIs remain in Craft.Expressions but use `System.Linq.Expressions` to be available with the natural BCL namespace; keep the package's auto-using list aligned.
 
+- 2026-09-30: Utilities helpers retain `Craft.Utilities.Helpers` while source/tests are grouped into Timing, IO, Text and Resilience folders; use injectable `TimeProvider` and fake time for scheduling tests.
+
 ## Patterns & Conventions
 
 <!-- Recurring patterns discovered in the codebase that new code should follow. -->

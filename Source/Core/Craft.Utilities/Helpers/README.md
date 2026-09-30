@@ -52,4 +52,6 @@ Add these when a consumer needs them, rather than growing a miscellaneous helper
 
 Tests use fake time and controlled queued callbacks, deterministic random invariants, real temporary files,
 and actual DOCX/PDF documents. CI runs the complete solution and reports reviewed utility coverage on
-Linux and Windows, including OS-specific file locking and permissions.
+Linux and Windows, including OS-specific file locking and permissions. The combined reports must cover
+100% of helper lines and branches; platform-specific error paths are measured on the platform that can
+produce them. No helper classes or methods are excluded from the coverage collection.

@@ -61,7 +61,7 @@ public static class TextExtractor
             using var doc = WordprocessingDocument.Open(stream, false);
             return doc.MainDocumentPart?.Document?.Body?.InnerText ?? string.Empty;
         }
-        catch (Exception error) when (error is OpenXmlPackageException or InvalidDataException)
+        catch (Exception error) when (error is OpenXmlPackageException or InvalidDataException or FileFormatException or System.Xml.XmlException)
         {
             return string.Empty;
         }

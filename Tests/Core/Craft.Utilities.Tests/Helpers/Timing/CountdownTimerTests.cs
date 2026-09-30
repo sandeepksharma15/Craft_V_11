@@ -23,7 +23,7 @@ public class CountdownTimerTests
     [Fact]
     public void Constructor_LargeTimeout_DoesNotOverflow()
     {
-        using CountdownTimer timer = new(int.MaxValue, 100, new FakeTimeProvider());
+        using CountdownTimer timer = new(int.MaxValue, 1000, new FakeTimeProvider());
         timer.Start();
     }
 
@@ -38,7 +38,7 @@ public class CountdownTimerTests
         timer.OnElapsed += () => elapsed++;
         timer.Start();
         timer.Start();
-        time.Advance(TimeSpan.FromSeconds(1));
+        for (int i = 0; i < 4; i++) time.Advance(TimeSpan.FromMilliseconds(250));
         Assert.Equal([1, 2, 3, 4], ticks);
         Assert.Equal(1, elapsed);
         timer.Start();
@@ -67,7 +67,7 @@ public class CountdownTimerTests
         timer.Reset();
         time.Advance(TimeSpan.FromSeconds(1));
         timer.Start();
-        time.Advance(TimeSpan.FromSeconds(1));
+        for (int i = 0; i < 4; i++) time.Advance(TimeSpan.FromMilliseconds(250));
         Assert.Equal([1, 2, 1, 2, 3, 4], ticks);
     }
 
@@ -94,10 +94,12 @@ public class CountdownTimerTests
         FakeTimeProvider time = new();
         using CountdownTimer timer = new(1, 2, time);
         timer.Start();
-        time.Advance(TimeSpan.FromSeconds(1));
+        time.Advance(TimeSpan.FromMilliseconds(500));
+        time.Advance(TimeSpan.FromMilliseconds(500));
         timer.Reset();
         timer.Start();
-        time.Advance(TimeSpan.FromSeconds(1));
+        time.Advance(TimeSpan.FromMilliseconds(500));
+        time.Advance(TimeSpan.FromMilliseconds(500));
     }
 
     [Fact]
@@ -177,7 +179,8 @@ public class CountdownTimerTests
         List<int> ticks = [];
         timer.OnTick += ticks.Add;
         await Task.WhenAll(Enumerable.Range(0, 20).Select(_ => Task.Run(timer.Start)));
-        time.Advance(TimeSpan.FromSeconds(1));
+        time.Advance(TimeSpan.FromMilliseconds(500));
+        time.Advance(TimeSpan.FromMilliseconds(500));
         Assert.Equal([1, 2], ticks);
     }
 }

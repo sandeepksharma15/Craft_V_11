@@ -4,6 +4,64 @@ namespace Craft.Extensions.Tests.Collections;
 
 public class EnumerableExtensionsTests
 {
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(10000)]
+    public void GenerateRandomizedList_Enumerable_PreservesEveryOccurrence(int count)
+    {
+        IEnumerable<int> source = Enumerable.Range(0, count).Select(i => i % 3);
+
+        List<int> result = source.GenerateRandomizedList();
+
+        Assert.Equal(source.Order(), result.Order());
+        Assert.Equal(count, result.Count);
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_NullSource_Throws()
+    {
+        IEnumerable<int>? source = null;
+
+        Assert.Throws<ArgumentNullException>("source", () => source.GenerateRandomizedList());
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_Iterator_EnumeratesOnce()
+    {
+        int enumerations = 0;
+        IEnumerable<int> Items()
+        {
+            enumerations++;
+            yield return 1;
+            yield return 2;
+            yield return 1;
+        }
+
+        List<int> result = Items().GenerateRandomizedList();
+
+        Assert.Equal([1, 1, 2], result.Order());
+        Assert.Equal(1, enumerations);
+    }
+
+    [Fact]
+    public void GenerateRandomizedList_ReferenceAndNullItems_PreservesIdentity()
+    {
+        TestItem first = new() { Id = 1, Name = "first" };
+        TestItem second = new() { Id = 2, Name = "second" };
+        TestItem?[] source = [first, null, first, second];
+
+        List<TestItem?> result = source.GenerateRandomizedList();
+
+        Assert.Equal(4, result.Count);
+        Assert.Equal(2, result.Count(item => ReferenceEquals(item, first)));
+        Assert.Single(result, item => ReferenceEquals(item, second));
+        Assert.Single(result, item => item is null);
+        Assert.Equal(new TestItem?[] { first, null, first, second }, source);
+    }
+
     [Fact]
     public void GetListDataForSelect_ReturnsEmptyDictionary_WhenItemsIsNull()
     {

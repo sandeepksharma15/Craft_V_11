@@ -1,4 +1,6 @@
-﻿using Craft.Utilities.Helpers.Text;
+﻿using Craft.Testing.Documents;
+using Craft.Testing.IO;
+using Craft.Utilities.Helpers.Text;
 
 namespace Craft.Utilities.Tests.Helpers.Text;
 
@@ -81,30 +83,40 @@ public class TextExtractorTests
         }
     }
 
-    [Fact]
-    public void ExtractTextFromDocOrPdf_ReturnsText_ForValidDocx()
+    [Theory]
+    [InlineData("Hello World")]
+    [InlineData("Generated document: 123!")]
+    public void ExtractTextFromDocOrPdf_ReturnsText_ForValidDocx(string text)
     {
         // Arrange
-        string filePath = Path.Combine(AppContext.BaseDirectory, "TestData", "Test.docx");
+        using var directory = new TemporaryDirectory();
+        string filePath = Path.Combine(directory.DirectoryPath, "document.docx");
+        TestDocumentFactory.CreateDocx(filePath, text);
 
         // Act
         var result = TextExtractor.ExtractTextFromDocOrPdf(filePath);
 
         // Assert
-        Assert.Equal("Hello World", result);
+        Assert.Equal(text, result);
+        using FileStream exclusive = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
     }
 
-    [Fact]
-    public void ExtractTextFromDocOrPdf_ReturnsText_ForValidPdf()
+    [Theory]
+    [InlineData("Hello World")]
+    [InlineData("Generated document: 123!")]
+    public void ExtractTextFromDocOrPdf_ReturnsText_ForValidPdf(string text)
     {
         // Arrange
-        string filePath = Path.Combine(AppContext.BaseDirectory, "TestData", "Test.pdf");
+        using var directory = new TemporaryDirectory();
+        string filePath = Path.Combine(directory.DirectoryPath, "document.pdf");
+        TestDocumentFactory.CreatePdf(filePath, text);
 
         // Act
         var result = TextExtractor.ExtractTextFromDocOrPdf(filePath);
 
         // Assert
-        Assert.Equal("Hello World", result.Trim());
+        Assert.Equal(text, result.Trim());
+        using FileStream exclusive = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
     }
 
     [Theory]

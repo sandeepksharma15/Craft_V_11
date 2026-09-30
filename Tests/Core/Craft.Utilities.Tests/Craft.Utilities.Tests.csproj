@@ -26,19 +26,12 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\Source\Core\Craft.Utilities\Craft.Utilities.csproj" />
+	  <ProjectReference Include="..\..\Support\Craft.Testing\Craft.Testing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Using Include="Xunit" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<None Update="TestData\Test.docx">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-		<None Update="TestData\Test.pdf">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
 
 </Project>

@@ -1,14 +1,21 @@
 namespace Craft.Utilities.Helpers;
 
-/// <summary>Provides case-sensitive edit distance over UTF-16 code units.</summary>
+/// <summary>
+/// Provides case-sensitive edit distance over UTF-16 code units.
+/// </summary>
 public static class TextSimilarity
 {
-    /// <summary>Computes Levenshtein distance (insertions, deletions and substitutions).
-    /// Null is treated as empty. Uses O(min(source.Length, target.Length)) working memory.</summary>
+    #region Public Methods
+
+    /// <summary>
+    /// Computes Levenshtein distance (insertions, deletions and substitutions). Null is treated as
+    /// empty. Uses O(min(source.Length, target.Length)) working memory.
+    /// </summary>
     public static int LevenshteinDistance(string? source, string? target)
     {
         if (string.IsNullOrEmpty(source))
             return target?.Length ?? 0;
+
         if (string.IsNullOrEmpty(target))
             return source.Length;
 
@@ -16,6 +23,7 @@ public static class TextSimilarity
             (source, target) = (target, source);
 
         int[] row = new int[source.Length + 1];
+
         for (int i = 0; i < row.Length; i++)
             row[i] = i;
 
@@ -23,6 +31,7 @@ public static class TextSimilarity
         {
             int diagonal = row[0];
             row[0] = j;
+
             for (int i = 1; i <= source.Length; i++)
             {
                 int above = row[i];
@@ -34,4 +43,6 @@ public static class TextSimilarity
 
         return row[^1];
     }
+
+    #endregion Public Methods
 }

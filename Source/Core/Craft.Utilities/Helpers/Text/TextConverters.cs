@@ -5,18 +5,44 @@ using Markdig.Syntax.Inlines;
 
 namespace Craft.Utilities.Helpers;
 
-/// <summary>Converts basic CommonMark formatting to RTF without interpreting user text as RTF controls.</summary>
+/// <summary>
+/// Converts basic CommonMark formatting to RTF without interpreting user text as RTF controls.
+/// </summary>
 public static class TextConverters
 {
-    /// <summary>Converts headings, paragraphs, emphasis, lists, links, quotes and code to Unicode RTF.</summary>
-    /// <remarks>Images render their alternative text. Raw HTML is displayed as literal text.
-    /// This is a basic text converter, not a general HTML renderer or page-layout engine.</remarks>
-    public static string ConvertMarkdownToRtf(string? markdown)
+    #region Private Methods
+
+    private static void AppendText(StringBuilder rtf, string text)
     {
-        ArgumentException.ThrowIfNullOrEmpty(markdown);
-        StringBuilder rtf = new(@"{\rtf1\ansi\deff0\uc1 ");
-        RenderBlocks(rtf, Markdown.Parse(markdown));
-        return rtf.Append('}').ToString();
+        foreach (char character in text)
+        {
+            switch (character)
+            {
+                case '\\':
+                case '{':
+                case '}':
+                    rtf.Append('\\').Append(character);
+                    break;
+
+                case '\r':
+                    break;
+
+                case '\n':
+                    rtf.Append(@"\line ");
+                    break;
+
+                case '\t':
+                    rtf.Append(@"\tab ");
+                    break;
+
+                default:
+                    if (character > 127)
+                        rtf.Append(@"\u").Append(((short)character).ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('?');
+                    else
+                        rtf.Append(character);
+                    break;
+            }
+        }
     }
 
     private static void RenderBlocks(StringBuilder rtf, ContainerBlock blocks)
@@ -31,18 +57,22 @@ public static class TextConverters
                     RenderInlines(rtf, heading.Inline!);
                     rtf.Append(@"\b0\fs24\par ");
                     break;
+
                 case ParagraphBlock paragraph:
                     RenderInlines(rtf, paragraph.Inline!);
                     rtf.Append(@"\par ");
                     break;
+
                 case CodeBlock code:
                     AppendText(rtf, code.Lines.ToString());
                     rtf.Append(@"\par ");
                     break;
+
                 case HtmlBlock html:
                     AppendText(rtf, html.Lines.ToString());
                     rtf.Append(@"\par ");
                     break;
+
                 case ListBlock list:
                     int number = int.Parse(list.OrderedStart ?? "1", System.Globalization.CultureInfo.InvariantCulture);
                     foreach (Block item in list)
@@ -54,9 +84,11 @@ public static class TextConverters
                         RenderBlocks(rtf, (ContainerBlock)item);
                     }
                     break;
+
                 case ThematicBreakBlock:
                     rtf.Append(@"\par ");
                     break;
+
                 case ContainerBlock container:
                     rtf.Append(@"{\li360 ");
                     RenderBlocks(rtf, container);
@@ -75,24 +107,30 @@ public static class TextConverters
                 case LiteralInline literal:
                     AppendText(rtf, literal.Content.ToString());
                     break;
+
                 case HtmlEntityInline entity:
                     AppendText(rtf, entity.Transcoded.ToString());
                     break;
+
                 case HtmlInline html:
                     AppendText(rtf, html.Tag);
                     break;
+
                 case LineBreakInline lineBreak:
                     rtf.Append(lineBreak.IsHard ? @"\line " : " ");
                     break;
+
                 case CodeInline code:
                     AppendText(rtf, code.Content);
                     break;
+
                 case EmphasisInline emphasis:
                     bool bold = emphasis.DelimiterCount == 2;
                     rtf.Append(bold ? @"{\b " : @"{\i ");
                     RenderInlines(rtf, emphasis);
                     rtf.Append(bold ? @"\b0 }" : @"\i0 }");
                     break;
+
                 case LinkInline link:
                     if (link.IsImage)
                         RenderInlines(rtf, link);
@@ -103,6 +141,7 @@ public static class TextConverters
                         rtf.Append("}}");
                     }
                     break;
+
                 case AutolinkInline link:
                     StartLink(rtf, link.IsEmail ? "mailto:" + link.Url : link.Url);
                     AppendText(rtf, link.Url);
@@ -120,32 +159,24 @@ public static class TextConverters
         rtf.Append(@"""}}{\fldrslt ");
     }
 
-    private static void AppendText(StringBuilder rtf, string text)
+    #endregion Private Methods
+
+    #region Public Methods
+
+    /// <summary>
+    /// Converts headings, paragraphs, emphasis, lists, links, quotes and code to Unicode RTF.
+    /// </summary>
+    /// <remarks>
+    /// Images render their alternative text. Raw HTML is displayed as literal text. This is a basic
+    /// text converter, not a general HTML renderer or page-layout engine.
+    /// </remarks>
+    public static string ConvertMarkdownToRtf(string? markdown)
     {
-        foreach (char character in text)
-        {
-            switch (character)
-            {
-                case '\\':
-                case '{':
-                case '}':
-                    rtf.Append('\\').Append(character);
-                    break;
-                case '\r':
-                    break;
-                case '\n':
-                    rtf.Append(@"\line ");
-                    break;
-                case '\t':
-                    rtf.Append(@"\tab ");
-                    break;
-                default:
-                    if (character > 127)
-                        rtf.Append(@"\u").Append(((short)character).ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('?');
-                    else
-                        rtf.Append(character);
-                    break;
-            }
-        }
+        ArgumentException.ThrowIfNullOrEmpty(markdown);
+        StringBuilder rtf = new(@"{\rtf1\ansi\deff0\uc1 ");
+        RenderBlocks(rtf, Markdown.Parse(markdown));
+        return rtf.Append('}').ToString();
     }
+
+    #endregion Public Methods
 }

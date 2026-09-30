@@ -5,17 +5,32 @@
 /// </summary>
 public static class RetryHelper
 {
+    #region Private Methods
+
+    private static int GetBackoffDelay(int initialDelayMs, int maxDelayMs, int attempt)
+    {
+        // Saturate before multiplying. Avoid floating-point conversion and integer overflow even
+        // for many attempts.
+        return (int)Math.Min((long)initialDelayMs << Math.Min(attempt, 31), maxDelayMs);
+    }
+
+    #endregion Private Methods
+
+    #region Public Methods
+
     /// <summary>
     /// Retries an operation that returns a value with a fixed delay between attempts.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <param name="action">The operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <returns>The result of the operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <param name="action">      The operation to retry. </param>
+    /// <param name="maxAttempts"> The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">     The delay in milliseconds between attempts (default: 1000). </param>
+    /// <returns> The result of the operation. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
     public static T Retry<T>(Func<T> action, int maxAttempts = 3, int delayMs = 1000)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -45,12 +60,14 @@ public static class RetryHelper
     /// <summary>
     /// Retries an operation that does not return a value with a fixed delay between attempts.
     /// </summary>
-    /// <param name="action">The operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
+    /// <param name="action">      The operation to retry. </param>
+    /// <param name="maxAttempts"> The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">     The delay in milliseconds between attempts (default: 1000). </param>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
     public static void Retry(Action action, int maxAttempts = 3, int delayMs = 1000)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -80,16 +97,20 @@ public static class RetryHelper
     /// <summary>
     /// Asynchronously retries an operation that returns a value with a fixed delay between attempts.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <param name="action">The asynchronous operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation with the result.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <param name="action">            The asynchronous operation to retry. </param>
+    /// <param name="maxAttempts">       The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">          
+    /// The delay in milliseconds between attempts (default: 1000).
+    /// </param>
+    /// <param name="cancellationToken"> Token to cancel the operation. </param>
+    /// <returns> A task representing the asynchronous operation with the result. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
+    /// <exception cref="OperationCanceledException"> Thrown when the operation is cancelled. </exception>
     public static async Task<T> RetryAsync<T>(Func<Task<T>> action, int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -121,15 +142,19 @@ public static class RetryHelper
     /// <summary>
     /// Asynchronously retries an operation that does not return a value with a fixed delay between attempts.
     /// </summary>
-    /// <param name="action">The asynchronous operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    /// <param name="action">            The asynchronous operation to retry. </param>
+    /// <param name="maxAttempts">       The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">          
+    /// The delay in milliseconds between attempts (default: 1000).
+    /// </param>
+    /// <param name="cancellationToken"> Token to cancel the operation. </param>
+    /// <returns> A task representing the asynchronous operation. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
+    /// <exception cref="OperationCanceledException"> Thrown when the operation is cancelled. </exception>
     public static async Task RetryAsync(Func<Task> action, int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -160,17 +185,41 @@ public static class RetryHelper
     }
 
     /// <summary>
+    /// Retries an operation and passes cancellation through to each asynchronous attempt.
+    /// </summary>
+    public static Task<T> RetryAsync<T>(Func<CancellationToken, Task<T>> action, int maxAttempts = 3,
+        int delayMs = 1000, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>
+    /// Retries an operation and passes cancellation through to each asynchronous attempt.
+    /// </summary>
+    public static Task RetryAsync(Func<CancellationToken, Task> action, int maxAttempts = 3,
+        int delayMs = 1000, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>
     /// Retries an operation that returns a value only when a specific exception type is thrown.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <typeparam name="TException">The type of exception to retry on.</typeparam>
-    /// <param name="action">The operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <returns>The result of the operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail with the specified exception type.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <typeparam name="TException"> The type of exception to retry on. </typeparam>
+    /// <param name="action">      The operation to retry. </param>
+    /// <param name="maxAttempts"> The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">     The delay in milliseconds between attempts (default: 1000). </param>
+    /// <returns> The result of the operation. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when all retry attempts fail with the specified exception type.
+    /// </exception>
     public static T RetryOnException<T, TException>(Func<T> action, int maxAttempts = 3, int delayMs = 1000)
         where TException : Exception
     {
@@ -199,19 +248,26 @@ public static class RetryHelper
     }
 
     /// <summary>
-    /// Asynchronously retries an operation that returns a value only when a specific exception type is thrown.
+    /// Asynchronously retries an operation that returns a value only when a specific exception type
+    /// is thrown.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <typeparam name="TException">The type of exception to retry on.</typeparam>
-    /// <param name="action">The asynchronous operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="delayMs">The delay in milliseconds between attempts (default: 1000).</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation with the result.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1 or delayMs is negative.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail with the specified exception type.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <typeparam name="TException"> The type of exception to retry on. </typeparam>
+    /// <param name="action">            The asynchronous operation to retry. </param>
+    /// <param name="maxAttempts">       The maximum number of attempts (default: 3). </param>
+    /// <param name="delayMs">          
+    /// The delay in milliseconds between attempts (default: 1000).
+    /// </param>
+    /// <param name="cancellationToken"> Token to cancel the operation. </param>
+    /// <returns> A task representing the asynchronous operation with the result. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1 or delayMs is negative.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when all retry attempts fail with the specified exception type.
+    /// </exception>
+    /// <exception cref="OperationCanceledException"> Thrown when the operation is cancelled. </exception>
     public static async Task<T> RetryOnExceptionAsync<T, TException>(Func<Task<T>> action, int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
         where TException : Exception
     {
@@ -242,17 +298,31 @@ public static class RetryHelper
     }
 
     /// <summary>
+    /// Retries the specified exception type while passing cancellation to each attempt.
+    /// </summary>
+    public static Task<T> RetryOnExceptionAsync<T, TException>(Func<CancellationToken, Task<T>> action,
+        int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
+        where TException : Exception
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryOnExceptionAsync<T, TException>(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>
     /// Retries an operation that returns a value with exponential backoff delay between attempts.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <param name="action">The operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="initialDelayMs">The initial delay in milliseconds (default: 1000).</param>
-    /// <param name="maxDelayMs">The maximum delay in milliseconds (default: 30000).</param>
-    /// <returns>The result of the operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1, initialDelayMs is negative, or maxDelayMs is less than initialDelayMs.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <param name="action">         The operation to retry. </param>
+    /// <param name="maxAttempts">    The maximum number of attempts (default: 3). </param>
+    /// <param name="initialDelayMs"> The initial delay in milliseconds (default: 1000). </param>
+    /// <param name="maxDelayMs">     The maximum delay in milliseconds (default: 30000). </param>
+    /// <returns> The result of the operation. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1, initialDelayMs is negative, or maxDelayMs is less
+    /// than initialDelayMs.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
     public static T RetryWithExponentialBackoff<T>(Func<T> action, int maxAttempts = 3, int initialDelayMs = 1000, int maxDelayMs = 30000)
     {
         ArgumentNullException.ThrowIfNull(action);
@@ -283,19 +353,23 @@ public static class RetryHelper
     }
 
     /// <summary>
-    /// Asynchronously retries an operation that returns a value with exponential backoff delay between attempts.
+    /// Asynchronously retries an operation that returns a value with exponential backoff delay
+    /// between attempts.
     /// </summary>
-    /// <typeparam name="T">The return type of the operation.</typeparam>
-    /// <param name="action">The asynchronous operation to retry.</param>
-    /// <param name="maxAttempts">The maximum number of attempts (default: 3).</param>
-    /// <param name="initialDelayMs">The initial delay in milliseconds (default: 1000).</param>
-    /// <param name="maxDelayMs">The maximum delay in milliseconds (default: 30000).</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation with the result.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when action is null.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when maxAttempts is less than 1, initialDelayMs is negative, or maxDelayMs is less than initialDelayMs.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when all retry attempts fail.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when the operation is cancelled.</exception>
+    /// <typeparam name="T"> The return type of the operation. </typeparam>
+    /// <param name="action">            The asynchronous operation to retry. </param>
+    /// <param name="maxAttempts">       The maximum number of attempts (default: 3). </param>
+    /// <param name="initialDelayMs">    The initial delay in milliseconds (default: 1000). </param>
+    /// <param name="maxDelayMs">        The maximum delay in milliseconds (default: 30000). </param>
+    /// <param name="cancellationToken"> Token to cancel the operation. </param>
+    /// <returns> A task representing the asynchronous operation with the result. </returns>
+    /// <exception cref="ArgumentNullException"> Thrown when action is null. </exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when maxAttempts is less than 1, initialDelayMs is negative, or maxDelayMs is less
+    /// than initialDelayMs.
+    /// </exception>
+    /// <exception cref="InvalidOperationException"> Thrown when all retry attempts fail. </exception>
+    /// <exception cref="OperationCanceledException"> Thrown when the operation is cancelled. </exception>
     public static async Task<T> RetryWithExponentialBackoffAsync<T>(Func<Task<T>> action, int maxAttempts = 3, int initialDelayMs = 1000,
         int maxDelayMs = 30000, CancellationToken cancellationToken = default)
     {
@@ -328,32 +402,9 @@ public static class RetryHelper
         throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
     }
 
-    /// <summary>Retries an operation and passes cancellation through to each asynchronous attempt.</summary>
-    public static Task<T> RetryAsync<T>(Func<CancellationToken, Task<T>> action, int maxAttempts = 3,
-        int delayMs = 1000, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
-    }
-
-    /// <summary>Retries an operation and passes cancellation through to each asynchronous attempt.</summary>
-    public static Task RetryAsync(Func<CancellationToken, Task> action, int maxAttempts = 3,
-        int delayMs = 1000, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
-    }
-
-    /// <summary>Retries the specified exception type while passing cancellation to each attempt.</summary>
-    public static Task<T> RetryOnExceptionAsync<T, TException>(Func<CancellationToken, Task<T>> action,
-        int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
-        where TException : Exception
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        return RetryOnExceptionAsync<T, TException>(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
-    }
-
-    /// <summary>Retries with capped exponential delays and passes cancellation to each attempt.</summary>
+    /// <summary>
+    /// Retries with capped exponential delays and passes cancellation to each attempt.
+    /// </summary>
     public static Task<T> RetryWithExponentialBackoffAsync<T>(Func<CancellationToken, Task<T>> action,
         int maxAttempts = 3, int initialDelayMs = 1000, int maxDelayMs = 30000,
         CancellationToken cancellationToken = default)
@@ -363,9 +414,5 @@ public static class RetryHelper
             initialDelayMs, maxDelayMs, cancellationToken);
     }
 
-    private static int GetBackoffDelay(int initialDelayMs, int maxDelayMs, int attempt)
-    {
-        // Saturate before multiplying. Avoid floating-point conversion and integer overflow even for many attempts.
-        return (int)Math.Min((long)initialDelayMs << Math.Min(attempt, 31), maxDelayMs);
-    }
+    #endregion Public Methods
 }

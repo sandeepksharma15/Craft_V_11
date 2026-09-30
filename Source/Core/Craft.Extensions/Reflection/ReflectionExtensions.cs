@@ -247,8 +247,43 @@ public static class ReflectionExtensions
             ?? throw new ArgumentException("Invalid expression. Expected a property access expression.", nameof(expression));
     }
 
-    private static PropertyInfo? GetInstanceProperty(object obj, string propertyName)
-        => obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+    private static string[] GetPropertyPath(string propertyPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(propertyPath);
+        var names = propertyPath.Split('.');
+
+        if (names.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("Property paths must contain non-empty segments.", nameof(propertyPath));
+
+        return names;
+    }
+
+    private static PropertyInfo ResolveProperty(Type type, string name, string propertyPath)
+    {
+        for (var current = type; current is not null; current = current.BaseType)
+        {
+            var property = current.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                .FirstOrDefault(property => property.Name == name);
+
+            if (property is null)
+                continue;
+
+            if (property.GetIndexParameters().Length != 0 || property.PropertyType.IsByRef || property.PropertyType.IsByRefLike)
+                throw new ArgumentException($"Property '{name}' in '{propertyPath}' is not a supported non-indexed property.", nameof(propertyPath));
+
+            return property;
+        }
+
+        throw new ArgumentException($"Property segment '{name}' in '{propertyPath}' was not found on '{type}'.", nameof(propertyPath));
+    }
+
+    private static void RequireAccessor(PropertyInfo property, bool write, bool includeNonPublic, string propertyPath)
+    {
+        var accessor = write ? property.GetSetMethod(includeNonPublic) : property.GetGetMethod(includeNonPublic);
+
+        if (accessor is null || (write && accessor.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(IsExternalInit))))
+            throw new ArgumentException($"Property '{property.Name}' in '{propertyPath}' has no permitted {(write ? "setter" : "getter")}.", nameof(propertyPath));
+    }
 
     #endregion Private Methods
 

@@ -1,6 +1,8 @@
 ﻿using Craft.Testing.Documents;
 using Craft.Testing.IO;
 using Craft.Utilities.Helpers.Text;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 
 namespace Craft.Utilities.Tests.Helpers.Text;
 
@@ -14,8 +16,7 @@ public class TextExtractorTests
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.DOCX");
         try
         {
-            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
-                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            using (var document = WordprocessingDocument.Create(path, DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
             {
                 var part = document.AddMainDocumentPart();
                 part.Document = new(new DocumentFormat.OpenXml.Wordprocessing.Body());
@@ -40,8 +41,7 @@ public class TextExtractorTests
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
         try
         {
-            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
-                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            using (var document = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document))
             {
                 if (addPart) document.AddMainDocumentPart();
             }
@@ -149,6 +149,7 @@ public class TextExtractorTests
     public void ExtractTextFromDocOrPdf_WordWithoutBody_ReturnsEmpty()
     {
         string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+
         try
         {
             using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
@@ -158,7 +159,10 @@ public class TextExtractorTests
             }
             Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
         }
-        finally { File.Delete(path); }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     #endregion Public Methods

@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using DocumentFormat.OpenXml.Packaging;
+using UglyToad.PdfPig;
 using UglyToad.PdfPig.Core;
 
 namespace Craft.Utilities.Helpers.Text;
@@ -14,7 +15,7 @@ public static class TextExtractor
         {
             var sb = new StringBuilder();
 
-            using var document = UglyToad.PdfPig.PdfDocument.Open(fileName);
+            using var document = PdfDocument.Open(fileName);
 
             foreach (var page in document.GetPages())
                 sb.Append(page.Text);

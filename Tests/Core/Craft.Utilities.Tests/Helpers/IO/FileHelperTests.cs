@@ -46,7 +46,7 @@ public class FileHelperTests : IDisposable
         string path = Path.Combine(_testDirectory, "hash.dat");
         File.WriteAllText(path, "");
         Assert.Throws<NotSupportedException>(() => FileHelper.GetFileHash(path, new("unsupported")));
-        await Assert.ThrowsAsync<NotSupportedException>(() => FileHelper.GetFileHashAsync(path, new("unsupported")));
+        await Assert.ThrowsAsync<NotSupportedException>(() => FileHelper.GetFileHashAsync(path, new("unsupported"), cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -76,9 +76,9 @@ public class FileHelperTests : IDisposable
         string destination = Path.Combine(_testDirectory, "destination");
         File.WriteAllText(source, "new");
         File.WriteAllText(destination, "old");
-        await Assert.ThrowsAsync<IOException>(() => FileHelper.CopyFileAsync(source, destination));
+        await Assert.ThrowsAsync<IOException>(() => FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken));
         Assert.Equal("old", File.ReadAllText(destination));
-        await FileHelper.CopyFileAsync(source, destination, overwrite: true);
+        await FileHelper.CopyFileAsync(source, destination, overwrite: true, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("new", File.ReadAllText(destination));
     }
 
@@ -90,7 +90,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(source, new string('x', 100000));
         async Task<bool> Copy()
         {
-            try { await FileHelper.CopyFileAsync(source, destination); return true; }
+            try { await FileHelper.CopyFileAsync(source, destination, cancellationToken: TestContext.Current.CancellationToken); return true; }
             catch (IOException) { return false; }
         }
         bool[] results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Copy()));
@@ -131,7 +131,7 @@ public class FileHelperTests : IDisposable
         if (change) content[^1]++;
         File.WriteAllBytes(second, content);
         Assert.Equal(!change, FileHelper.CompareFiles(first, second));
-        Assert.Equal(!change, await FileHelper.CompareFilesAsync(first, second));
+        Assert.Equal(!change, await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class FileHelperTests : IDisposable
         string second = Path.Combine(_testDirectory, "second");
         File.WriteAllText(first, "a");
         File.WriteAllText(second, "ab");
-        Assert.False(await FileHelper.CompareFilesAsync(first, second));
+        Assert.False(await FileHelper.CompareFilesAsync(first, second, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -151,7 +151,7 @@ public class FileHelperTests : IDisposable
     {
         string path = Path.Combine(_testDirectory, "missing");
         Assert.Throws<ArgumentOutOfRangeException>(() => FileHelper.DeleteFile(path, count, delay));
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => FileHelper.DeleteFileAsync(path, count, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => FileHelper.DeleteFileAsync(path, count, delay, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class FileHelperTests : IDisposable
         File.WriteAllText(path, "locked");
         using FileStream handle = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         Assert.False(FileHelper.DeleteFile(path, retryCount: 1, retryDelayMilliseconds: 0));
-        Assert.False(await FileHelper.DeleteFileAsync(path, retryCount: 1, retryDelayMilliseconds: 0));
+        Assert.False(await FileHelper.DeleteFileAsync(path, retryCount: 1, retryDelayMilliseconds: 0, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class FileHelperTests : IDisposable
         {
             File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
             Assert.False(FileHelper.DeleteFile(path));
-            Assert.False(await FileHelper.DeleteFileAsync(path));
+            Assert.False(await FileHelper.DeleteFileAsync(path, cancellationToken: TestContext.Current.CancellationToken));
         }
         finally { File.SetUnixFileMode(directory, original); }
     }
@@ -201,10 +201,10 @@ public class FileHelperTests : IDisposable
     [Fact]
     public async Task AsyncFileOperations_NullArguments_Throw()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync("source", null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.DeleteFileAsync(null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync(null!, "second"));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync("first", null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CopyFileAsync("source", null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.DeleteFileAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync(null!, "second", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FileHelper.CompareFilesAsync("first", null!, cancellationToken: TestContext.Current.CancellationToken));
     }
     private readonly string _testDirectory;
 

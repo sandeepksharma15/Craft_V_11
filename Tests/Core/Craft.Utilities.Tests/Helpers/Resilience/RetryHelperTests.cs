@@ -4,6 +4,146 @@ namespace Craft.Utilities.Tests.Helpers;
 
 public class RetryHelperTests
 {
+
+    [Theory]
+    [InlineData("value")]
+    [InlineData("void")]
+    [InlineData("typed")]
+    [InlineData("backoff")]
+    public void SynchronousRetry_Cancellation_IsNeverRetried(string kind)
+    {
+        int calls = 0;
+        OperationCanceledException expected = new();
+        int Action() { calls++; throw expected; }
+        Action invoke = kind switch
+        {
+            "value" => () => RetryHelper.Retry(Action, delayMs: 0),
+            "void" => () => RetryHelper.Retry(() => { Action(); }, delayMs: 0),
+            "typed" => () => RetryHelper.RetryOnException<int, Exception>(Action, delayMs: 0),
+            _ => () => RetryHelper.RetryWithExponentialBackoff(Action, initialDelayMs: 0)
+        };
+        Assert.Same(expected, Assert.Throws<OperationCanceledException>(invoke));
+        Assert.Equal(1, calls);
+    }
+
+    [Theory]
+    [InlineData("value")]
+    [InlineData("void")]
+    [InlineData("typed")]
+    [InlineData("backoff")]
+    public async Task AsynchronousRetry_Cancellation_IsNeverRetriedOrWrapped(string kind)
+    {
+        int calls = 0;
+        OperationCanceledException expected = new();
+        Task<int> Action() { calls++; throw expected; }
+        Func<Task> invoke = kind switch
+        {
+            "value" => () => RetryHelper.RetryAsync(Action, delayMs: 0),
+            "void" => () => RetryHelper.RetryAsync(async () => { await Action(); }, delayMs: 0),
+            "typed" => () => RetryHelper.RetryOnExceptionAsync<int, Exception>(Action, delayMs: 0),
+            _ => () => RetryHelper.RetryWithExponentialBackoffAsync(Action, initialDelayMs: 0)
+        };
+        Assert.Same(expected, await Assert.ThrowsAsync<OperationCanceledException>(invoke));
+        Assert.Equal(1, calls);
+    }
+
+    [Theory]
+    [InlineData("value")]
+    [InlineData("void")]
+    [InlineData("typed")]
+    [InlineData("backoff")]
+    public async Task TokenAwareRetry_PassesTokenToEachAttempt(string kind)
+    {
+        using CancellationTokenSource source = new();
+        int calls = 0;
+        Task<int> Action(CancellationToken token)
+        {
+            Assert.Equal(source.Token, token);
+            calls++;
+            return calls == 1 ? Task.FromException<int>(new IOException()) : Task.FromResult(42);
+        }
+        Task<int> valueTask = kind switch
+        {
+            "value" => RetryHelper.RetryAsync(Action, delayMs: 0, cancellationToken: source.Token),
+            "typed" => RetryHelper.RetryOnExceptionAsync<int, IOException>(Action, delayMs: 0, cancellationToken: source.Token),
+            "backoff" => RetryHelper.RetryWithExponentialBackoffAsync(Action, initialDelayMs: 0, cancellationToken: source.Token),
+            _ => Task.FromResult(42)
+        };
+        Assert.Equal(42, await valueTask);
+        if (kind == "void")
+            await RetryHelper.RetryAsync(async token => { await Action(token); }, delayMs: 0, cancellationToken: source.Token);
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task TokenAwareRetry_CancellationDuringAction_StopsAttempts()
+    {
+        using CancellationTokenSource source = new();
+        int calls = 0;
+        await Assert.ThrowsAsync<OperationCanceledException>(() => RetryHelper.RetryAsync<int>(token =>
+        {
+            calls++;
+            source.Cancel();
+            token.ThrowIfCancellationRequested();
+            return Task.FromResult(1);
+        }, delayMs: 0, cancellationToken: source.Token));
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public void TokenAwareRetry_NullDelegates_Throw()
+    {
+        Assert.Throws<ArgumentNullException>("action", () => RetryHelper.RetryAsync<int>((Func<CancellationToken, Task<int>>)null!));
+        Assert.Throws<ArgumentNullException>("action", () => RetryHelper.RetryAsync((Func<CancellationToken, Task>)null!));
+        Assert.Throws<ArgumentNullException>("action", () => RetryHelper.RetryOnExceptionAsync<int, IOException>((Func<CancellationToken, Task<int>>)null!));
+        Assert.Throws<ArgumentNullException>("action", () => RetryHelper.RetryWithExponentialBackoffAsync<int>((Func<CancellationToken, Task<int>>)null!));
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(-1, 0)]
+    [InlineData(1, -1)]
+    public async Task Retry_InvalidArguments_AllStrategiesValidate(int attempts, int delay)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => RetryHelper.Retry(() => 1, attempts, delay));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RetryHelper.Retry(() => { }, attempts, delay));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RetryHelper.RetryOnException<int, IOException>(() => 1, attempts, delay));
+        Assert.Throws<ArgumentOutOfRangeException>(() => RetryHelper.RetryWithExponentialBackoff(() => 1, attempts, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => RetryHelper.RetryAsync(() => Task.FromResult(1), attempts, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => RetryHelper.RetryAsync(() => Task.CompletedTask, attempts, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => RetryHelper.RetryOnExceptionAsync<int, IOException>(() => Task.FromResult(1), attempts, delay));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => RetryHelper.RetryWithExponentialBackoffAsync(() => Task.FromResult(1), attempts, delay));
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(40)]
+    public async Task Backoff_ZeroDelayAndManyAttempts_PreservesLastFailure(int maxAttempts)
+    {
+        int calls = 0;
+        IOException expected = new("last");
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+            RetryHelper.RetryWithExponentialBackoff<int>(() => { calls++; throw expected; }, maxAttempts, 0, 0));
+        Assert.Same(expected, error.InnerException);
+        Assert.Equal(maxAttempts, calls);
+        calls = 0;
+        error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            RetryHelper.RetryWithExponentialBackoffAsync<int>(() => { calls++; return Task.FromException<int>(expected); },
+                maxAttempts, 0, 0));
+        Assert.Same(expected, error.InnerException);
+        Assert.Equal(maxAttempts, calls);
+    }
+
+    [Fact]
+    public async Task RetryAsync_VoidNullAndTypedExhaustion_PreserveFailures()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>("action", () => RetryHelper.RetryAsync((Func<Task>)null!));
+        IOException expected = new();
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            RetryHelper.RetryOnExceptionAsync<int, IOException>(() => Task.FromException<int>(expected), 1, 0));
+        Assert.Same(expected, error.InnerException);
+    }
+
     #region Retry<T> Tests
 
     [Fact]
@@ -237,7 +377,7 @@ public class RetryHelperTests
     {
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
-            await RetryHelper.RetryAsync<int>(null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
+            await RetryHelper.RetryAsync<int>((Func<Task<int>>)null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -467,7 +607,7 @@ public class RetryHelperTests
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await RetryHelper.RetryOnExceptionAsync<int, InvalidOperationException>(
-                null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
+                (Func<Task<int>>)null!, maxAttempts: 3, delayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -749,7 +889,7 @@ public class RetryHelperTests
         // Arrange & Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await RetryHelper.RetryWithExponentialBackoffAsync<int>(
-                null!, maxAttempts: 3, initialDelayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
+                (Func<Task<int>>)null!, maxAttempts: 3, initialDelayMs: 1000, cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion

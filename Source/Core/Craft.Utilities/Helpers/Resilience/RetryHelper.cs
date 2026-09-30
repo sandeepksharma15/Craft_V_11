@@ -24,17 +24,17 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             try
             {
                 return action();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
 
-                if (attempt < maxAttempts)
+                if (attempt + 1 < maxAttempts)
                     Thread.Sleep(delayMs);
             }
         }
@@ -59,17 +59,17 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             try
             {
                 action();
                 return;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
-                if (attempt < maxAttempts)
+                if (attempt + 1 < maxAttempts)
                     Thread.Sleep(delayMs);
             }
         }
@@ -98,20 +98,20 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                return await action();
+                return await action().ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
 
-                if (attempt < maxAttempts)
-                    await Task.Delay(delayMs, cancellationToken);
+                if (attempt + 1 < maxAttempts)
+                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -138,21 +138,21 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                await action();
+                await action().ConfigureAwait(false);
                 return;
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
 
-                if (attempt < maxAttempts)
-                    await Task.Delay(delayMs, cancellationToken);
+                if (attempt + 1 < maxAttempts)
+                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -180,17 +180,17 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             try
             {
                 return action();
             }
-            catch (TException ex)
+            catch (TException ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
 
-                if (attempt < maxAttempts)
+                if (attempt + 1 < maxAttempts)
                     Thread.Sleep(delayMs);
             }
         }
@@ -221,20 +221,20 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                return await action();
+                return await action().ConfigureAwait(false);
             }
-            catch (TException ex)
+            catch (TException ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
 
-                if (attempt < maxAttempts)
-                    await Task.Delay(delayMs, cancellationToken);
+                if (attempt + 1 < maxAttempts)
+                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -262,19 +262,19 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             try
             {
                 return action();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
-                if (attempt < maxAttempts)
+                if (attempt + 1 < maxAttempts)
                 {
-                    var delayMs = Math.Min((long)initialDelayMs * (long)Math.Pow(2, attempt - 1), maxDelayMs);
-                    Thread.Sleep((int)delayMs);
+                    int delayMs = GetBackoffDelay(initialDelayMs, maxDelayMs, attempt);
+                    Thread.Sleep(delayMs);
                 }
             }
         }
@@ -306,25 +306,66 @@ public static class RetryHelper
 
         Exception? lastException = null;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                return await action();
+                return await action().ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
-                if (attempt < maxAttempts)
+                if (attempt + 1 < maxAttempts)
                 {
-                    var delayMs = Math.Min((long)initialDelayMs * (long)Math.Pow(2, attempt - 1), maxDelayMs);
-                    await Task.Delay((int)delayMs, cancellationToken);
+                    int delayMs = GetBackoffDelay(initialDelayMs, maxDelayMs, attempt);
+                    await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
 
         throw new InvalidOperationException($"Operation failed after {maxAttempts} attempts.", lastException);
+    }
+
+    /// <summary>Retries an operation and passes cancellation through to each asynchronous attempt.</summary>
+    public static Task<T> RetryAsync<T>(Func<CancellationToken, Task<T>> action, int maxAttempts = 3,
+        int delayMs = 1000, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>Retries an operation and passes cancellation through to each asynchronous attempt.</summary>
+    public static Task RetryAsync(Func<CancellationToken, Task> action, int maxAttempts = 3,
+        int delayMs = 1000, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryAsync(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>Retries the specified exception type while passing cancellation to each attempt.</summary>
+    public static Task<T> RetryOnExceptionAsync<T, TException>(Func<CancellationToken, Task<T>> action,
+        int maxAttempts = 3, int delayMs = 1000, CancellationToken cancellationToken = default)
+        where TException : Exception
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryOnExceptionAsync<T, TException>(() => action(cancellationToken), maxAttempts, delayMs, cancellationToken);
+    }
+
+    /// <summary>Retries with capped exponential delays and passes cancellation to each attempt.</summary>
+    public static Task<T> RetryWithExponentialBackoffAsync<T>(Func<CancellationToken, Task<T>> action,
+        int maxAttempts = 3, int initialDelayMs = 1000, int maxDelayMs = 30000,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        return RetryWithExponentialBackoffAsync(() => action(cancellationToken), maxAttempts,
+            initialDelayMs, maxDelayMs, cancellationToken);
+    }
+
+    private static int GetBackoffDelay(int initialDelayMs, int maxDelayMs, int attempt)
+    {
+        // Saturate before multiplying. Avoid floating-point conversion and integer overflow even for many attempts.
+        return (int)Math.Min((long)initialDelayMs << Math.Min(attempt, 31), maxDelayMs);
     }
 }

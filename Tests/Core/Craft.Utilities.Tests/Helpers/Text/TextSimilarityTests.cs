@@ -4,6 +4,25 @@ namespace Craft.Utilities.Tests.Helpers;
 
 public class TextSimilarityTests
 {
+
+    [Theory]
+    [InlineData(null, null, 0)]
+    [InlineData("", null, 0)]
+    [InlineData(null, "", 0)]
+    [InlineData("abc", "xyz", 3)]
+    [InlineData("abc", "a", 2)]
+    [InlineData("é", "e", 1)]
+    [InlineData("😀", "", 2)]
+    public void LevenshteinDistance_EdgeCases_ReturnsUtf16Distance(string? source, string? target, int expected)
+        => Assert.Equal(expected, TextSimilarity.LevenshteinDistance(source, target));
+
+    [Fact]
+    public void LevenshteinDistance_HighlyUnequalLengths_HandlesBothDirections()
+    {
+        string longText = new('x', 100000);
+        Assert.Equal(99999, TextSimilarity.LevenshteinDistance("x", longText));
+        Assert.Equal(99999, TextSimilarity.LevenshteinDistance(longText, "x"));
+    }
     // ── LevenshteinDistance ──────────────────────────────────────────────────
 
     [Fact]

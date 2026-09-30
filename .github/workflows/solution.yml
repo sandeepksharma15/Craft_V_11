@@ -12,7 +12,14 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     env:
       DOTNET_TEST_RUNNER: Microsoft.Testing.Platform
 
@@ -40,9 +47,9 @@ jobs:
           dotnet test Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \
             --configuration Release --no-build \
             -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
-            --filter "FullyQualifiedName~StyleBuilder|FullyQualifiedName~ValueBuilder|FullyQualifiedName~Craft.Utilities.Tests.Passwords" \
+            --filter "FullyQualifiedName~StyleBuilder|FullyQualifiedName~ValueBuilder|FullyQualifiedName~Craft.Utilities.Tests.Passwords|FullyQualifiedName~Craft.Utilities.Tests.Helpers" \
             --collect:"XPlat Code Coverage" --results-directory artifacts/utility-coverage \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder,[Craft.Utilities]Craft.Utilities.Passwords.*"
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder,[Craft.Utilities]Craft.Utilities.Passwords.*,[Craft.Utilities]Craft.Utilities.Helpers.*"
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
@@ -52,17 +59,24 @@ jobs:
               raise SystemExit(f"Expected one coverage report, found {len(reports)}")
           report = ET.parse(reports[0]).getroot()
           expected = {"Craft.Utilities.Builders.StyleBuilder", "Craft.Utilities.Builders.StyleBuilderExtensions", "Craft.Utilities.Builders.ValueBuilder", "Craft.Utilities.Passwords.PasswordGenerator", "Craft.Utilities.Passwords.PasswordGeneratorService", "Craft.Utilities.Passwords.PasswordGeneratorServiceExtensions"}
+          helpers = {"Craft.Utilities.Helpers." + name for name in
+              ("CountdownTimer", "Debouncer", "FileHelper", "RandomHelper", "RetryHelper", "TextConverters", "TextExtractor", "TextSimilarity")}
           reported = {item.attrib["name"] for item in report.findall(".//class")}
-          if not expected <= reported:
-              raise SystemExit(f"Missing utility coverage: {expected - reported}")
+          if not expected | helpers <= reported:
+              raise SystemExit(f"Missing utility coverage: {(expected | helpers) - reported}")
           for item in report.findall(".//class"):
               print(f"{item.attrib['name']}: lines={item.attrib['line-rate']}, branches={item.attrib['branch-rate']}")
+              missing = [line.attrib["number"] for line in item.findall("./lines/line") if int(line.attrib["hits"]) == 0]
+              partial = [(line.attrib["number"], line.attrib.get("condition-coverage")) for line in item.findall("./lines/line")
+                  if line.attrib.get("branch") == "true" and not line.attrib.get("condition-coverage", "").startswith("100%")]
+              print(f"  Uncovered lines: {missing}; partial branches: {partial}")
+              if item.attrib["name"] in expected and (float(item.attrib["line-rate"]) < 1 or float(item.attrib["branch-rate"]) < 1):
+                  raise SystemExit("Previously reviewed utilities require 100% line and branch coverage")
           print(f"Lines: {report.attrib['lines-covered']}/{report.attrib['lines-valid']}")
           print(f"Branches: {report.attrib['branches-covered']}/{report.attrib['branches-valid']}")
           if int(report.attrib["lines-valid"]) == 0 or int(report.attrib["branches-valid"]) == 0:
               raise SystemExit("Utility coverage is missing")
-          if float(report.attrib["line-rate"]) < 1 or float(report.attrib["branch-rate"]) < 1:
-              raise SystemExit("Reviewed utilities require 100% line and branch coverage")
+
           PY
 
 

@@ -4,6 +4,46 @@ namespace Craft.Utilities.Tests.Helpers;
 
 public class TextExtractorTests
 {
+
+    [Theory]
+    [InlineData("legacy.doc")]
+    [InlineData("legacy.DOC")]
+    public void ExtractTextFromDocOrPdf_LegacyBinaryWord_IsExplicitlyUnsupported(string path)
+        => Assert.Throws<NotSupportedException>(() => TextExtractor.ExtractTextFromDocOrPdf(path));
+
+    [Fact]
+    public void ExtractTextFromDocOrPdf_EmptyWordDocument_ReturnsEmptyAndReleasesFile()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.DOCX");
+        try
+        {
+            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
+                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            {
+                var part = document.AddMainDocumentPart();
+                part.Document = new(new DocumentFormat.OpenXml.Wordprocessing.Body());
+            }
+            Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
+            using FileStream exclusive = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void ExtractTextFromDocOrPdf_WordWithoutBody_ReturnsEmpty()
+    {
+        string path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+        try
+        {
+            using (var document = DocumentFormat.OpenXml.Packaging.WordprocessingDocument.Create(path,
+                DocumentFormat.OpenXml.WordprocessingDocumentType.Document))
+            {
+                document.AddMainDocumentPart().Document = new();
+            }
+            Assert.Equal("", TextExtractor.ExtractTextFromDocOrPdf(path));
+        }
+        finally { File.Delete(path); }
+    }
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -33,7 +73,7 @@ public class TextExtractorTests
     [Fact]
     public void ExtractTextFromDocOrPdf_ReturnsEmptyString_ForCorruptedDocx()
     {
-        var tempFile = Path.GetTempFileName() + ".docx";
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
 
         File.WriteAllText(tempFile, "not a real docx");
         try
@@ -50,7 +90,7 @@ public class TextExtractorTests
     [Fact]
     public void ExtractTextFromDocOrPdf_ReturnsEmptyString_ForCorruptedPdf()
     {
-        var tempFile = Path.GetTempFileName() + ".pdf";
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.pdf");
         File.WriteAllText(tempFile, "not a real pdf");
         try
         {
@@ -89,4 +129,3 @@ public class TextExtractorTests
         Assert.Equal("Hello World", result.Trim());
     }
 }
-

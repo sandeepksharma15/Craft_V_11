@@ -32,3 +32,5 @@
 ## Gotchas
 
 <!-- Pitfalls, quirks, or non-obvious behaviors encountered in this workspace. -->
+
+- 2026-09-30: Reflection property value APIs support case-sensitive dotted paths with public-only access by default and explicit non-public opt-in; use strict assignment and write back nested structs. Setters require reference-type roots and reject init-only properties.

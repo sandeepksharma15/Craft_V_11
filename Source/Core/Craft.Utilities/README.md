@@ -4,7 +4,7 @@ Craft.Utilities is a .NET 10 library providing a rich set of utility classes, he
 
 ## Features
 - **Caching Services**: In-memory and Redis cache implementations with a common interface.
-- **Password Generation**: Secure, customizable password generator and service.
+- **Password Generation**: Cryptographically random password generator with configurable length.
 - **File Upload Service**: Abstraction for file uploads and storage.
 - **Helpers**: Utilities for random value generation, debouncing, countdown timers, parameter replacement in expressions, and more.
 - **Builders**: Fluent builders for CSS, style, and value construction.
@@ -27,6 +27,7 @@ dotnet add reference ../Craft.Utilities/Craft.Utilities.csproj
 ```csharp
 using Craft.Utilities;
 using Craft.Utilities.CacheService;
+using Craft.Utilities.Passwords;
 
 // Use the in-memory cache service
 ICacheService cache = new MemoryCacheService();
@@ -35,8 +36,12 @@ var value = cache.Get<string>("key");
 
 // Generate a secure password
 var passwordService = new PasswordGeneratorService();
-string password = passwordService.Generate(16);
+string password = passwordService.GeneratePassword(16);
 ```
+
+The password APIs require at least 6 characters and default to 8 for compatibility. Each generated password contains at least one uppercase letter, lowercase letter, digit, and character from `!@#$%^&*()_+[]{}|;:,.<>?`. Pass the desired length explicitly, as in the 16-character example above.
+
+Register the default singleton with `services.AddPasswordGeneratorService()` and consume `IPasswordGeneratorService`. Repeated registration is safe and preserves an existing custom implementation.
 
 ## Key Components
 - `ICacheService`, `MemoryCacheService`, `RedisCacheService`: Caching abstractions and implementations.
@@ -56,3 +61,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ---
 For more details, review the source code and XML documentation in the project.
+

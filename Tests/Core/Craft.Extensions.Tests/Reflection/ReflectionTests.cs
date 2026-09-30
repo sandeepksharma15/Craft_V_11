@@ -266,7 +266,7 @@ public class ReflectionExtensionsTests
         obj.SetPrivateProp(55);
 
         Assert.Equal(123, obj.GetPropertyValue("IntProp"));
-        Assert.Equal(55, obj.GetPropertyValue("PrivateProp"));
+        Assert.Equal(55, obj.GetPropertyValue("PrivateProp", includeNonPublic: true));
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class ReflectionExtensionsTests
         Assert.Throws<ArgumentNullException>(() => obj.GetPropertyValue(null!));
         Assert.Throws<ArgumentException>(() => obj.GetPropertyValue(""));
         Assert.Throws<ArgumentException>(() => obj.GetPropertyValue("NotExist"));
-        Assert.Throws<NullReferenceException>(() =>
+        Assert.Throws<ArgumentNullException>(() =>
             ((object)null!).GetPropertyValue("IntProp"));
     }
 
@@ -287,7 +287,7 @@ public class ReflectionExtensionsTests
         var obj = new Simple();
 
         obj.SetPropertyValue("IntProp", 42);
-        obj.SetPropertyValue("PrivateProp", 99);
+        obj.SetPropertyValue("PrivateProp", 99, includeNonPublic: true);
         obj.SetPropertyValue("StringProp", null);
 
         Assert.Equal(42, obj.IntProp);
@@ -304,7 +304,7 @@ public class ReflectionExtensionsTests
         Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("", 1));
         Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("NotExist", 1));
         Assert.Throws<ArgumentException>(() => obj.SetPropertyValue("ReadOnlyProp", 1));
-        Assert.Throws<NullReferenceException>(() =>
+        Assert.Throws<ArgumentNullException>(() =>
             ((object)null!).SetPropertyValue("IntProp", 1));
     }
 

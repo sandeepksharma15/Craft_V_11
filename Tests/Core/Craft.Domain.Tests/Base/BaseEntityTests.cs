@@ -1,4 +1,7 @@
-﻿namespace Craft.Domain.Tests.Base;
+﻿using Craft.Domain.Abstractions;
+using Craft.Domain.Base;
+
+namespace Craft.Domain.Tests.Base;
 
 public class BaseEntityTests
 {

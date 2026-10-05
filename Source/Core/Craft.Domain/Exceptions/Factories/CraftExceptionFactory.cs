@@ -1,4 +1,11 @@
-namespace Craft.Domain;
+using Craft.Domain.Exceptions.Base;
+using Craft.Domain.Exceptions.Client;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Infrastructure;
+using Craft.Domain.Exceptions.Security;
+using Craft.Domain.Exceptions.Server;
+
+namespace Craft.Domain.Exceptions.Factories;
 
 /// <summary>
 /// Factory for creating Craft exceptions with consistent formatting and simplified usage.

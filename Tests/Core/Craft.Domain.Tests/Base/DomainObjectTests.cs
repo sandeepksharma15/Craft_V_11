@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Craft.Domain.Base;
 
 namespace Craft.Domain.Tests.Base;
 

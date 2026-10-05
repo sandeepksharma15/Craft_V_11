@@ -1,4 +1,4 @@
-namespace Craft.Domain;
+namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Marker interface for aggregate roots with a strongly-typed identifier.

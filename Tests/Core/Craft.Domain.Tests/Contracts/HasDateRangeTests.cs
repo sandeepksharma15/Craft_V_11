@@ -1,3 +1,5 @@
+using Craft.Domain.Abstractions;
+
 namespace Craft.Domain.Tests.Contracts;
 
 public class HasDateRangeTests

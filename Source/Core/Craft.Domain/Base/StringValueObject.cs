@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Base;
 
 
 /// <summary>

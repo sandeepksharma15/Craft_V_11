@@ -1,4 +1,6 @@
-﻿namespace Craft.Domain.Tests.Base;
+﻿using Craft.Domain.Base;
+
+namespace Craft.Domain.Tests.Base;
 
 public class BaseVmTests
 {

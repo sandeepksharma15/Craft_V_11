@@ -1,4 +1,5 @@
 using System.Net;
+using Craft.Domain.Exceptions.Base;
 
 namespace Craft.Domain.Tests.Infrastructure;
 

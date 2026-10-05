@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Base;
 
 /// <summary>
 /// Base class for immutable numeric value objects.

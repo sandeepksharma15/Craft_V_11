@@ -1,6 +1,7 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Domain;
 
 /// <summary>
 /// Exception thrown when attempting to create a resource that already exists.

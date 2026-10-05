@@ -1,3 +1,6 @@
+using Craft.Domain.Abstractions;
+using Craft.Domain.Events;
+
 namespace Craft.Domain.Tests.Events;
 
 public class DomainEventBaseTests

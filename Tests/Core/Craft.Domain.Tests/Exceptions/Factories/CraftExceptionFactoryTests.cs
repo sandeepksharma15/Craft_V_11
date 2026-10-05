@@ -1,4 +1,10 @@
 using System.Net;
+using Craft.Domain.Exceptions.Client;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Factories;
+using Craft.Domain.Exceptions.Infrastructure;
+using Craft.Domain.Exceptions.Security;
+using Craft.Domain.Exceptions.Server;
 
 namespace Craft.Domain.Tests.Factories;
 

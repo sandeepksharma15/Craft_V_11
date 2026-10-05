@@ -1,4 +1,7 @@
-﻿namespace Craft.Domain.Tests.Helpers;
+﻿using Craft.Domain.Abstractions;
+using Craft.Domain.Helpers;
+
+namespace Craft.Domain.Tests.Helpers;
 
 public class EntityHelperTests
 {

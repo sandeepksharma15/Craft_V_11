@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Craft.Domain.Enums;
 
 namespace Craft.Domain.Tests.Enums;
 

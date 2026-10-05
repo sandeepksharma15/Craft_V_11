@@ -1,4 +1,6 @@
-namespace Craft.Domain;
+using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Base;
 
 /// <summary>
 /// Internal abstract base record that consolidates the shared properties of all data transfer types.

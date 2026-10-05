@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Enums;
 
 /// <summary>
 /// Represents the honorific titles used to address a person.

@@ -1,4 +1,6 @@
-namespace Craft.Domain;
+using Craft.Domain.Base;
+
+namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Defines the contract for data transfer objects used in API communication.

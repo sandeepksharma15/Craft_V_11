@@ -1,4 +1,6 @@
-﻿namespace Craft.Domain.Tests.Contracts;
+﻿using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Tests.Contracts;
 
 public class HasVersionTests
 {

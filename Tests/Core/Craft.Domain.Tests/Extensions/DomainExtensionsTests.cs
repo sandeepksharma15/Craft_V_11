@@ -1,4 +1,6 @@
-﻿namespace Craft.Domain.Tests.Extensions;
+﻿using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Tests.Extensions;
 
 public class DomainExtensionsTests
 {

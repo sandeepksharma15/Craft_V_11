@@ -1,4 +1,4 @@
-﻿namespace Craft.Domain;
+﻿namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Defines a base contract for data transfer models with a strongly-typed identifier.

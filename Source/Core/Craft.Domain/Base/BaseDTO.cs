@@ -1,4 +1,6 @@
-namespace Craft.Domain;
+using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Base;
 
 /// <summary>
 /// Abstract base class for Data Transfer Objects (DTOs) with a strongly-typed identifier.

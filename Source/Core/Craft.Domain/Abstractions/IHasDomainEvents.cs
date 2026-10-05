@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Defines a contract for entities that can raise domain events.

@@ -1,3 +1,5 @@
+using Craft.Domain.Helpers;
+
 namespace Craft.Domain.Tests.Helpers;
 
 public class DomainConstantsLocalizedTests

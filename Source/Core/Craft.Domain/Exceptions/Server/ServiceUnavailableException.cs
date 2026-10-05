@@ -1,6 +1,7 @@
 using System.Net;
+using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Server;
 
 /// <summary>
 /// Exception thrown when the service is temporarily unavailable.

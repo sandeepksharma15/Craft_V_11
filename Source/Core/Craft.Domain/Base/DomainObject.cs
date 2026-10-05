@@ -1,12 +1,13 @@
-﻿namespace Craft.Domain;
+﻿namespace Craft.Domain.Base;
 
 /// <summary>
-/// Base type for all domain objects.
-/// Provides common guard helpers used across entities, value objects,
-/// aggregates, domain events, and other domain abstractions.
+/// Base type for all domain objects. Provides common guard helpers used across entities, value
+/// objects, aggregates, domain events, and other domain abstractions.
 /// </summary>
 public abstract class DomainObject
 {
+    #region Protected Methods
+
     /// <summary>
     /// Ensures that the supplied condition is true.
     /// </summary>
@@ -17,8 +18,7 @@ public abstract class DomainObject
     }
 
     /// <summary>
-    /// Ensures that the supplied string is not null, empty or whitespace.
-    /// Returns the trimmed value.
+    /// Ensures that the supplied string is not null, empty or whitespace. Returns the trimmed value.
     /// </summary>
     protected static string NotEmpty(string? value, string paramName)
     {
@@ -37,4 +37,6 @@ public abstract class DomainObject
         ArgumentNullException.ThrowIfNull(value, paramName);
         return value;
     }
+
+    #endregion Protected Methods
 }

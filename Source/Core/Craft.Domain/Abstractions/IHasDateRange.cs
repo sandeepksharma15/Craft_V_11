@@ -1,4 +1,4 @@
-namespace Craft.Domain;
+namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Abstraction for models that represent a time-bounded assignment.

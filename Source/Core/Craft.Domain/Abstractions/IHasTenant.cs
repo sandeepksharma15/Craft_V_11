@@ -1,4 +1,4 @@
-﻿namespace Craft.Domain;
+﻿namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Defines a contract for entities that belong to a specific tenant in a multi-tenant system.

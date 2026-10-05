@@ -1,3 +1,5 @@
+using Craft.Domain.Base;
+
 namespace Craft.Domain.Tests.Base;
 
 public class ValueObjectTests

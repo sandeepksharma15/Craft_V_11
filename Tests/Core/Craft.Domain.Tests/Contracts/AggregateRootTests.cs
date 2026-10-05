@@ -1,3 +1,6 @@
+using Craft.Domain.Abstractions;
+using Craft.Domain.Base;
+
 namespace Craft.Domain.Tests.Contracts;
 
 public class AggregateRootTests

@@ -1,6 +1,7 @@
 using System.Net;
+using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Client;
 
 /// <summary>
 /// Exception thrown when a feature or endpoint is not yet implemented.

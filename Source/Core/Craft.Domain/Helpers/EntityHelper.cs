@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
+using Craft.Domain.Abstractions;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Helpers;
 
 public static class EntityHelper
 {

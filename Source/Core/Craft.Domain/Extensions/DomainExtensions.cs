@@ -1,6 +1,7 @@
 ﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
 using System.ComponentModel;
-using Craft.Domain;
+using Craft.Domain.Abstractions;
+using Craft.Domain.Helpers;
 
 namespace System;
 #pragma warning restore IDE0130 // Namespace does not match folder structure

@@ -1,6 +1,6 @@
 ﻿using Craft.Domain.Resources;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Helpers;
 
 /// <summary>
 /// Provides constant values for domain validation, including error messages and regular expressions.

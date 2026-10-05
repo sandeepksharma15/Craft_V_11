@@ -1,6 +1,7 @@
 using System.Net;
+using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Domain;
 
 /// <summary>
 /// Exception thrown when a precondition specified in the request headers fails.

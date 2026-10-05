@@ -1,4 +1,4 @@
-namespace Craft.Domain;
+namespace Craft.Domain.Base;
 
 /// <summary> 
 /// Base class for all value objects. 

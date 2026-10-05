@@ -1,4 +1,4 @@
-﻿namespace Craft.Domain;
+﻿namespace Craft.Domain.Abstractions;
 
 /// <summary>
 /// Defines a contract for entities that are associated with a specific user.

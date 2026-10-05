@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json.Serialization;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Base;
 
 /// <summary>
 /// Base class for all custom exceptions in the Craft framework.

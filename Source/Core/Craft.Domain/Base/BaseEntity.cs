@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Craft.Domain.Abstractions;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Base;
 
 /// <summary>
 /// Abstract base class for domain entities with the default KeyType identifier.

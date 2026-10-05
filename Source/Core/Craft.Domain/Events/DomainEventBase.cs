@@ -1,4 +1,6 @@
-namespace Craft.Domain;
+using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Events;
 
 /// <summary>
 /// Abstract base class for domain events providing common functionality.

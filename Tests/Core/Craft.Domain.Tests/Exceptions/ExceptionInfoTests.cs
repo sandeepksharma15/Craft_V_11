@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text.Json;
+using Craft.Domain.Exceptions.Base;
+using Craft.Domain.Exceptions.Domain;
 
 namespace Craft.Domain.Tests.Exceptions;
 

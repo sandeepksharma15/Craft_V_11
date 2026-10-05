@@ -1,4 +1,6 @@
-namespace Craft.Domain;
+using Craft.Domain.Abstractions;
+
+namespace Craft.Domain.Base;
 
 /// <summary>
 /// Abstract base class for data transfer models with the default KeyType identifier.

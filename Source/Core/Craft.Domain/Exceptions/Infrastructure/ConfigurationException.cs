@@ -1,6 +1,7 @@
 using System.Net;
+using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain;
+namespace Craft.Domain.Exceptions.Infrastructure;
 
 /// <summary>
 /// Exception thrown when a configuration error occurs.

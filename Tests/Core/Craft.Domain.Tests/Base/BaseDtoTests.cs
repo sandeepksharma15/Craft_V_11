@@ -1,0 +1,176 @@
+namespace Craft.Domain.Tests.Base;
+
+/// <summary>
+/// Unit tests for the BaseDto class.
+/// </summary>
+public class BaseDtoTests
+{
+    [Fact]
+    public void BaseDto_Id_ShouldSetAndGet()
+    {
+        // Arrange
+        const KeyType testId = 1;
+        var dto = new TestDto { Id = testId };
+
+        // Assert
+        Assert.Equal(testId, dto.Id);
+    }
+
+    [Fact]
+    public void BaseDto_WithGenericKey_Id_ShouldSetAndGet()
+    {
+        // Arrange
+        const long testId = 123456L;
+        var dto = new TestGenericDto { Id = testId };
+
+        // Assert
+        Assert.Equal(testId, dto.Id);
+    }
+
+    [Fact]
+    public void Id_DefaultValue_ShouldBeDefaultForType()
+    {
+        // Arrange
+        var dto = new TestDto();
+
+        // Act
+        var id = dto.Id;
+
+        // Assert
+        Assert.Equal(default, id);
+    }
+
+    [Fact]
+    public void Id_SetValue_ShouldReturnSetValue()
+    {
+        // Arrange
+        var dto = new TestDto();
+        const KeyType expectedId = 42;
+
+        // Act
+        dto.Id = expectedId;
+        var id = dto.Id;
+
+        // Assert
+        Assert.Equal(expectedId, id);
+    }
+
+    [Fact]
+    public void GenericDto_Id_SetValue_ShouldReturnSetValue()
+    {
+        // Arrange
+        var dto = new TestGenericDto();
+        const KeyType expectedId = 999L;
+
+        // Act
+        dto.Id = expectedId;
+        var id = dto.Id;
+
+        // Assert
+        Assert.Equal(expectedId, id);
+    }
+
+    [Fact]
+    public void BaseDto_ImplementsIModel()
+    {
+        // Arrange
+        var dto = new TestDto();
+
+        // Act & Assert
+        Assert.IsType<IModel>(dto, exactMatch: false);
+    }
+
+    [Fact]
+    public void BaseDto_WithGenericKey_ImplementsIModel()
+    {
+        // Arrange
+        var dto = new TestGenericDto();
+
+        // Act & Assert
+        Assert.IsType<IModel<KeyType>>(dto, exactMatch: false);
+    }
+
+    [Fact]
+    public void BaseDto_DefaultConstructor_ShouldNotThrow()
+    {
+        // Arrange & Act
+        var exception = Record.Exception(() => new TestDto());
+
+        // Assert
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void BaseDto_WithString_Id_ShouldSetAndGet()
+    {
+        // Arrange
+        var dto = new TestStringDto();
+        const string expectedId = "test-id-123";
+
+        // Act
+        dto.Id = expectedId;
+
+        // Assert
+        Assert.Equal(expectedId, dto.Id);
+    }
+
+    [Fact]
+    public void BaseDto_WithGuid_Id_ShouldSetAndGet()
+    {
+        // Arrange
+        var dto = new TestGuidDto();
+        var expectedId = Guid.NewGuid();
+
+        // Act
+        dto.Id = expectedId;
+
+        // Assert
+        Assert.Equal(expectedId, dto.Id);
+    }
+
+    [Fact]
+    public void BaseDto_IsJsonSerializable()
+    {
+        // Arrange
+        var dto = new TestDto { Id = 42, ConcurrencyStamp = "stamp-abc", IsDeleted = true };
+
+        // Act
+        var json = JsonSerializer.Serialize(dto);
+        var result = JsonSerializer.Deserialize<TestDto>(json);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(dto.Id, result.Id);
+        Assert.Equal(dto.ConcurrencyStamp, result.ConcurrencyStamp);
+        Assert.Equal(dto.IsDeleted, result.IsDeleted);
+    }
+
+    [Fact]
+    public void BaseDto_Generic_IsJsonSerializable()
+    {
+        // Arrange
+        var dto = new TestGenericDto { Id = 999L, ConcurrencyStamp = "stamp-xyz", IsDeleted = false };
+
+        // Act
+        var json = JsonSerializer.Serialize(dto);
+        var result = JsonSerializer.Deserialize<TestGenericDto>(json);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(dto.Id, result.Id);
+        Assert.Equal(dto.ConcurrencyStamp, result.ConcurrencyStamp);
+        Assert.Equal(dto.IsDeleted, result.IsDeleted);
+    }
+
+    // Test records for testing the abstract BaseDto
+    public record TestDto : BaseDto;
+
+    public record TestGenericDto : BaseDto<long>;
+
+    public record TestStringDto : BaseDto<string>
+    {
+        public override string Id { get; set; } = string.Empty;
+    }
+
+    public record TestGuidDto : BaseDto<Guid>;
+}

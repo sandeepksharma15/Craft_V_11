@@ -6,17 +6,19 @@
   </Folder>
   <Folder Name="/Source/" />
   <Folder Name="/Source/Core/">
+    <Project Path="Source/Core/Craft.Domain/Craft.Domain.csproj" />
     <Project Path="Source/Core/Craft.Expressions/Craft.Expressions.csproj" />
     <Project Path="Source/Core/Craft.Extensions/Craft.Extensions.csproj" />
     <Project Path="Source/Core/Craft.Utilities/Craft.Utilities.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
   <Folder Name="/Tests/Core/">
+    <Project Path="Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Expressions.Tests/Craft.Expressions.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/Support/" Id="d51a40ec-aa25-aa80-ff9d-a6cfe0dc4779">
+  <Folder Name="/Tests/Support/">
     <Project Path="Tests/Support/Craft.Testing/Craft.Testing.csproj" />
   </Folder>
 </Solution>

@@ -1,20 +1,11 @@
 using System.Net;
+using Craft.Domain.Exceptions.Server;
 
-namespace Craft.Domain.Tests.Server;
+namespace Craft.Domain.Tests.Exceptions.Server;
 
 public class GatewayTimeoutExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new GatewayTimeoutException();
-
-        // Assert
-        Assert.Equal("Gateway timeout - no response from upstream server", ex.Message);
-        Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessageAndStatusCode()
@@ -26,21 +17,6 @@ public class GatewayTimeoutExceptionTests
         Assert.Equal("Upstream server timeout", ex.Message);
         Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new GatewayTimeoutException("timeout occurred", inner);
-
-        // Assert
-        Assert.Equal("timeout occurred", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
     }
 
     [Fact]
@@ -59,15 +35,18 @@ public class GatewayTimeoutExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithUpstreamServiceAndTimeout_SetsFormattedMessage()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
-        // Arrange & Act
-        var ex = new GatewayTimeoutException("ExternalAPI", 30);
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new GatewayTimeoutException("timeout occurred", inner);
 
         // Assert
-        Assert.Equal("Gateway timeout from \"ExternalAPI\" after 30 seconds", ex.Message);
+        Assert.Equal("timeout occurred", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
         Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
-        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -80,4 +59,30 @@ public class GatewayTimeoutExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void Constructor_WithUpstreamServiceAndTimeout_SetsFormattedMessage()
+    {
+        // Arrange & Act
+        var ex = new GatewayTimeoutException("ExternalAPI", 30);
+
+        // Assert
+        Assert.Equal("Gateway timeout from \"ExternalAPI\" after 30 seconds", ex.Message);
+        Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new GatewayTimeoutException();
+
+        // Assert
+        Assert.Equal("Gateway timeout - no response from upstream server", ex.Message);
+        Assert.Equal(HttpStatusCode.GatewayTimeout, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

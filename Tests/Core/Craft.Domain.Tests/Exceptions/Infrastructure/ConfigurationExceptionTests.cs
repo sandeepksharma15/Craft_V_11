@@ -1,20 +1,88 @@
 using System.Net;
 using Craft.Domain.Exceptions.Base;
+using Craft.Domain.Exceptions.Infrastructure;
 
-namespace Craft.Domain.Tests.Infrastructure;
+namespace Craft.Domain.Tests.Exceptions.Infrastructure;
 
 public class ConfigurationExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_InheritsFromCraftException()
     {
         // Arrange & Act
         var ex = new ConfigurationException();
 
         // Assert
-        Assert.Equal("A configuration error occurred", ex.Message);
+        Assert.IsType<CraftException>(ex, exactMatch: false);
+        Assert.IsType<Exception>(ex, exactMatch: false);
+    }
+
+    [Fact]
+    public void Constructor_WithConfigurationKeyAndReason_HandlesComplexKeys()
+    {
+        // Arrange & Act
+        var ex = new ConfigurationException("Azure:Storage:BlobContainer:Name", "Container name contains invalid characters");
+
+        // Assert
+        Assert.Contains("Azure:Storage:BlobContainer:Name", ex.Message);
+        Assert.Contains("Container name contains invalid characters", ex.Message);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithConfigurationKeyAndReason_SetsFormattedMessage()
+    {
+        // Arrange & Act
+        var ex = new ConfigurationException("Database:ConnectionString", "Value is missing or empty");
+
+        // Assert
+        Assert.Equal("Configuration error for key \"Database:ConnectionString\": Value is missing or empty", ex.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
         Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyErrors_InitializesEmptyErrorsList()
+    {
+        // Arrange
+        var errors = new List<string>();
+
+        // Act
+        var ex = new ConfigurationException("Configuration error", errors);
+
+        // Assert
+        Assert.NotNull(ex.Errors);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithInnerException_PreservesStackTrace()
+    {
+        // Arrange
+        var inner = new InvalidOperationException("JSON parse error");
+
+        // Act
+        var ex = new ConfigurationException("Failed to parse configuration file", inner);
+
+        // Assert
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal("Failed to parse configuration file", ex.Message);
+    }
+
+    [Fact]
+    public void Constructor_WithLongConfigurationKey_PreservesFullKey()
+    {
+        // Arrange
+        var longKey = "VeryLongConfigurationKeyThatExceedsTypicalLengthForTestingPurposes:SubKey:AnotherSubKey";
+
+        // Act
+        var ex = new ConfigurationException(longKey, "Value not found");
+
+        // Assert
+        Assert.Contains(longKey, ex.Message);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
     [Fact]
@@ -27,21 +95,6 @@ public class ConfigurationExceptionTests
         Assert.Equal("Missing required configuration", ex.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("Configuration file not found");
-
-        // Act
-        var ex = new ConfigurationException("Failed to load configuration", inner);
-
-        // Assert
-        Assert.Equal("Failed to load configuration", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
     [Fact]
@@ -69,66 +122,18 @@ public class ConfigurationExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithConfigurationKeyAndReason_SetsFormattedMessage()
-    {
-        // Arrange & Act
-        var ex = new ConfigurationException("Database:ConnectionString", "Value is missing or empty");
-
-        // Assert
-        Assert.Equal("Configuration error for key \"Database:ConnectionString\": Value is missing or empty", ex.Message);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithConfigurationKeyAndReason_HandlesComplexKeys()
-    {
-        // Arrange & Act
-        var ex = new ConfigurationException("Azure:Storage:BlobContainer:Name", "Container name contains invalid characters");
-
-        // Assert
-        Assert.Contains("Azure:Storage:BlobContainer:Name", ex.Message);
-        Assert.Contains("Container name contains invalid characters", ex.Message);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
-    }
-
-    [Fact]
-    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
-    {
-        // Arrange & Act
-        var ex = new ConfigurationException("Configuration error", (List<string>?)null);
-
-        // Assert
-        Assert.NotNull(ex.Errors);
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithEmptyErrors_InitializesEmptyErrorsList()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
         // Arrange
-        var errors = new List<string>();
+        var inner = new Exception("Configuration file not found");
 
         // Act
-        var ex = new ConfigurationException("Configuration error", errors);
+        var ex = new ConfigurationException("Failed to load configuration", inner);
 
         // Assert
-        Assert.NotNull(ex.Errors);
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void StatusCode_IsAlwaysInternalServerError()
-    {
-        // Arrange & Act
-        var ex1 = new ConfigurationException();
-        var ex2 = new ConfigurationException("message");
-        var ex3 = new ConfigurationException("key", "reason");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.InternalServerError, ex1.StatusCode);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex2.StatusCode);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex3.StatusCode);
+        Assert.Equal("Failed to load configuration", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
     }
 
     [Fact]
@@ -152,14 +157,14 @@ public class ConfigurationExceptionTests
     }
 
     [Fact]
-    public void Constructor_InheritsFromCraftException()
+    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
     {
         // Arrange & Act
-        var ex = new ConfigurationException();
+        var ex = new ConfigurationException("Configuration error", (List<string>?)null);
 
         // Assert
-        Assert.IsType<CraftException>(ex, exactMatch: false);
-        Assert.IsType<Exception>(ex, exactMatch: false);
+        Assert.NotNull(ex.Errors);
+        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -174,30 +179,30 @@ public class ConfigurationExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithLongConfigurationKey_PreservesFullKey()
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
     {
-        // Arrange
-        var longKey = "VeryLongConfigurationKeyThatExceedsTypicalLengthForTestingPurposes:SubKey:AnotherSubKey";
-
-        // Act
-        var ex = new ConfigurationException(longKey, "Value not found");
+        // Arrange & Act
+        var ex = new ConfigurationException();
 
         // Assert
-        Assert.Contains(longKey, ex.Message);
+        Assert.Equal("A configuration error occurred", ex.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+        Assert.Empty(ex.Errors);
     }
 
     [Fact]
-    public void Constructor_WithInnerException_PreservesStackTrace()
+    public void StatusCode_IsAlwaysInternalServerError()
     {
-        // Arrange
-        var inner = new InvalidOperationException("JSON parse error");
-
-        // Act
-        var ex = new ConfigurationException("Failed to parse configuration file", inner);
+        // Arrange & Act
+        var ex1 = new ConfigurationException();
+        var ex2 = new ConfigurationException("message");
+        var ex3 = new ConfigurationException("key", "reason");
 
         // Assert
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal("Failed to parse configuration file", ex.Message);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex1.StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex2.StatusCode);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex3.StatusCode);
     }
+
+    #endregion Public Methods
 }

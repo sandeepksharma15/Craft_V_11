@@ -1,62 +1,37 @@
 using System.Net;
 using Craft.Domain.Exceptions.Base;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class GoneExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_InheritsFromCraftException()
     {
         // Arrange & Act
         var ex = new GoneException();
 
         // Assert
-        Assert.Equal("The requested resource is no longer available", ex.Message);
-        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
-        Assert.Empty(ex.Errors);
+        Assert.IsType<CraftException>(ex, exactMatch: false);
+        Assert.IsType<Exception>(ex, exactMatch: false);
     }
 
     [Fact]
-    public void Constructor_WithMessage_SetsMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new GoneException("Resource has been deleted");
-
-        // Assert
-        Assert.Equal("Resource has been deleted", ex.Message);
-        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    public void Constructor_WithEntityNameAndGuidKey_SetsFormattedMessage()
     {
         // Arrange
-        var inner = new Exception("Deletion error");
+        var guid = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
 
         // Act
-        var ex = new GoneException("Resource gone", inner);
+        var ex = new GoneException("User", guid);
 
         // Assert
-        Assert.Equal("Resource gone", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndErrors_SetsAllProperties()
-    {
-        // Arrange
-        var errors = new List<string> { "Deleted 30 days ago", "Cannot be recovered" };
-
-        // Act
-        var ex = new GoneException("Resource permanently deleted", errors);
-
-        // Assert
-        Assert.Equal("Resource permanently deleted", ex.Message);
-        Assert.Equal(errors, ex.Errors);
-        Assert.Equal(2, ex.Errors.Count);
+        Assert.Contains("User", ex.Message);
+        Assert.Contains(guid.ToString(), ex.Message);
+        Assert.Contains("permanently deleted", ex.Message);
         Assert.Equal((HttpStatusCode)410, ex.StatusCode);
     }
 
@@ -89,19 +64,70 @@ public class GoneExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithEntityNameAndGuidKey_SetsFormattedMessage()
+    public void Constructor_WithMessage_SetsMessageAndStatusCode()
     {
-        // Arrange
-        var guid = Guid.Parse("550e8400-e29b-41d4-a716-446655440000");
-
-        // Act
-        var ex = new GoneException("User", guid);
+        // Arrange & Act
+        var ex = new GoneException("Resource has been deleted");
 
         // Assert
-        Assert.Contains("User", ex.Message);
-        Assert.Contains(guid.ToString(), ex.Message);
-        Assert.Contains("permanently deleted", ex.Message);
+        Assert.Equal("Resource has been deleted", ex.Message);
         Assert.Equal((HttpStatusCode)410, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithMessageAndErrors_SetsAllProperties()
+    {
+        // Arrange
+        var errors = new List<string> { "Deleted 30 days ago", "Cannot be recovered" };
+
+        // Act
+        var ex = new GoneException("Resource permanently deleted", errors);
+
+        // Assert
+        Assert.Equal("Resource permanently deleted", ex.Message);
+        Assert.Equal(errors, ex.Errors);
+        Assert.Equal(2, ex.Errors.Count);
+        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    {
+        // Arrange
+        var inner = new Exception("Deletion error");
+
+        // Act
+        var ex = new GoneException("Resource gone", inner);
+
+        // Assert
+        Assert.Equal("Resource gone", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
+    {
+        // Arrange & Act
+        var ex = new GoneException("Gone", (List<string>?)null);
+
+        // Assert
+        Assert.NotNull(ex.Errors);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithOldDeletionDate_FormatsCorrectly()
+    {
+        // Arrange
+        var deletedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        // Act
+        var ex = new GoneException("LegacyOrder", 456, deletedAt);
+
+        // Assert
+        Assert.Contains("2020-01-01", ex.Message);
     }
 
     [Fact]
@@ -120,26 +146,25 @@ public class GoneExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithOldDeletionDate_FormatsCorrectly()
+    public void Constructor_WithSpecialCharactersInEntityName_HandlesCorrectly()
     {
-        // Arrange
-        var deletedAt = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        // Act
-        var ex = new GoneException("LegacyOrder", 456, deletedAt);
+        // Arrange & Act
+        var ex = new GoneException("User-Account", "email@example.com");
 
         // Assert
-        Assert.Contains("2020-01-01", ex.Message);
+        Assert.Contains("User-Account", ex.Message);
+        Assert.Contains("email@example.com", ex.Message);
     }
 
     [Fact]
-    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
     {
         // Arrange & Act
-        var ex = new GoneException("Gone", (List<string>?)null);
+        var ex = new GoneException();
 
         // Assert
-        Assert.NotNull(ex.Errors);
+        Assert.Equal("The requested resource is no longer available", ex.Message);
+        Assert.Equal((HttpStatusCode)410, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
 
@@ -159,25 +184,5 @@ public class GoneExceptionTests
         Assert.Equal((HttpStatusCode)410, ex4.StatusCode);
     }
 
-    [Fact]
-    public void Constructor_InheritsFromCraftException()
-    {
-        // Arrange & Act
-        var ex = new GoneException();
-
-        // Assert
-        Assert.IsType<CraftException>(ex, exactMatch: false);
-        Assert.IsType<Exception>(ex, exactMatch: false);
-    }
-
-    [Fact]
-    public void Constructor_WithSpecialCharactersInEntityName_HandlesCorrectly()
-    {
-        // Arrange & Act
-        var ex = new GoneException("User-Account", "email@example.com");
-
-        // Assert
-        Assert.Contains("User-Account", ex.Message);
-        Assert.Contains("email@example.com", ex.Message);
-    }
+    #endregion Public Methods
 }

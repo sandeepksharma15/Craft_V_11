@@ -1,17 +1,20 @@
 using System.Net;
+using Craft.Domain.Exceptions.Client;
 
-namespace Craft.Domain.Tests.Client;
+namespace Craft.Domain.Tests.Exceptions.Client;
 
 public class TooManyRequestsExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_WithLimitAndPeriod_SetsFormattedMessage()
     {
         // Arrange & Act
-        var ex = new TooManyRequestsException();
+        var ex = new TooManyRequestsException(100, "hour");
 
         // Assert
-        Assert.Equal("Too many requests - rate limit exceeded", ex.Message);
+        Assert.Equal("Rate limit exceeded: 100 requests per hour", ex.Message);
         Assert.Equal((HttpStatusCode)429, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
@@ -26,21 +29,6 @@ public class TooManyRequestsExceptionTests
         Assert.Equal("Rate limit hit", ex.Message);
         Assert.Equal((HttpStatusCode)429, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new TooManyRequestsException("too many requests", inner);
-
-        // Assert
-        Assert.Equal("too many requests", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal((HttpStatusCode)429, ex.StatusCode);
     }
 
     [Fact]
@@ -59,14 +47,28 @@ public class TooManyRequestsExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithLimitAndPeriod_SetsFormattedMessage()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
-        // Arrange & Act
-        var ex = new TooManyRequestsException(100, "hour");
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new TooManyRequestsException("too many requests", inner);
 
         // Assert
-        Assert.Equal("Rate limit exceeded: 100 requests per hour", ex.Message);
+        Assert.Equal("too many requests", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
         Assert.Equal((HttpStatusCode)429, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
+    {
+        // Arrange & Act
+        var ex = new TooManyRequestsException("too many", (List<string>?)null);
+
+        // Assert
+        Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
 
@@ -83,13 +85,16 @@ public class TooManyRequestsExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
     {
         // Arrange & Act
-        var ex = new TooManyRequestsException("too many", (List<string>?)null);
+        var ex = new TooManyRequestsException();
 
         // Assert
-        Assert.NotNull(ex.Errors);
+        Assert.Equal("Too many requests - rate limit exceeded", ex.Message);
+        Assert.Equal((HttpStatusCode)429, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
+
+    #endregion Public Methods
 }

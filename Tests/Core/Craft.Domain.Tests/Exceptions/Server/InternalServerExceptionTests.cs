@@ -1,9 +1,12 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Server;
 
-namespace Craft.Domain.Tests.Server;
+namespace Craft.Domain.Tests.Exceptions.Server;
 
 public class InternalServerExceptionTests
 {
+    #region Public Methods
+
     [Fact]
     public void Constructor_Parameterless_SetsDefaultMessageAndStatusCode()
     {
@@ -13,6 +16,18 @@ public class InternalServerExceptionTests
         // Assert
         Assert.Equal("An internal server error occurred", ex.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithCustomStatusCode_SetsStatusCode()
+    {
+        // Arrange & Act
+        var ex = new InternalServerException("custom error", [], HttpStatusCode.NotImplemented);
+
+        // Assert
+        Assert.Equal("custom error", ex.Message);
+        Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
 
@@ -29,17 +44,16 @@ public class InternalServerExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    public void Constructor_WithMessageAndEmptyErrors_SetsEmptyErrors()
     {
         // Arrange
-        var inner = new Exception("inner");
+        var errors = new List<string>();
 
         // Act
-        var ex = new InternalServerException("custom error", inner);
+        var ex = new InternalServerException("custom error", errors);
 
         // Assert
         Assert.Equal("custom error", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
@@ -57,6 +71,22 @@ public class InternalServerExceptionTests
         Assert.Equal("custom error", ex.Message);
         Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
         Assert.Equal(errors, ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    {
+        // Arrange
+        var inner = new Exception("inner");
+
+        // Act
+        var ex = new InternalServerException("custom error", inner);
+
+        // Assert
+        Assert.Equal("custom error", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
+        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -86,30 +116,5 @@ public class InternalServerExceptionTests
         Assert.Equal(errors, ex.Errors);
     }
 
-    [Fact]
-    public void Constructor_WithMessageAndEmptyErrors_SetsEmptyErrors()
-    {
-        // Arrange
-        var errors = new List<string>();
-
-        // Act
-        var ex = new InternalServerException("custom error", errors);
-
-        // Assert
-        Assert.Equal("custom error", ex.Message);
-        Assert.Equal(HttpStatusCode.InternalServerError, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithCustomStatusCode_SetsStatusCode()
-    {
-        // Arrange & Act
-        var ex = new InternalServerException("custom error", [], HttpStatusCode.NotImplemented);
-
-        // Assert
-        Assert.Equal("custom error", ex.Message);
-        Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #endregion Public Methods
 }

@@ -1,20 +1,11 @@
 using System.Net;
+using Craft.Domain.Exceptions.Server;
 
-namespace Craft.Domain.Tests.Server;
+namespace Craft.Domain.Tests.Exceptions.Server;
 
 public class BadGatewayExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new BadGatewayException();
-
-        // Assert
-        Assert.Equal("Bad gateway - invalid response from upstream server", ex.Message);
-        Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessageAndStatusCode()
@@ -26,21 +17,6 @@ public class BadGatewayExceptionTests
         Assert.Equal("Upstream server error", ex.Message);
         Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new BadGatewayException("bad gateway", inner);
-
-        // Assert
-        Assert.Equal("bad gateway", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
     }
 
     [Fact]
@@ -59,15 +35,18 @@ public class BadGatewayExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithUpstreamServiceAndReason_SetsFormattedMessage()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
-        // Arrange & Act
-        var ex = new BadGatewayException("ExternalAPI", "Invalid JSON response");
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new BadGatewayException("bad gateway", inner);
 
         // Assert
-        Assert.Equal("Bad gateway from \"ExternalAPI\": Invalid JSON response", ex.Message);
+        Assert.Equal("bad gateway", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
         Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
-        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -80,4 +59,30 @@ public class BadGatewayExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void Constructor_WithUpstreamServiceAndReason_SetsFormattedMessage()
+    {
+        // Arrange & Act
+        var ex = new BadGatewayException("ExternalAPI", "Invalid JSON response");
+
+        // Assert
+        Assert.Equal("Bad gateway from \"ExternalAPI\": Invalid JSON response", ex.Message);
+        Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new BadGatewayException();
+
+        // Assert
+        Assert.Equal("Bad gateway - invalid response from upstream server", ex.Message);
+        Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

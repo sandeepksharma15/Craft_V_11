@@ -1,63 +1,45 @@
 using System.Net;
 using Craft.Domain.Exceptions.Base;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class PreconditionFailedExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_InheritsFromCraftException()
     {
         // Arrange & Act
         var ex = new PreconditionFailedException();
 
         // Assert
-        Assert.Equal("Precondition failed for the request", ex.Message);
-        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
-        Assert.Empty(ex.Errors);
+        Assert.IsType<CraftException>(ex, exactMatch: false);
+        Assert.IsType<Exception>(ex, exactMatch: false);
     }
 
     [Fact]
-    public void Constructor_WithMessage_SetsMessageAndStatusCode()
+    public void Constructor_WithCustomHeaderName_FormatsCorrectly()
     {
         // Arrange & Act
-        var ex = new PreconditionFailedException("ETag mismatch");
+        var ex = new PreconditionFailedException("X-Custom-Precondition", "expected-value", "actual-value");
 
         // Assert
-        Assert.Equal("ETag mismatch", ex.Message);
-        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
-        Assert.Empty(ex.Errors);
+        Assert.Contains("X-Custom-Precondition", ex.Message);
+        Assert.Contains("expected-value", ex.Message);
+        Assert.Contains("actual-value", ex.Message);
     }
 
     [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    public void Constructor_WithEmptyValues_HandlesCorrectly()
     {
-        // Arrange
-        var inner = new Exception("Validation error");
-
-        // Act
-        var ex = new PreconditionFailedException("Precondition failed", inner);
+        // Arrange & Act
+        var ex = new PreconditionFailedException("If-Match", "", "\"current-value\"");
 
         // Assert
-        Assert.Equal("Precondition failed", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndErrors_SetsAllProperties()
-    {
-        // Arrange
-        var errors = new List<string> { "If-Match header required", "ETag does not match" };
-
-        // Act
-        var ex = new PreconditionFailedException("Precondition check failed", errors);
-
-        // Assert
-        Assert.Equal("Precondition check failed", ex.Message);
-        Assert.Equal(errors, ex.Errors);
-        Assert.Equal(2, ex.Errors.Count);
-        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
+        Assert.Contains("If-Match", ex.Message);
+        Assert.Contains("''", ex.Message);
     }
 
     [Fact]
@@ -86,18 +68,6 @@ public class PreconditionFailedExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithIfNoneMatchHeader_SetsFormattedMessage()
-    {
-        // Arrange & Act
-        var ex = new PreconditionFailedException("If-None-Match", "*", "\"resource-etag\"");
-
-        // Assert
-        Assert.Contains("If-None-Match", ex.Message);
-        Assert.Contains("*", ex.Message);
-        Assert.Contains("resource-etag", ex.Message);
-    }
-
-    [Fact]
     public void Constructor_WithIfModifiedSinceHeader_SetsFormattedMessage()
     {
         // Arrange
@@ -111,6 +81,18 @@ public class PreconditionFailedExceptionTests
         Assert.Contains("If-Modified-Since", ex.Message);
         Assert.Contains(expected, ex.Message);
         Assert.Contains(actual, ex.Message);
+    }
+
+    [Fact]
+    public void Constructor_WithIfNoneMatchHeader_SetsFormattedMessage()
+    {
+        // Arrange & Act
+        var ex = new PreconditionFailedException("If-None-Match", "*", "\"resource-etag\"");
+
+        // Assert
+        Assert.Contains("If-None-Match", ex.Message);
+        Assert.Contains("*", ex.Message);
+        Assert.Contains("resource-etag", ex.Message);
     }
 
     [Fact]
@@ -130,14 +112,46 @@ public class PreconditionFailedExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithEmptyValues_HandlesCorrectly()
+    public void Constructor_WithMessage_SetsMessageAndStatusCode()
     {
         // Arrange & Act
-        var ex = new PreconditionFailedException("If-Match", "", "\"current-value\"");
+        var ex = new PreconditionFailedException("ETag mismatch");
 
         // Assert
-        Assert.Contains("If-Match", ex.Message);
-        Assert.Contains("''", ex.Message);
+        Assert.Equal("ETag mismatch", ex.Message);
+        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithMessageAndErrors_SetsAllProperties()
+    {
+        // Arrange
+        var errors = new List<string> { "If-Match header required", "ETag does not match" };
+
+        // Act
+        var ex = new PreconditionFailedException("Precondition check failed", errors);
+
+        // Assert
+        Assert.Equal("Precondition check failed", ex.Message);
+        Assert.Equal(errors, ex.Errors);
+        Assert.Equal(2, ex.Errors.Count);
+        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    {
+        // Arrange
+        var inner = new Exception("Validation error");
+
+        // Act
+        var ex = new PreconditionFailedException("Precondition failed", inner);
+
+        // Assert
+        Assert.Equal("Precondition failed", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
     }
 
     [Fact]
@@ -148,6 +162,29 @@ public class PreconditionFailedExceptionTests
 
         // Assert
         Assert.NotNull(ex.Errors);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithSpecialCharacters_HandlesCorrectly()
+    {
+        // Arrange & Act
+        var ex = new PreconditionFailedException("If-Match", "\"<value>\"", "\"<different>\"");
+
+        // Assert
+        Assert.Contains("<value>", ex.Message);
+        Assert.Contains("<different>", ex.Message);
+    }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new PreconditionFailedException();
+
+        // Assert
+        Assert.Equal("Precondition failed for the request", ex.Message);
+        Assert.Equal((HttpStatusCode)412, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
 
@@ -165,37 +202,5 @@ public class PreconditionFailedExceptionTests
         Assert.Equal((HttpStatusCode)412, ex3.StatusCode);
     }
 
-    [Fact]
-    public void Constructor_InheritsFromCraftException()
-    {
-        // Arrange & Act
-        var ex = new PreconditionFailedException();
-
-        // Assert
-        Assert.IsType<CraftException>(ex, exactMatch: false);
-        Assert.IsType<Exception>(ex, exactMatch: false);
-    }
-
-    [Fact]
-    public void Constructor_WithCustomHeaderName_FormatsCorrectly()
-    {
-        // Arrange & Act
-        var ex = new PreconditionFailedException("X-Custom-Precondition", "expected-value", "actual-value");
-
-        // Assert
-        Assert.Contains("X-Custom-Precondition", ex.Message);
-        Assert.Contains("expected-value", ex.Message);
-        Assert.Contains("actual-value", ex.Message);
-    }
-
-    [Fact]
-    public void Constructor_WithSpecialCharacters_HandlesCorrectly()
-    {
-        // Arrange & Act
-        var ex = new PreconditionFailedException("If-Match", "\"<value>\"", "\"<different>\"");
-
-        // Assert
-        Assert.Contains("<value>", ex.Message);
-        Assert.Contains("<different>", ex.Message);
-    }
+    #endregion Public Methods
 }

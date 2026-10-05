@@ -6,7 +6,7 @@ using Craft.Domain.Exceptions.Infrastructure;
 using Craft.Domain.Exceptions.Security;
 using Craft.Domain.Exceptions.Server;
 
-namespace Craft.Domain.Tests.Factories;
+namespace Craft.Domain.Tests.Exceptions.Factories;
 
 public class CraftExceptionFactoryTests
 {

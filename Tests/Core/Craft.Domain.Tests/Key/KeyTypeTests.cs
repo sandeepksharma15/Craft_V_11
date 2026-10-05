@@ -1,4 +1,4 @@
-﻿namespace Craft.Domain.Tests.Keys;
+﻿namespace Craft.Domain.Tests.Key;
 
 public class KeyTypeTests
 {

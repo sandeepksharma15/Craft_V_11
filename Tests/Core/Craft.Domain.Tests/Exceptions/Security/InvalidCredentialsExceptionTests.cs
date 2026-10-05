@@ -1,9 +1,12 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Security;
 
-namespace Craft.Domain.Tests.Security;
+namespace Craft.Domain.Tests.Exceptions.Security;
 
 public class InvalidCredentialsExceptionTests
 {
+    #region Public Methods
+
     [Fact]
     public void Constructor_Parameterless_SetsDefaultMessage()
     {
@@ -14,6 +17,16 @@ public class InvalidCredentialsExceptionTests
         Assert.Equal("Invalid Credentials: Please check your credentials", ex.Message);
         Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
         Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithCustomStatusCode_SetsStatusCode()
+    {
+        // Arrange & Act
+        var ex = new InvalidCredentialsException("msg", [], HttpStatusCode.BadRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
     }
 
     [Fact]
@@ -43,6 +56,16 @@ public class InvalidCredentialsExceptionTests
     }
 
     [Fact]
+    public void Constructor_WithMessageAndNullErrors_SetsEmptyErrors()
+    {
+        // Arrange & Act
+        var ex = new InvalidCredentialsException("msg", null!, HttpStatusCode.Unauthorized);
+
+        // Assert
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
     public void Constructor_WithMessageErrorsStatusCode_SetsAllProperties()
     {
         // Arrange & Act
@@ -55,23 +78,5 @@ public class InvalidCredentialsExceptionTests
         Assert.Equal(errors, ex.Errors);
     }
 
-    [Fact]
-    public void Constructor_WithMessageAndNullErrors_SetsEmptyErrors()
-    {
-        // Arrange & Act
-        var ex = new InvalidCredentialsException("msg", null!, HttpStatusCode.Unauthorized);
-
-        // Assert
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithCustomStatusCode_SetsStatusCode()
-    {
-        // Arrange & Act
-        var ex = new InvalidCredentialsException("msg", [], HttpStatusCode.BadRequest);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-    }
+    #endregion Public Methods
 }

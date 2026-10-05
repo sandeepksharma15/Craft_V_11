@@ -1,17 +1,20 @@
 using System.Net;
+using Craft.Domain.Exceptions.Client;
 
-namespace Craft.Domain.Tests.Client;
+namespace Craft.Domain.Tests.Exceptions.Client;
 
 public class FeatureNotImplementedExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_WithFeatureNameAndDetails_SetsFormattedMessage()
     {
         // Arrange & Act
-        var ex = new FeatureNotImplementedException();
+        var ex = new FeatureNotImplementedException("Export to PDF", "Planned for next release");
 
         // Assert
-        Assert.Equal("This feature is not implemented", ex.Message);
+        Assert.Equal("Feature \"Export to PDF\" is not implemented: Planned for next release", ex.Message);
         Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
@@ -26,21 +29,6 @@ public class FeatureNotImplementedExceptionTests
         Assert.Equal("Feature coming soon", ex.Message);
         Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new FeatureNotImplementedException("not implemented", inner);
-
-        // Assert
-        Assert.Equal("not implemented", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
     }
 
     [Fact]
@@ -59,15 +47,18 @@ public class FeatureNotImplementedExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithFeatureNameAndDetails_SetsFormattedMessage()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
-        // Arrange & Act
-        var ex = new FeatureNotImplementedException("Export to PDF", "Planned for next release");
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new FeatureNotImplementedException("not implemented", inner);
 
         // Assert
-        Assert.Equal("Feature \"Export to PDF\" is not implemented: Planned for next release", ex.Message);
+        Assert.Equal("not implemented", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
         Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
-        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -80,4 +71,18 @@ public class FeatureNotImplementedExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new FeatureNotImplementedException();
+
+        // Assert
+        Assert.Equal("This feature is not implemented", ex.Message);
+        Assert.Equal(HttpStatusCode.NotImplemented, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

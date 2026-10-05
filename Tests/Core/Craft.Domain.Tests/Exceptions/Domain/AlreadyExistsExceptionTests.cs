@@ -1,18 +1,11 @@
 using System.Net;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class AlreadyExistsExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessage()
-    {
-        // Arrange & Act
-        var ex = new AlreadyExistsException();
-
-        // Assert
-        Assert.Equal("This resource already exists", ex.Message);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessage()
@@ -59,4 +52,16 @@ public class AlreadyExistsExceptionTests
         Assert.Equal("Entity \"User\" (123) already exists", ex.Message);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, ex.StatusCode);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessage()
+    {
+        // Arrange & Act
+        var ex = new AlreadyExistsException();
+
+        // Assert
+        Assert.Equal("This resource already exists", ex.Message);
+    }
+
+    #endregion Public Methods
 }

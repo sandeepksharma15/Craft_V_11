@@ -1,22 +1,11 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class ModelValidationExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCodeAndEmptyValidationErrors()
-    {
-        // Arrange & Act
-        var ex = new ModelValidationException();
-
-        // Assert
-        Assert.Equal("One or more validation failures have occurred.", ex.Message);
-        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-        Assert.NotNull(ex.ValidationErrors);
-        Assert.Empty(ex.ValidationErrors);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessageAndStatusCode()
@@ -67,4 +56,20 @@ public class ModelValidationExceptionTests
         Assert.Contains("Error3", ex.Errors);
         Assert.Equal(3, ex.Errors.Count);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCodeAndEmptyValidationErrors()
+    {
+        // Arrange & Act
+        var ex = new ModelValidationException();
+
+        // Assert
+        Assert.Equal("One or more validation failures have occurred.", ex.Message);
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+        Assert.NotNull(ex.ValidationErrors);
+        Assert.Empty(ex.ValidationErrors);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

@@ -1,17 +1,23 @@
 using System.Net;
+using Craft.Domain.Exceptions.Client;
 
-namespace Craft.Domain.Tests.Client;
+namespace Craft.Domain.Tests.Exceptions.Client;
 
 public class UnsupportedMediaTypeExceptionTests
 {
+    #region Public Methods
+
     [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    public void Constructor_WithMediaTypeAndSupportedTypes_SetsFormattedMessage()
     {
-        // Arrange & Act
-        var ex = new UnsupportedMediaTypeException();
+        // Arrange
+        var supportedTypes = new[] { "application/json", "application/xml" };
+
+        // Act
+        var ex = new UnsupportedMediaTypeException("text/plain", supportedTypes);
 
         // Assert
-        Assert.Equal("The media type is not supported", ex.Message);
+        Assert.Equal("Media type \"text/plain\" is not supported. Supported types: application/json, application/xml", ex.Message);
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
@@ -26,21 +32,6 @@ public class UnsupportedMediaTypeExceptionTests
         Assert.Equal("Invalid content type", ex.Message);
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new UnsupportedMediaTypeException("unsupported media", inner);
-
-        // Assert
-        Assert.Equal("unsupported media", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.UnsupportedMediaType, ex.StatusCode);
     }
 
     [Fact]
@@ -59,18 +50,18 @@ public class UnsupportedMediaTypeExceptionTests
     }
 
     [Fact]
-    public void Constructor_WithMediaTypeAndSupportedTypes_SetsFormattedMessage()
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
     {
         // Arrange
-        var supportedTypes = new[] { "application/json", "application/xml" };
+        var inner = new Exception("inner exception");
 
         // Act
-        var ex = new UnsupportedMediaTypeException("text/plain", supportedTypes);
+        var ex = new UnsupportedMediaTypeException("unsupported media", inner);
 
         // Assert
-        Assert.Equal("Media type \"text/plain\" is not supported. Supported types: application/json, application/xml", ex.Message);
+        Assert.Equal("unsupported media", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, ex.StatusCode);
-        Assert.Empty(ex.Errors);
     }
 
     [Fact]
@@ -83,4 +74,18 @@ public class UnsupportedMediaTypeExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new UnsupportedMediaTypeException();
+
+        // Assert
+        Assert.Equal("The media type is not supported", ex.Message);
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

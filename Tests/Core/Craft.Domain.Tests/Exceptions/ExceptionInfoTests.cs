@@ -1,7 +1,9 @@
 using System.Net;
-using System.Text.Json;
 using Craft.Domain.Exceptions.Base;
 using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Infrastructure;
+using Craft.Domain.Exceptions.Security;
+using Craft.Domain.Exceptions.Server;
 
 namespace Craft.Domain.Tests.Exceptions;
 
@@ -86,12 +88,30 @@ public class ExceptionInfoTests
         Assert.Equal("SqlException", deserialized.InnerException.ExceptionType);
     }
 
-    #endregion
+    #endregion ExceptionInfo Property Tests
 }
 
 public class CraftExceptionToErrorInfoTests
 {
     #region ToErrorInfo Basic Tests
+
+    [Fact]
+    public void ToErrorInfo_ShouldIncludeErrors()
+    {
+        // Arrange
+        var errors = new List<string> { "Error 1", "Error 2", "Error 3" };
+        var exception = new BadRequestException("Bad request", errors);
+
+        // Act
+        var info = exception.ToErrorInfo();
+
+        // Assert
+        Assert.NotNull(info.Errors);
+        Assert.Equal(3, info.Errors.Count);
+        Assert.Contains("Error 1", info.Errors);
+        Assert.Contains("Error 2", info.Errors);
+        Assert.Contains("Error 3", info.Errors);
+    }
 
     [Fact]
     public void ToErrorInfo_ShouldReturnCorrectExceptionType()
@@ -134,24 +154,6 @@ public class CraftExceptionToErrorInfoTests
     }
 
     [Fact]
-    public void ToErrorInfo_ShouldIncludeErrors()
-    {
-        // Arrange
-        var errors = new List<string> { "Error 1", "Error 2", "Error 3" };
-        var exception = new BadRequestException("Bad request", errors);
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.NotNull(info.Errors);
-        Assert.Equal(3, info.Errors.Count);
-        Assert.Contains("Error 1", info.Errors);
-        Assert.Contains("Error 2", info.Errors);
-        Assert.Contains("Error 3", info.Errors);
-    }
-
-    [Fact]
     public void ToErrorInfo_ShouldReturnNullErrors_WhenNoErrors()
     {
         // Arrange
@@ -164,22 +166,9 @@ public class CraftExceptionToErrorInfoTests
         Assert.Null(info.Errors);
     }
 
-    #endregion
+    #endregion ToErrorInfo Basic Tests
 
     #region StackTrace Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldNotIncludeStackTrace_ByDefault()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Null(info.StackTrace);
-    }
 
     [Fact]
     public void ToErrorInfo_ShouldIncludeStackTrace_WhenRequested()
@@ -203,7 +192,20 @@ public class CraftExceptionToErrorInfoTests
         Assert.Contains("ToErrorInfo_ShouldIncludeStackTrace_WhenRequested", info.StackTrace);
     }
 
-    #endregion
+    [Fact]
+    public void ToErrorInfo_ShouldNotIncludeStackTrace_ByDefault()
+    {
+        // Arrange
+        var exception = new NotFoundException("Not found");
+
+        // Act
+        var info = exception.ToErrorInfo();
+
+        // Assert
+        Assert.Null(info.StackTrace);
+    }
+
+    #endregion StackTrace Tests
 
     #region InnerException Tests
 
@@ -253,7 +255,7 @@ public class CraftExceptionToErrorInfoTests
         Assert.Null(info.InnerException);
     }
 
-    #endregion
+    #endregion InnerException Tests
 
     #region Different Exception Types Tests
 
@@ -286,20 +288,6 @@ public class CraftExceptionToErrorInfoTests
     }
 
     [Fact]
-    public void ToErrorInfo_ShouldWork_ForUnauthorizedException()
-    {
-        // Arrange
-        var exception = new UnauthorizedException("Not authorized");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("UnauthorizedException", info.ExceptionType);
-        Assert.Equal(401, info.StatusCode);
-    }
-
-    [Fact]
     public void ToErrorInfo_ShouldWork_ForInternalServerException()
     {
         // Arrange
@@ -313,7 +301,21 @@ public class CraftExceptionToErrorInfoTests
         Assert.Equal(500, info.StatusCode);
     }
 
-    #endregion
+    [Fact]
+    public void ToErrorInfo_ShouldWork_ForUnauthorizedException()
+    {
+        // Arrange
+        var exception = new UnauthorizedException("Not authorized");
+
+        // Act
+        var info = exception.ToErrorInfo();
+
+        // Assert
+        Assert.Equal("UnauthorizedException", info.ExceptionType);
+        Assert.Equal(401, info.StatusCode);
+    }
+
+    #endregion Different Exception Types Tests
 
     #region StatusCodeValue Property Tests
 
@@ -331,7 +333,7 @@ public class CraftExceptionToErrorInfoTests
         Assert.Equal((int)HttpStatusCode.NotFound, statusCodeValue);
     }
 
-    #endregion
+    #endregion StatusCodeValue Property Tests
 
     #region JSON Serialization Integration Tests
 
@@ -357,7 +359,7 @@ public class CraftExceptionToErrorInfoTests
         // Arrange
         var innerEx = new InvalidOperationException("Inner error");
         var exception = new DatabaseException("Database error", innerEx);
-        
+
         // Act
         var info = exception.ToErrorInfo(includeStackTrace: false);
         var json = JsonSerializer.Serialize(info);
@@ -370,5 +372,5 @@ public class CraftExceptionToErrorInfoTests
         Assert.Equal(info.StatusCode, deserialized.StatusCode);
     }
 
-    #endregion
+    #endregion JSON Serialization Integration Tests
 }

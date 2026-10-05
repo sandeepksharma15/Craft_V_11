@@ -1,20 +1,11 @@
 using System.Net;
+using Craft.Domain.Exceptions.Server;
 
-namespace Craft.Domain.Tests.Server;
+namespace Craft.Domain.Tests.Exceptions.Server;
 
 public class ServiceUnavailableExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new ServiceUnavailableException();
-
-        // Assert
-        Assert.Equal("The service is temporarily unavailable", ex.Message);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessageAndStatusCode()
@@ -26,21 +17,6 @@ public class ServiceUnavailableExceptionTests
         Assert.Equal("Service is down for maintenance", ex.Message);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new ServiceUnavailableException("service unavailable", inner);
-
-        // Assert
-        Assert.Equal("service unavailable", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
     }
 
     [Fact]
@@ -59,6 +35,21 @@ public class ServiceUnavailableExceptionTests
     }
 
     [Fact]
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    {
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new ServiceUnavailableException("service unavailable", inner);
+
+        // Assert
+        Assert.Equal("service unavailable", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
+    }
+
+    [Fact]
     public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
     {
         // Arrange & Act
@@ -68,4 +59,18 @@ public class ServiceUnavailableExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new ServiceUnavailableException();
+
+        // Assert
+        Assert.Equal("The service is temporarily unavailable", ex.Message);
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

@@ -1,20 +1,11 @@
 using System.Net;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class BadRequestExceptionTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new BadRequestException();
-
-        // Assert
-        Assert.Equal("The request is invalid", ex.Message);
-        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_WithMessage_SetsMessageAndStatusCode()
@@ -26,21 +17,6 @@ public class BadRequestExceptionTests
         Assert.Equal("Invalid request data", ex.Message);
         Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
         Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithMessageAndInnerException_SetsProperties()
-    {
-        // Arrange
-        var inner = new Exception("inner exception");
-
-        // Act
-        var ex = new BadRequestException("bad request", inner);
-
-        // Assert
-        Assert.Equal("bad request", ex.Message);
-        Assert.Equal(inner, ex.InnerException);
-        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
     }
 
     [Fact]
@@ -59,6 +35,21 @@ public class BadRequestExceptionTests
     }
 
     [Fact]
+    public void Constructor_WithMessageAndInnerException_SetsProperties()
+    {
+        // Arrange
+        var inner = new Exception("inner exception");
+
+        // Act
+        var ex = new BadRequestException("bad request", inner);
+
+        // Assert
+        Assert.Equal("bad request", ex.Message);
+        Assert.Equal(inner, ex.InnerException);
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+    }
+
+    [Fact]
     public void Constructor_WithNullErrors_InitializesEmptyErrorsList()
     {
         // Arrange & Act
@@ -68,4 +59,18 @@ public class BadRequestExceptionTests
         Assert.NotNull(ex.Errors);
         Assert.Empty(ex.Errors);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaultMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new BadRequestException();
+
+        // Assert
+        Assert.Equal("The request is invalid", ex.Message);
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    #endregion Public Methods
 }

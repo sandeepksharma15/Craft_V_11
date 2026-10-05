@@ -1,20 +1,11 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Security;
 
-namespace Craft.Domain.Tests.Security;
+namespace Craft.Domain.Tests.Exceptions.Security;
 
 public class UnauthorizedExceptionTests
 {
-    [Fact]
-    public void Constructor_WithMessage_SetsMessageAndStatusCode()
-    {
-        // Arrange & Act
-        var ex = new UnauthorizedException("unauthorized!");
-
-        // Assert
-        Assert.Equal("unauthorized!", ex.Message);
-        Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
+    #region Public Methods
 
     [Fact]
     public void Constructor_Parameterless_Defaults()
@@ -24,6 +15,28 @@ public class UnauthorizedExceptionTests
 
         // Assert
         Assert.NotNull(ex.Message); // Exception.Message is default
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void Constructor_WithCustomStatusCode_SetsStatusCode()
+    {
+        // Arrange & Act
+        var ex = new UnauthorizedException("unauthorized!", [], HttpStatusCode.BadRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
+    }
+
+    [Fact]
+    public void Constructor_WithMessage_SetsMessageAndStatusCode()
+    {
+        // Arrange & Act
+        var ex = new UnauthorizedException("unauthorized!");
+
+        // Assert
+        Assert.Equal("unauthorized!", ex.Message);
+        Assert.Equal(HttpStatusCode.Unauthorized, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
 
@@ -41,6 +54,16 @@ public class UnauthorizedExceptionTests
     }
 
     [Fact]
+    public void Constructor_WithMessageAndNullErrors_SetsEmptyErrors()
+    {
+        // Arrange & Act
+        var ex = new UnauthorizedException("unauthorized!", null!, HttpStatusCode.Unauthorized);
+
+        // Assert
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
     public void Constructor_WithMessageErrorsStatusCode_SetsAllProperties()
     {
         // Arrange & Act
@@ -53,23 +76,5 @@ public class UnauthorizedExceptionTests
         Assert.Equal(errors, ex.Errors);
     }
 
-    [Fact]
-    public void Constructor_WithMessageAndNullErrors_SetsEmptyErrors()
-    {
-        // Arrange & Act
-        var ex = new UnauthorizedException("unauthorized!", null!, HttpStatusCode.Unauthorized);
-
-        // Assert
-        Assert.Empty(ex.Errors);
-    }
-
-    [Fact]
-    public void Constructor_WithCustomStatusCode_SetsStatusCode()
-    {
-        // Arrange & Act
-        var ex = new UnauthorizedException("unauthorized!", [], HttpStatusCode.BadRequest);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, ex.StatusCode);
-    }
+    #endregion Public Methods
 }

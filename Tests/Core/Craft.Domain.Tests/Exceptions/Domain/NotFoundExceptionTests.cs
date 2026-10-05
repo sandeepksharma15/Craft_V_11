@@ -1,6 +1,7 @@
 ﻿using System.Net;
+using Craft.Domain.Exceptions.Domain;
 
-namespace Craft.Domain.Tests.Domain;
+namespace Craft.Domain.Tests.Exceptions.Domain;
 
 public class NotFoundExceptionTests
 {
@@ -14,6 +15,18 @@ public class NotFoundExceptionTests
 
         // Assert
         Assert.Equal("The requested resource was not found", ex.Message);
+        Assert.Equal(HttpStatusCode.NotFound, ex.StatusCode);
+        Assert.Empty(ex.Errors);
+    }
+
+    [Fact]
+    public void NotFoundException_WithEntityNameAndKey_SetsFormattedMessage()
+    {
+        // Arrange & Act
+        var ex = new NotFoundException("User", 123);
+
+        // Assert
+        Assert.Equal("Entity \"User\" (123) was not found.", ex.Message);
         Assert.Equal(HttpStatusCode.NotFound, ex.StatusCode);
         Assert.Empty(ex.Errors);
     }
@@ -45,17 +58,5 @@ public class NotFoundExceptionTests
         Assert.Equal(HttpStatusCode.NotFound, ex.StatusCode);
     }
 
-    [Fact]
-    public void NotFoundException_WithEntityNameAndKey_SetsFormattedMessage()
-    {
-        // Arrange & Act
-        var ex = new NotFoundException("User", 123);
-
-        // Assert
-        Assert.Equal("Entity \"User\" (123) was not found.", ex.Message);
-        Assert.Equal(HttpStatusCode.NotFound, ex.StatusCode);
-        Assert.Empty(ex.Errors);
-    }
-
-    #endregion
+    #endregion NotFoundException Tests
 }

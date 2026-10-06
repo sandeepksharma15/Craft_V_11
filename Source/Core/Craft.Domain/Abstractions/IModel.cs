@@ -1,12 +1,7 @@
-﻿namespace Craft.Domain.Abstractions;
+namespace Craft.Domain.Abstractions;
 
-/// <summary>
-/// Defines a base contract for data transfer models with a strongly-typed identifier.
-/// </summary>
-/// <typeparam name="TKey"> The type of the model identifier. </typeparam>
+/// <summary>Marks identified types eligible for Craft model operations.</summary>
 public interface IModel<TKey> : IHasId<TKey>;
 
-/// <summary>
-/// Defines a base contract for data transfer models with the default KeyType identifier.
-/// </summary>
+/// <summary>Model eligibility contract with the configured default identifier.</summary>
 public interface IModel : IModel<KeyType>;

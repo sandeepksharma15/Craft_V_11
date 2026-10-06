@@ -1,12 +1,8 @@
-﻿namespace Craft.Domain.Abstractions;
+namespace Craft.Domain.Abstractions;
 
-/// <summary>
-/// Defines a contract for entities that support optimistic concurrency control.
-/// </summary>
+/// <summary>Defines a contract for entities that support optimistic concurrency control.</summary>
 public interface IHasConcurrency
 {
-    #region Public Fields
-
     /// <summary>
     /// The name of the database column for the ConcurrencyStamp property.
     /// </summary>
@@ -17,45 +13,20 @@ public interface IHasConcurrency
     /// </summary>
     public const int MaxLength = 40;
 
-    #endregion Public Fields
-
-    #region Public Properties
-
-    /// <summary>
-    /// Gets or sets the concurrency stamp for optimistic concurrency control.
-    /// </summary>
     string? ConcurrencyStamp { get; set; }
 
-    #endregion Public Properties
-
-    #region Public Methods
-
-    /// <summary>
-    /// Clears the concurrency stamp by setting it to null.
-    /// </summary>
-    public void ClearConcurrencyStamp()
-        => ConcurrencyStamp = null;
-
-    /// <summary>
-    /// Gets the current concurrency stamp.
-    /// </summary>
-    /// <returns> The concurrency stamp value. </returns>
-    public string? GetConcurrencyStamp()
-        => ConcurrencyStamp;
+    public string? GetConcurrencyStamp() => ConcurrencyStamp;
 
     /// <summary>
     /// Determines whether the entity has a concurrency stamp set.
     /// </summary>
-    /// <returns> True if a concurrency stamp is set; otherwise, false. </returns>
-    public bool HasConcurrencyStamp()
-        => !string.IsNullOrWhiteSpace(ConcurrencyStamp);
+    public bool HasConcurrencyStamp() => !string.IsNullOrWhiteSpace(ConcurrencyStamp);
 
     /// <summary>
     /// Sets the concurrency stamp. If no stamp is provided, generates a new GUID.
     /// </summary>
-    /// <param name="stamp"> The concurrency stamp to set. If null, a new GUID is generated. </param>
     public void SetConcurrencyStamp(string? stamp = null)
         => ConcurrencyStamp = stamp ?? Guid.NewGuid().ToString();
 
-    #endregion Public Methods
+    public void ClearConcurrencyStamp() => ConcurrencyStamp = null;
 }

@@ -1,17 +1,19 @@
-﻿namespace Craft.Domain.Base;
+using Craft.Domain.Abstractions;
 
-/// <summary> 
-/// Base type for aggregate roots. 
-/// </summary> 
-public abstract class AggregateRoot<TKey> : BaseEntity<TKey> 
-{ 
-    protected AggregateRoot() { } 
+namespace Craft.Domain.Base;
 
-    protected AggregateRoot(TKey id) : base(id) { } 
-}
-
-public abstract class AggregateRoot : AggregateRoot<KeyType>
+/// <summary>Convenience base for entities opting into the aggregate root marker.</summary>
+public abstract class AggregateRoot<TKey> : BaseEntity<TKey>, IAggregateRoot<TKey>
 {
     protected AggregateRoot() { }
+
+    protected AggregateRoot(TKey id) : base(id) { }
+}
+
+/// <summary>Aggregate root base with the configured default identifier.</summary>
+public abstract class AggregateRoot : AggregateRoot<KeyType>, IAggregateRoot
+{
+    protected AggregateRoot() { }
+
     protected AggregateRoot(KeyType id) : base(id) { }
 }

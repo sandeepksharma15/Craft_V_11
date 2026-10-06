@@ -1,8 +1,6 @@
-﻿namespace Craft.Domain.Abstractions;
+namespace Craft.Domain.Abstractions;
 
-/// <summary>
-/// Defines a contract for entities that support versioning for tracking changes.
-/// </summary>
+/// <summary>Defines a contract for entities that support versioning for tracking changes.</summary>
 public interface IHasVersion
 {
     /// <summary>
@@ -10,9 +8,6 @@ public interface IHasVersion
     /// </summary>
     public const string ColumnName = "Version";
 
-    /// <summary>
-    /// Gets or sets the version number of the entity.
-    /// </summary>
     public long Version { get; set; }
 
     /// <summary>
@@ -24,10 +19,6 @@ public interface IHasVersion
             Version--;
     }
 
-    /// <summary>
-    /// Gets the current version number.
-    /// </summary>
-    /// <returns>The version number.</returns>
     public long GetVersion() => Version;
 
     /// <summary>
@@ -35,9 +26,5 @@ public interface IHasVersion
     /// </summary>
     public void IncrementVersion() => Version++;
 
-    /// <summary>
-    /// Sets the version number.
-    /// </summary>
-    /// <param name="version">The version number to set.</param>
     public void SetVersion(long version) => Version = version;
 }

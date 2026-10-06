@@ -6,13 +6,13 @@ namespace Craft.Domain.Tests.Contracts;
 public class AggregateRootBaseTests
 {
     [Fact]
-    public void DefaultBase_ImplementsLongAggregateContract()
+    public void DefaultBase_ImplementsConfiguredAggregateContract()
     {
-        LongRoot root = new(42);
+        DefaultRoot root = new(42);
 
         IAggregateRoot contract = root;
-        Assert.Equal(42L, contract.Id);
-        Assert.IsAssignableFrom<IAggregateRoot<long>>(root);
+        Assert.Equal((KeyType)42, contract.Id);
+        Assert.IsAssignableFrom<IAggregateRoot<KeyType>>(root);
         Assert.False((object)root is IHasDomainEvents);
     }
 
@@ -34,7 +34,7 @@ public class AggregateRootBaseTests
         Assert.False(entity is IAggregateRoot);
     }
 
-    private sealed class LongRoot(long id) : AggregateRoot(id) { }
+    private sealed class DefaultRoot(KeyType id) : AggregateRoot(id) { }
     private sealed class GuidRoot(Guid id) : AggregateRoot<Guid>(id) { }
     private sealed class PlainEntity : BaseEntity { }
 }

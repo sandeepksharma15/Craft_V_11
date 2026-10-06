@@ -20,5 +20,5 @@ public interface IHasUser<TKey>
     void SetUserId(TKey userId) => UserId = userId;
 }
 
-/// <summary>Defines a contract for entities that are associated with a user with the default long identifier.</summary>
-public interface IHasUser : IHasUser<long>;
+/// <summary>Defines a contract for entities that are associated with a user with the configured default identifier.</summary>
+public interface IHasUser : IHasUser<KeyType>;

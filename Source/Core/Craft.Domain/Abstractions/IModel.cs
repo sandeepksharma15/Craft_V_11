@@ -1,7 +1,7 @@
 namespace Craft.Domain.Abstractions;
 
-/// <summary>Defines a base contract for data transfer models with a strongly-typed identifier.</summary>
+/// <summary>Marks identified types eligible for Craft model operations.</summary>
 public interface IModel<TKey> : IHasId<TKey>;
 
-/// <summary>Defines a base contract for data transfer models with the default long identifier.</summary>
-public interface IModel : IModel<long>;
+/// <summary>Model eligibility contract with the configured default identifier.</summary>
+public interface IModel : IModel<KeyType>;

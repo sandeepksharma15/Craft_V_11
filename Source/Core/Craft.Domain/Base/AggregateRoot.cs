@@ -10,10 +10,10 @@ public abstract class AggregateRoot<TKey> : BaseEntity<TKey>, IAggregateRoot<TKe
     protected AggregateRoot(TKey id) : base(id) { }
 }
 
-/// <summary>Aggregate root base with a long identifier.</summary>
-public abstract class AggregateRoot : AggregateRoot<long>, IAggregateRoot
+/// <summary>Aggregate root base with the configured default identifier.</summary>
+public abstract class AggregateRoot : AggregateRoot<KeyType>, IAggregateRoot
 {
     protected AggregateRoot() { }
 
-    protected AggregateRoot(long id) : base(id) { }
+    protected AggregateRoot(KeyType id) : base(id) { }
 }

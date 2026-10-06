@@ -20,5 +20,5 @@ public interface IHasTenant<TKey>
     void SetTenantId(TKey tenantId) => TenantId = tenantId;
 }
 
-/// <summary>Defines a contract for entities that belong to a tenant with the default long identifier.</summary>
-public interface IHasTenant : IHasTenant<long>;
+/// <summary>Defines a contract for entities that belong to a tenant with the configured default identifier.</summary>
+public interface IHasTenant : IHasTenant<KeyType>;

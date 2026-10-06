@@ -4,5 +4,5 @@ namespace Craft.Domain.Abstractions;
 /// <remarks>Does not enforce transactions, repository restrictions, or domain event handling.</remarks>
 public interface IAggregateRoot<TKey> : IEntity<TKey>;
 
-/// <summary>Aggregate root marker with a long identifier.</summary>
-public interface IAggregateRoot : IAggregateRoot<long>, IEntity;
+/// <summary>Aggregate root marker with the configured default identifier.</summary>
+public interface IAggregateRoot : IAggregateRoot<KeyType>, IEntity;

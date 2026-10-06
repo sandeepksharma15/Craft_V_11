@@ -20,5 +20,5 @@ public interface IHasId<TKey>
     void SetId(TKey id) => Id = id;
 }
 
-/// <summary>Defines a contract for entities that have the default long identifier.</summary>
-public interface IHasId : IHasId<long>;
+/// <summary>Defines a contract for entities that have the configured default identifier.</summary>
+public interface IHasId : IHasId<KeyType>;

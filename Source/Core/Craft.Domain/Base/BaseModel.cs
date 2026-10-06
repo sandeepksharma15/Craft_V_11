@@ -19,7 +19,7 @@ namespace Craft.Domain.Base;
 /// </list>
 /// </para>
 /// </remarks>
-public abstract record BaseModel : BaseModel<KeyType>, IDataTransferObject;
+public abstract record BaseModel : BaseModel<KeyType>, IDataObject;
 
 /// <summary>
 /// Abstract base class for data transfer models with a strongly-typed identifier.
@@ -27,7 +27,7 @@ public abstract record BaseModel : BaseModel<KeyType>, IDataTransferObject;
 /// </summary>
 /// <typeparam name="TKey">The type of the model identifier.</typeparam>
 /// <remarks>
-/// <para>This class implements <see cref="IDataTransferObject{TKey}"/> to indicate it is designed
+/// <para>This class implements <see cref="IDataObject{TKey}"/> to indicate it is designed
 /// for data transfer across application boundaries.</para>
 /// <para>
 /// <b>Properties included for data transfer:</b>

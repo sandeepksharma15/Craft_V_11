@@ -42,8 +42,8 @@ public class DataTransferObjectTests
         var dto = new ProductDto();
 
         // Assert
-        Assert.IsType<IDataTransferObject>(dto, exactMatch: false);
-        Assert.IsType<IDataTransferObject<KeyType>>(dto, exactMatch: false);
+        Assert.IsType<IDataObject>(dto, exactMatch: false);
+        Assert.IsType<IDataObject<KeyType>>(dto, exactMatch: false);
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public class DataTransferObjectTests
         var vm = new ProductVm();
 
         // Assert
-        Assert.IsType<IDataTransferObject>(vm, exactMatch: false);
-        Assert.IsType<IDataTransferObject<KeyType>>(vm, exactMatch: false);
+        Assert.IsType<IDataObject>(vm, exactMatch: false);
+        Assert.IsType<IDataObject<KeyType>>(vm, exactMatch: false);
     }
 
     [Fact]
@@ -64,8 +64,8 @@ public class DataTransferObjectTests
         var model = new ProductModel();
 
         // Assert
-        Assert.IsType<IDataTransferObject>(model, exactMatch: false);
-        Assert.IsType<IDataTransferObject<KeyType>>(model, exactMatch: false);
+        Assert.IsType<IDataObject>(model, exactMatch: false);
+        Assert.IsType<IDataObject<KeyType>>(model, exactMatch: false);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class DataTransferObjectTests
         var dto = new ProductDtoWithGuid();
 
         // Assert
-        Assert.IsType<IDataTransferObject<Guid>>(dto, exactMatch: false);
+        Assert.IsType<IDataObject<Guid>>(dto, exactMatch: false);
     }
 
     #endregion
@@ -178,7 +178,7 @@ public class DataTransferObjectTests
     public void CanTreatAllTypesAsIDataTransferObject()
     {
         // Arrange
-        var dtos = new List<IDataTransferObject>
+        var dtos = new List<IDataObject>
         {
             new ProductDto { Id = 1, Name = "DTO" },
             new ProductVm { Id = 2, Name = "VM" },
@@ -208,7 +208,7 @@ public class DataTransferObjectTests
         };
 
         // Act
-        var dtos = objects.OfType<IDataTransferObject>().ToList();
+        var dtos = objects.OfType<IDataObject>().ToList();
 
         // Assert
         Assert.Equal(3, dtos.Count);
@@ -222,7 +222,7 @@ public class DataTransferObjectTests
     public void GenericMethod_CanConstrainToIDataTransferObject()
     {
         // Arrange
-        static T CloneDto<T>(T source) where T : IDataTransferObject<KeyType>, new()
+        static T CloneDto<T>(T source) where T : IDataObject<KeyType>, new()
         {
             return new T
             {

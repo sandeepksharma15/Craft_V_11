@@ -55,7 +55,7 @@ The alias does not configure EF key generation. Switching an existing database r
 - ✅ **Value Objects** - `ValueObject` and `SingleValueObject<T>` with structural equality
 - ✅ **Aggregate Roots** - `IAggregateRoot` marker interface for DDD boundaries
 - ✅ **Domain Events** - `IDomainEvent`, `DomainEventBase`, and `IHasDomainEvents`
-- ✅ **Data Transfer Objects** - `BaseDto`, `BaseVm`, `BaseModel` with `IDataTransferObject`
+- ✅ **Data Transfer Objects** - `BaseDto`, `BaseVm`, `BaseModel` with `IDataObject`
 - ✅ **Rich Exception Hierarchy** - Categorized exceptions with HTTP status codes
 - ✅ **Localization Support** - Resource-backed error messages
 - ✅ **Multi-tenancy Support** - `IHasTenant` interface
@@ -134,7 +134,7 @@ Craft.Domain/
 │   ├── IHasActive.cs
 │   ├── IHasVersion.cs
 │   ├── IModel.cs
-│   ├── IDataTransferObject.cs
+│   ├── IDataObject.cs
 │   ├── IAggregateRoot.cs
 │   ├── IDomainEvent.cs
 │   └── IHasDomainEvents.cs
@@ -299,7 +299,7 @@ public class Order : BaseEntity, IAggregateRoot, IHasDomainEvents
 
 ### Data Transfer Objects
 
-Three base classes for API communication, all implementing `IDataTransferObject`:
+Three base classes for API communication, all implementing `IDataObject`:
 
 | Class | Purpose | Use Case |
 |-------|---------|----------|
@@ -341,7 +341,7 @@ public class ProductVm : BaseVm
 | `IHasActive` | Activation/deactivation |
 | `IHasVersion` | Version tracking |
 | `IModel<TKey>` | Data transfer models |
-| `IDataTransferObject<TKey>` | API transfer objects |
+| `IDataObject<TKey>` | API transfer objects |
 | `IAggregateRoot<TKey>` | DDD aggregate roots |
 | `IDomainEvent` | Domain events |
 | `IHasDomainEvents` | Event-raising entities |

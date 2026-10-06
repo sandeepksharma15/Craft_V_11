@@ -52,4 +52,4 @@ public abstract record BaseDto<TKey> : BaseTransferObject<TKey>;
 /// Abstract base class for Data Transfer Objects (DTOs) with the default KeyType identifier.
 /// </summary>
 /// <inheritdoc cref="BaseDto{TKey}"/>
-public abstract record BaseDto : BaseDto<KeyType>, IDataTransferObject;
+public abstract record BaseDto : BaseDto<KeyType>, IDataObject;

@@ -6,7 +6,7 @@ namespace Craft.Domain.Base;
 /// Abstract base class for View Models (VMs) with the default KeyType identifier.
 /// </summary>
 /// <inheritdoc cref="BaseVm{TKey}"/>
-public abstract record BaseVm : BaseVm<KeyType>, IDataTransferObject;
+public abstract record BaseVm : BaseVm<KeyType>, IDataObject;
 
 /// <summary>
 /// Abstract base class for View Models (VMs) with a strongly-typed identifier.

@@ -11,7 +11,7 @@ namespace Craft.Domain.Base;
 /// type directly.
 /// </remarks>
 /// <typeparam name="TKey">The type of the identifier.</typeparam>
-public abstract record BaseTransferObject<TKey> : IDataTransferObject<TKey>
+public abstract record BaseTransferObject<TKey> : IDataObject<TKey>
 {
     /// <summary>
     /// Gets or sets the identifier.

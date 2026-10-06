@@ -5,15 +5,25 @@
 /// </summary>
 public interface IHasVersion
 {
+    #region Public Fields
+
     /// <summary>
     /// The name of the database column for the Version property.
     /// </summary>
     public const string ColumnName = "Version";
 
+    #endregion Public Fields
+
+    #region Public Properties
+
     /// <summary>
     /// Gets or sets the version number of the entity.
     /// </summary>
     public long Version { get; set; }
+
+    #endregion Public Properties
+
+    #region Public Methods
 
     /// <summary>
     /// Decrements the version number if it is greater than zero.
@@ -27,7 +37,7 @@ public interface IHasVersion
     /// <summary>
     /// Gets the current version number.
     /// </summary>
-    /// <returns>The version number.</returns>
+    /// <returns> The version number. </returns>
     public long GetVersion() => Version;
 
     /// <summary>
@@ -38,6 +48,8 @@ public interface IHasVersion
     /// <summary>
     /// Sets the version number.
     /// </summary>
-    /// <param name="version">The version number to set.</param>
+    /// <param name="version"> The version number to set. </param>
     public void SetVersion(long version) => Version = version;
+
+    #endregion Public Methods
 }

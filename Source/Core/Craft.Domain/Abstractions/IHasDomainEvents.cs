@@ -3,28 +3,6 @@ namespace Craft.Domain.Abstractions;
 /// <summary>
 /// Defines a contract for entities that can raise domain events.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Typically implemented by aggregate roots to record domain events that occurred during a business
-/// operation. Events are collected and dispatched after the aggregate is persisted.
-/// </para>
-/// <para> <b> Usage pattern: </b>
-/// <list type="number">
-/// <item>
-/// <description> Entity raises events during domain operations </description>
-/// </item>
-/// <item>
-/// <description> Repository/Unit of Work persists the entity </description>
-/// </item>
-/// <item>
-/// <description> Event dispatcher publishes collected events </description>
-/// </item>
-/// <item>
-/// <description> Events are cleared after successful dispatch </description>
-/// </item>
-/// </list>
-/// </para>
-/// </remarks>
 public interface IHasDomainEvents
 {
     #region Public Properties

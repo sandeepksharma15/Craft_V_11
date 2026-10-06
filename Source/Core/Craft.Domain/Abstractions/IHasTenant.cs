@@ -50,4 +50,4 @@ public interface IHasTenant<TKey>
 /// <summary>
 /// Defines a contract for entities that belong to a tenant with the default KeyType identifier.
 /// </summary>
-public interface IHasTenant : IHasTenant<long>;
+public interface IHasTenant : IHasTenant<KeyType>;

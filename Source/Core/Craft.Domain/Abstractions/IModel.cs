@@ -9,4 +9,4 @@ public interface IModel<TKey> : IHasId<TKey>;
 /// <summary>
 /// Defines a base contract for data transfer models with the default KeyType identifier.
 /// </summary>
-public interface IModel : IModel<long>;
+public interface IModel : IModel<KeyType>;

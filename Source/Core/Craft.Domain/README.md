@@ -8,6 +8,7 @@ A foundational Domain-Driven Design (DDD) library for .NET 10 applications. Prov
 ## Table of Contents
 
 - [Installation](#installation)
+- [Default Key Type](#default-key-type)
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Architecture Overview](#architecture-overview)
@@ -31,13 +32,30 @@ Add a reference to `Craft.Domain` in your project:
 <ProjectReference Include="path/to/Craft.Domain.csproj" />
 ```
 
+## Default Key Type
+
+The repository's [`Directory.Build.props`](../../../Directory.Build.props) defines `CraftDefaultKeyType` (default: `System.Int64`) and generates `global using KeyType = System.Int64;` for its SDK-style C# projects. No per-project alias file is needed.
+
+Non-generic contracts and bases follow that setting:
+
+```csharp
+public interface IModel : IModel<KeyType>;
+public interface IEntity : IEntity<KeyType>;
+```
+
+`IModel<TKey>` marks identified types eligible for Craft model operations; it is independent of entity or aggregate status.
+
+Change the central property to `System.Guid` and rebuild libraries and consumers to change the default. Generic types such as `BaseEntity<Guid>` remain available without changing the default. This is a compile-time choice, not a runtime setting or a consumer override of an existing package.
+
+The alias does not configure EF key generation. Switching an existing database requires explicit schema/data migration and a compatible ID generation strategy; numeric auto-increment does not carry over to GUID keys. Existing numeric fixtures may also require updates. See the [repository configuration guide](../../../README.md#default-key-type) for build overrides and importing the shared configuration.
+
 ## Features
 
 - ✅ **Base Entity Classes** - `BaseEntity<TKey>` with identity, concurrency, and soft-delete
 - ✅ **Value Objects** - `ValueObject` and `SingleValueObject<T>` with structural equality
 - ✅ **Aggregate Roots** - `IAggregateRoot` marker interface for DDD boundaries
 - ✅ **Domain Events** - `IDomainEvent`, `DomainEventBase`, and `IHasDomainEvents`
-- ✅ **Data Transfer Objects** - `BaseDto`, `BaseVm`, `BaseModel` with `IDataTransferObject`
+- ✅ **Data Transfer Objects** - `BaseDto`, `BaseVm`, `BaseModel` with `IDataObject`
 - ✅ **Rich Exception Hierarchy** - Categorized exceptions with HTTP status codes
 - ✅ **Localization Support** - Resource-backed error messages
 - ✅ **Multi-tenancy Support** - `IHasTenant` interface
@@ -116,7 +134,7 @@ Craft.Domain/
 │   ├── IHasActive.cs
 │   ├── IHasVersion.cs
 │   ├── IModel.cs
-│   ├── IDataTransferObject.cs
+│   ├── IDataObject.cs
 │   ├── IAggregateRoot.cs
 │   ├── IDomainEvent.cs
 │   └── IHasDomainEvents.cs
@@ -281,7 +299,7 @@ public class Order : BaseEntity, IAggregateRoot, IHasDomainEvents
 
 ### Data Transfer Objects
 
-Three base classes for API communication, all implementing `IDataTransferObject`:
+Three base classes for API communication, all implementing `IDataObject`:
 
 | Class | Purpose | Use Case |
 |-------|---------|----------|
@@ -323,7 +341,7 @@ public class ProductVm : BaseVm
 | `IHasActive` | Activation/deactivation |
 | `IHasVersion` | Version tracking |
 | `IModel<TKey>` | Data transfer models |
-| `IDataTransferObject<TKey>` | API transfer objects |
+| `IDataObject<TKey>` | API transfer objects |
 | `IAggregateRoot<TKey>` | DDD aggregate roots |
 | `IDomainEvent` | Domain events |
 | `IHasDomainEvents` | Event-raising entities |

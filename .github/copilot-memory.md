@@ -25,6 +25,8 @@
 
 - 2026-09-30: Utilities helpers retain `Craft.Utilities.Helpers` while source/tests are grouped into Timing, IO, Text and Resilience folders; use injectable `TimeProvider` and fake time for scheduling tests.
 
+- 2026-10-06: Define the source-wide default key type through CraftDefaultKeyType in root Directory.Build.props (System.Int64 by default); use its generated KeyType alias instead of per-project aliases. Generic key contracts remain independent.
+
 ## Patterns & Conventions
 
 <!-- Recurring patterns discovered in the codebase that new code should follow. -->

@@ -102,3 +102,14 @@ jobs:
           path: artifacts/combined-coverage
       - name: Enforce complete cross-platform helper coverage
         run: python3 .github/scripts/verify-helper-coverage.py artifacts/combined-coverage
+
+  guid-key-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '11.0'
+          dotnet-quality: preview
+      - name: Build domain with GUID default keys
+        run: dotnet build Source/Core/Craft.Domain/Craft.Domain.csproj --configuration Release -p:CraftDefaultKeyType=System.Guid

@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <CraftDefaultKeyType Condition="'$(CraftDefaultKeyType)' == ''">System.Int64</CraftDefaultKeyType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="$(CraftDefaultKeyType)" Alias="KeyType" />
+  </ItemGroup>
+</Project>

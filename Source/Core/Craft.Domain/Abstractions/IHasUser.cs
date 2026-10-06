@@ -50,4 +50,4 @@ public interface IHasUser<TKey>
 /// <summary>
 /// Defines a contract for entities that are associated with a user with the default KeyType identifier.
 /// </summary>
-public interface IHasUser : IHasUser<KeyType>;
+public interface IHasUser : IHasUser<long>;

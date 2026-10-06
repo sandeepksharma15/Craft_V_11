@@ -49,4 +49,4 @@ public interface IHasId<TKey>
 /// <summary>
 /// Defines a contract for entities that have the default KeyType identifier.
 /// </summary>
-public interface IHasId : IHasId<KeyType>;
+public interface IHasId : IHasId<long>;

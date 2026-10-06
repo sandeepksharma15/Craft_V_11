@@ -17,4 +17,4 @@ public interface IDataObject<TKey> : IModel<TKey>, IHasConcurrency, ISoftDelete;
 /// <summary>
 /// Defines the contract for data transfer objects with the default KeyType identifier.
 /// </summary>
-public interface IDataObject : IDataObject<KeyType>, IModel;
+public interface IDataObject : IDataObject<long>, IModel;

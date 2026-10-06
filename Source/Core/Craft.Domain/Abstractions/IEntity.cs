@@ -9,4 +9,4 @@ public interface IEntity<TKey> : IHasId<TKey>;
 /// <summary>
 /// Defines a base contract for domain entities with the default KeyType identifier.
 /// </summary>
-public interface IEntity : IEntity<KeyType>;
+public interface IEntity : IEntity<long>;

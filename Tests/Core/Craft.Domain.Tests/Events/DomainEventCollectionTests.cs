@@ -15,6 +15,40 @@ public class DomainEventCollectionTests
 
     #endregion
 
+    [Fact]
+    public void ReadOnlyView_RemainsStableAndReflectsChanges()
+    {
+        DomainEventCollection collection = new();
+        IReadOnlyCollection<IDomainEvent> view = collection.DomainEvents;
+        TestEvent domainEvent = new("data");
+
+        collection.AddDomainEvent(domainEvent);
+        Assert.Same(view, collection.DomainEvents);
+        Assert.Single(view);
+        Assert.Throws<NotSupportedException>(() => ((ICollection<IDomainEvent>)view).Add(domainEvent));
+
+        collection.RemoveDomainEvent(domainEvent);
+        Assert.Empty(view);
+        collection.AddDomainEvent(domainEvent);
+        collection.ClearDomainEvents();
+        Assert.Empty(view);
+    }
+
+    [Fact]
+    public void DuplicateEvents_RemovingOne_PreservesOtherOccurrence()
+    {
+        DomainEventCollection collection = new();
+        TestEvent domainEvent = new("data");
+        collection.AddDomainEvent(domainEvent);
+        collection.AddDomainEvent(domainEvent);
+
+        Assert.Equal(2, collection.DomainEvents.Count);
+        Assert.True(collection.RemoveDomainEvent(domainEvent));
+        Assert.Single(collection.DomainEvents);
+        Assert.True(collection.RemoveDomainEvent(domainEvent));
+        Assert.False(collection.RemoveDomainEvent(domainEvent));
+    }
+
     #region Constructor Tests
 
     [Fact]

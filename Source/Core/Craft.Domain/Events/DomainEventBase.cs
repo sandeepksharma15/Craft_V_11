@@ -2,104 +2,53 @@ using Craft.Domain.Abstractions;
 
 namespace Craft.Domain.Events;
 
-/// <summary>
-/// Abstract base class for domain events providing common functionality.
-/// </summary>
-/// <remarks>
-/// <para>Inherit from this class when creating domain events:</para>
-/// <code>
-/// public sealed class OrderPlacedEvent : DomainEventBase
-/// {
-///     public Guid OrderId { get; }
-///     public decimal TotalAmount { get; }
-///     
-///     public OrderPlacedEvent(Guid orderId, decimal totalAmount)
-///     {
-///         OrderId = orderId;
-///         TotalAmount = totalAmount;
-///     }
-/// }
-/// </code>
-/// </remarks>
+/// <summary>Immutable event identity and UTC occurrence metadata.</summary>
+/// <remarks>Equality uses EventId only; restoring an event must preserve its original ID.</remarks>
 public abstract class DomainEventBase : IDomainEvent, IEquatable<DomainEventBase>
 {
-    /// <summary>
-    /// Gets the unique identifier for this event instance.
-    /// </summary>
-    public Guid EventId { get; }
+    protected DomainEventBase() : this(Guid.NewGuid(), DateTime.UtcNow) { }
 
-    /// <summary>
-    /// Gets the UTC timestamp when the event occurred.
-    /// </summary>
-    public DateTime OccurredOnUtc { get; }
+    protected DomainEventBase(DateTime occurredOnUtc) : this(Guid.NewGuid(), occurredOnUtc) { }
 
-    /// <summary>
-    /// Gets the type name of the event for serialization and routing purposes.
-    /// </summary>
-    public string EventType => GetType().Name;
-
-    /// <summary>
-    /// Gets an optional correlation identifier for tracing related events.
-    /// </summary>
-    public Guid? CorrelationId { get; init; }
-
-    /// <summary>
-    /// Gets an optional causation identifier linking this event to its cause.
-    /// </summary>
-    public Guid? CausationId { get; init; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DomainEventBase"/> class.
-    /// </summary>
-    protected DomainEventBase()
+    /// <summary>Restores metadata for a persisted event without generating a new identity.</summary>
+    protected DomainEventBase(Guid eventId, DateTime occurredOnUtc)
     {
-        EventId = Guid.NewGuid();
-        OccurredOnUtc = DateTime.UtcNow;
-    }
+        if (eventId == Guid.Empty)
+            throw new ArgumentException("Event ID cannot be empty.", nameof(eventId));
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DomainEventBase"/> class with a specific timestamp.
-    /// </summary>
-    /// <param name="occurredOnUtc">The UTC timestamp when the event occurred.</param>
-    protected DomainEventBase(DateTime occurredOnUtc)
-    {
-        EventId = Guid.NewGuid();
+        if (occurredOnUtc.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("Event timestamp must be UTC.", nameof(occurredOnUtc));
+
+        EventId = eventId;
         OccurredOnUtc = occurredOnUtc;
     }
 
-    /// <summary>
-    /// Determines whether two domain events are equal based on their EventId.
-    /// </summary>
+    public Guid EventId { get; }
+
+    public DateTime OccurredOnUtc { get; }
+
+    /// <summary>Defaults to the CLR type name; override for a stable external contract name.</summary>
+    public virtual string EventType => GetType().Name;
+
+    public Guid? CorrelationId { get; init; }
+
+    public Guid? CausationId { get; init; }
+
     public static bool operator ==(DomainEventBase? left, DomainEventBase? right)
         => Equals(left, right);
 
-    /// <summary>
-    /// Determines whether two domain events are not equal.
-    /// </summary>
     public static bool operator !=(DomainEventBase? left, DomainEventBase? right)
         => !Equals(left, right);
 
-    /// <inheritdoc />
     public bool Equals(DomainEventBase? other)
-    {
-        if (other is null)
-            return false;
+        => other is not null && EventId == other.EventId;
 
-        if (ReferenceEquals(this, other))
-            return true;
-
-        return EventId == other.EventId;
-    }
-
-    /// <inheritdoc />
     public override bool Equals(object? obj)
         => obj is DomainEventBase other && Equals(other);
 
-    /// <inheritdoc />
     public override int GetHashCode()
         => EventId.GetHashCode();
 
-    /// <inheritdoc />
     public override string ToString()
         => $"{EventType} ({EventId}) at {OccurredOnUtc:O}";
 }

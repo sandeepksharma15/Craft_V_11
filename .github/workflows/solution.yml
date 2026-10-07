@@ -55,6 +55,40 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Verify domain extension coverage
+        run: |
+          dotnet test --project Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj \
+            --configuration Release --no-build \
+            --coverlet --results-directory artifacts/domain-extension-coverage \
+            --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.Domain]Craft.Domain.Abstractions.DomainExtensions*"
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = list(Path("artifacts/domain-extension-coverage").rglob("coverage.cobertura*.xml"))
+          if len(reports) != 1:
+              raise SystemExit(f"Expected one domain extension report, found {len(reports)}")
+          report = ET.parse(reports[0]).getroot()
+          names = {item.attrib["name"] for item in report.findall(".//class")}
+          if "Craft.Domain.Abstractions.DomainExtensions" not in names:
+              raise SystemExit("DomainExtensions coverage is missing")
+          print(f"Domain extension lines: {report.attrib['lines-covered']}/{report.attrib['lines-valid']}")
+          print(f"Domain extension branches: {report.attrib['branches-covered']}/{report.attrib['branches-valid']}")
+          if int(report.attrib["lines-valid"]) == 0 or int(report.attrib["branches-valid"]) == 0:
+              raise SystemExit("Domain extension coverage is empty")
+          if float(report.attrib["line-rate"]) != 1 or float(report.attrib["branch-rate"]) != 1:
+              raise SystemExit("Domain extensions require 100% line and branch coverage")
+          PY
+
+      - name: Upload domain extension coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: domain-extension-coverage-${{ matrix.os }}
+          path: artifacts/domain-extension-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify utility coverage
         run: |
           dotnet test --project Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \

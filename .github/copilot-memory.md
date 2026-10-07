@@ -46,3 +46,5 @@
 - 2026-09-30: Generate simple DOCX/PDF test inputs during Arrange with Craft.Testing.Documents.TestDocumentFactory and isolated disposable Craft.Testing.IO.TemporaryDirectory; avoid copy-to-output binary fixtures for Live Testing portability.
 
 - 2026-10-07: All runnable test projects use native Microsoft Testing Platform via global.json, xunit.v3 and coverlet.MTP; avoid VSTest packages and legacy TestingPlatformDotnetTestSupport. Coverage reports have timestamped filenames.
+
+- 2026-10-07: DomainExtensions lives with its contracts in Craft.Domain.Abstractions. Null/default IDs never match tenant/user associations; IsNullOrDefault uses IHasId and exact default-key semantics (negative IDs are assigned). Parsing and creator-audit aliases do not belong in these extensions.

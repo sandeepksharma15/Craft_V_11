@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Reflection;
+using System.Reflection.Emit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Craft.Extensions.Tests.DependencyInjection;
 
@@ -72,6 +74,37 @@ public class ServiceProviderExtensionsTests
         // Assert
         Assert.Contains(services, d => d.ImplementationType == typeof(TestService1) && d.ServiceType == typeof(ITestService));
         Assert.Contains(services, d => d.ImplementationType == typeof(TestService2) && d.ServiceType == typeof(ITestService));
+    }
+
+    [Fact]
+    public void AddServices_RegistersLoadableTypesFromPartiallyLoadedAssembly()
+    {
+        var assembly = AssemblyBuilder.DefineDynamicAssembly(
+            new AssemblyName($"PartialServices_{Guid.NewGuid():N}"), AssemblyBuilderAccess.RunAndCollect);
+        var module = assembly.DefineDynamicModule("Services");
+        var builder = module.DefineType("LoadableService", TypeAttributes.Public);
+        builder.AddInterfaceImplementation(typeof(IDisposable));
+        var dispose = builder.DefineMethod(nameof(IDisposable.Dispose),
+            MethodAttributes.Public | MethodAttributes.Virtual, typeof(void), Type.EmptyTypes);
+        dispose.GetILGenerator().Emit(OpCodes.Ret);
+        var implementation = builder.CreateType()!;
+        var unfinished = module.DefineType("UnfinishedService", TypeAttributes.Public);
+        var services = new ServiceCollection();
+
+        try
+        {
+            Assert.Throws<ReflectionTypeLoadException>(() => assembly.GetTypes());
+
+            services.AddServices(typeof(IDisposable), ServiceLifetime.Transient);
+
+            Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IDisposable)
+                && descriptor.ImplementationType == implementation
+                && descriptor.Lifetime == ServiceLifetime.Transient);
+        }
+        finally
+        {
+            unfinished.CreateType();
+        }
     }
 
     [Fact]

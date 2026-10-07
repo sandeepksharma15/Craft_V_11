@@ -29,3 +29,14 @@ Use the same override for every build/test invocation in that configuration. Pro
 Changing the default changes compiled public signatures. It cannot change an already-built NuGet package. Numeric test data and application code may need updating when switching to `Guid`; database keys, foreign keys, migrations and ID generation need a separate migration plan. The default `long` supports numeric database identity generation; a GUID requires an appropriate GUID generation strategy. .NET's `System.Guid` represents UUID values.
 
 To use another key type without rebuilding Craft, use its generic contracts and bases instead. See [Craft.Domain key configuration](Source/Core/Craft.Domain/README.md#default-key-type).
+
+## Run tests and coverage
+
+All four test projects use xUnit v3 with native Microsoft Testing Platform (MTP). The repository requires .NET 11; `global.json` selects MTP for `dotnet test`. `Craft.Testing` is a shared fixture library, not a test application.
+
+```sh
+dotnet test --solution Craft_V_11.slnx --configuration Release
+dotnet test --project Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj --configuration Release --coverlet --results-directory artifacts/domain-coverage
+```
+
+`coverlet.MTP` provides Cobertura and OpenCover reports. Each test application copies the shared `Tests/testconfig.json` beside its executable. Coverage includes Craft libraries, auto-properties, async methods and iterators; test infrastructure and explicitly generated or excluded code are omitted. Report filenames include timestamps. CI enforces the existing exception, extension and cross-platform utility coverage gates.

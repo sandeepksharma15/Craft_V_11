@@ -4,8 +4,8 @@ import sys
 import xml.etree.ElementTree as ET
 
 root = Path(sys.argv[1])
-cobertura = sorted(root.rglob("coverage.cobertura.xml"))
-opencover = sorted(root.rglob("coverage.opencover.xml"))
+cobertura = sorted(root.rglob("coverage.cobertura*.xml"))
+opencover = sorted(root.rglob("coverage.opencover*.xml"))
 if len(cobertura) != 2 or len(opencover) != 2:
     raise SystemExit(f"Expected two OS reports of each format, found {len(cobertura)} and {len(opencover)}")
 

@@ -7,6 +7,8 @@ on:
       - 'Tests/Core/Craft.Extensions.Tests/**'
       - 'Tests/Support/Craft.Testing/**'
       - '.github/workflows/craft-extensions.yml'
+      - 'global.json'
+      - 'Tests/testconfig.json'
   pull_request:
     branches: [master]
     paths:
@@ -14,6 +16,8 @@ on:
       - 'Tests/Core/Craft.Extensions.Tests/**'
       - 'Tests/Support/Craft.Testing/**'
       - '.github/workflows/craft-extensions.yml'
+      - 'global.json'
+      - 'Tests/testconfig.json'
   workflow_dispatch:
   merge_group:
 
@@ -22,8 +26,6 @@ permissions:
 
 jobs:
   test:
-    env:
-      DOTNET_TEST_RUNNER: Microsoft.Testing.Platform
     name: Build and test Craft.Extensions
     runs-on: ubuntu-latest
 
@@ -48,12 +50,13 @@ jobs:
 
       - name: Test with coverage
         run: >
-          dotnet test Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj
+          dotnet test --project Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj
           --configuration Release
           --no-build
           --coverlet
           --coverlet-include "[Craft.Extensions]*"
           --coverlet-output-format cobertura
+          --results-directory artifacts/extensions-coverage
 
       - name: Verify 100% line coverage
         shell: bash
@@ -63,8 +66,8 @@ jobs:
           import sys
           import xml.etree.ElementTree as ET
 
-          reports = glob.glob("TestResults/coverage*.xml", recursive=True)
-          if not reports:
+          reports = glob.glob("artifacts/extensions-coverage/coverage.cobertura*.xml", recursive=True)
+          if len(reports) != 1:
               print("No Cobertura coverage report was produced.")
               sys.exit(1)
 
@@ -87,5 +90,5 @@ jobs:
         with:
           name: craft-extensions-test-results
           path: |
-            TestResults/coverage*.xml
+            artifacts/extensions-coverage/coverage.cobertura*.xml
           if-no-files-found: warn

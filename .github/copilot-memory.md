@@ -27,6 +27,8 @@
 
 - 2026-10-06: Define the source-wide default key type through CraftDefaultKeyType in root Directory.Build.props (System.Int64 by default); use its generated KeyType alias instead of per-project aliases. Generic key contracts remain independent.
 
+- 2026-10-07: Domain transfer bases are mutable classes with reference equality. Entity equality requires an assigned ID and the same runtime type; configure key generation in persistence rather than a generic Identity annotation.
+
 ## Patterns & Conventions
 
 <!-- Recurring patterns discovered in the codebase that new code should follow. -->

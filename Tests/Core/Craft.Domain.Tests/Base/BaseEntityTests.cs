@@ -1,4 +1,4 @@
-﻿using Craft.Domain.Abstractions;
+using Craft.Domain.Abstractions;
 using Craft.Domain.Base;
 
 namespace Craft.Domain.Tests.Base;
@@ -153,32 +153,6 @@ public class BaseEntityTests
     }
 
     [Fact]
-    public void GetHashCode_Should_Not_Return_Zero()
-    {
-        // Arrange
-        var entity = new MockEntity(1);
-
-        // Act
-        // Assert
-        Assert.NotEqual(0, entity.GetHashCode());
-    }
-
-    [Fact]
-    public void GetHashCode_ShouldReturnDifferentValue_WhenDifferentEntities()
-    {
-        // Arrange
-        var entity1 = new MockEntity(1);
-        var entity2 = new MockEntity(2);
-
-        // Act
-        var hashCode1 = entity1.GetHashCode();
-        var hashCode2 = entity2.GetHashCode();
-
-        // Assert
-        Assert.NotEqual(hashCode1, hashCode2);
-    }
-
-    [Fact]
     public void GetHashCode_ShouldReturnSameValue_WhenEqualEntities()
     {
         // Arrange
@@ -299,6 +273,129 @@ public class BaseEntityTests
         // Assert
         Assert.Equal("[ENTITY: MockEntity] Key = 1", result);
     }
+
+    [Fact]
+    public void Equals_DistinctDefaultIds_ReturnsFalse()
+    {
+        MockEntity first = new();
+        MockEntity second = new();
+
+        Assert.False(first.Equals(second));
+        Assert.False(first == second);
+        Assert.True(first != second);
+        Assert.Equal(2, new HashSet<MockEntity> { first, second }.Count);
+    }
+
+    [Fact]
+    public void Equals_DefaultIdSameReference_ReturnsTrue()
+    {
+        MockEntity entity = new();
+        BaseEntity<KeyType> same = entity;
+
+        Assert.True(entity.Equals(same));
+        Assert.True(entity == same);
+        Assert.False(entity != same);
+    }
+
+    [Fact]
+    public void EqualityOperators_NullOperands_AreConsistent()
+    {
+        BaseEntity<KeyType>? missing = null;
+        MockEntity entity = new(1);
+
+        Assert.True(missing == null);
+        Assert.False(missing != null);
+        Assert.False(entity == missing);
+        Assert.False(missing == entity);
+        Assert.True(entity != missing);
+        Assert.True(missing != entity);
+    }
+
+    [Fact]
+    public void HashSet_AssignedEqualIds_DeduplicatesEntities()
+    {
+        MockEntity first = new(42);
+        MockEntity second = new(42);
+
+        Assert.True(first.Equals((object)second));
+        Assert.Single(new HashSet<MockEntity> { first, second });
+    }
+
+    [Fact]
+    public void Equals_ConcurrencyAndDeletionState_DoNotChangeIdentity()
+    {
+        MockEntity first = new(42) { ConcurrencyStamp = "first" };
+        MockEntity second = new(42) { ConcurrencyStamp = "second", IsDeleted = true };
+
+        Assert.True(first.Equals(second));
+        Assert.Equal(first.GetHashCode(), second.GetHashCode());
+    }
+
+    [Fact]
+    public void Equals_GuidKeys_RequireAssignedIdentity()
+    {
+        GuidEntity first = new();
+        GuidEntity second = new();
+        Assert.False(first.Equals(second));
+
+        Guid id = Guid.NewGuid();
+        first.Id = id;
+        second.Id = id;
+        Assert.True(first.Equals(second));
+        Assert.False(first.IsNew());
+        Assert.Equal(first.GetHashCode(), second.GetHashCode());
+
+        second.Id = Guid.NewGuid();
+        Assert.False(first.Equals(second));
+    }
+
+    [Fact]
+    public void Equals_ReferenceKeys_HandleNullAndAssignedIds()
+    {
+        StringEntity first = new();
+        StringEntity second = new();
+        Assert.True(first.IsNew());
+        Assert.False(first.Equals(second));
+        Assert.True(first.Equals(first));
+
+        first.Id = "device-1";
+        second.Id = "device-1";
+        Assert.True(first.Equals(second));
+        Assert.Equal(first.GetHashCode(), second.GetHashCode());
+        Assert.False(first.IsNew());
+    }
+
+    [Fact]
+    public void Equals_NullableKeys_TreatNullAsDefaultAndZeroAsAssigned()
+    {
+        NullableEntity first = new();
+        NullableEntity second = new();
+        Assert.False(first.Equals(second));
+        Assert.True(first.IsNew());
+
+        first.Id = 0;
+        second.Id = 0;
+        Assert.True(first.Equals(second));
+        Assert.False(first.IsNew());
+    }
+
+    [Fact]
+    public void Equals_TenantIdentity_IsSymmetric()
+    {
+        MockTenantEntity first = new(42, 1);
+        MockTenantEntity same = new(42, 1);
+        MockTenantEntity other = new(42, 2);
+
+        Assert.True(first.Equals(same));
+        Assert.True(same.Equals(first));
+        Assert.Equal(first.GetHashCode(), same.GetHashCode());
+        Assert.False(first.Equals(other));
+        Assert.False(other.Equals(first));
+    }
+
+    private sealed class GuidEntity : BaseEntity<Guid> { }
+    private sealed class StringEntity : BaseEntity<string?> { }
+    private sealed class NullableEntity : BaseEntity<long?> { }
 
     private class MockEntity : BaseEntity
     {

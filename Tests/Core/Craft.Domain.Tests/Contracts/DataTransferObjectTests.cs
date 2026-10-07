@@ -7,26 +7,26 @@ public class DataTransferObjectTests
 {
     #region Test Implementations
 
-    private sealed record ProductDto : BaseDTO
+    private sealed class ProductDto : BaseDTO
     {
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
     }
 
-    private sealed record ProductVm : BaseVm
+    private sealed class ProductVm : BaseVm
     {
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string FormattedPrice => Price.ToString("C");
     }
 
-    private sealed record ProductModel : BaseModel
+    private sealed class ProductModel : BaseModel
     {
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
     }
 
-    private sealed record ProductDtoWithGuid : BaseDTO<Guid>
+    private sealed class ProductDtoWithGuid : BaseDTO<Guid>
     {
         public string Name { get; set; } = string.Empty;
     }

@@ -13,6 +13,7 @@ public class AggregateRootBaseTests
         IAggregateRoot contract = root;
         Assert.Equal((KeyType)42, contract.Id);
         Assert.IsAssignableFrom<IAggregateRoot<KeyType>>(root);
+        Assert.IsAssignableFrom<IModel>(root);
         Assert.False((object)root is IHasDomainEvents);
     }
 

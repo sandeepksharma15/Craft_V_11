@@ -49,13 +49,23 @@ Change the central property to `System.Guid` and rebuild libraries and consumers
 
 The alias does not configure EF key generation. Switching an existing database requires explicit schema/data migration and a compatible ID generation strategy; numeric auto-increment does not carry over to GUID keys. Existing numeric fixtures may also require updates. See the [repository configuration guide](../../../README.md#default-key-type) for build overrides and importing the shared configuration.
 
+## Base Classes
+
+`BaseEntity<TKey>` supplies identity, a concurrency stamp, and soft-delete state. `AggregateRoot<TKey>` adds the optional aggregate marker. Their non-generic counterparts use the configured `KeyType`; neither requires domain events.
+
+`DataObject<TKey>`, `BaseDTO<TKey>`, `BaseVm<TKey>`, and `BaseModel<TKey>` are mutable classes. DTOs, editable view models, and general transfer models keep reference equality; they do not inherit entity equality. Existing derived records must become classes, and record `with` expressions must be replaced with explicit copying. These bases keep their existing `IDataObject`/`IModel`, concurrency, and soft-delete contracts. Independent immutable records can still be used without inheriting these bases.
+
+Entity equality requires the same concrete runtime type and a non-default ID. Distinct entities with default IDs are unequal; the same reference is always equal. `AdditionalEqualityCheck` can include tenant or shard identity and must remain symmetric. Equality ignores concurrency and deletion state. Do not change IDs while an entity is a dictionary key or hash-set member. `IsNew()` checks only the default ID; a preassigned GUID does not prove that an entity is persisted.
+
+The base keeps key and concurrency annotations but does not force a key-generation strategy or column order. Configure database-generated numeric keys or application-assigned IDs in the consuming persistence model. Review generated migrations when upgrading an existing model. EF conventions and provider behaviour still apply; no custom JSON or EF value converters are required for these primitive key types.
+
 ## Features
 
 - ✅ **Base Entity Classes** - `BaseEntity<TKey>` with identity, concurrency, and soft-delete
 - ✅ **Value Objects** - `ValueObject` and `SingleValueObject<T>` with structural equality
 - ✅ **Aggregate Roots** - `IAggregateRoot` marker interface for DDD boundaries
 - ✅ **Domain Events** - `IDomainEvent`, `DomainEventBase`, and `IHasDomainEvents`
-- ✅ **Data Transfer Objects** - `BaseDto`, `BaseVm`, `BaseModel` with `IDataObject`
+- ✅ **Data Transfer Objects** - `BaseDTO`, `BaseVm`, `BaseModel` with `IDataObject`
 - ✅ **Rich Exception Hierarchy** - Categorized exceptions with HTTP status codes
 - ✅ **Localization Support** - Resource-backed error messages
 - ✅ **Multi-tenancy Support** - `IHasTenant` interface
@@ -164,7 +174,7 @@ Craft.Domain/
 
 ### Entities
 
-Entities have identity and lifecycle. Use `BaseEntity<TKey>` or `BaseEntity` (which uses `long` as the key type).
+Entities have identity and lifecycle. Use `BaseEntity<TKey>` or `BaseEntity` (which uses the configured `KeyType`).
 
 ```csharp
 // With default long key
@@ -181,10 +191,10 @@ public class Document : BaseEntity<Guid>
 ```
 
 **Built-in features:**
-- `Id` - Primary key with database generation
+- `Id` - Primary key; generation is configured by persistence
 - `ConcurrencyStamp` - GUID-based optimistic concurrency
 - `IsDeleted` - Soft-delete support
-- `Equals()` / `GetHashCode()` - Identity-based equality with tenant awareness
+- `Equals()` / `GetHashCode()` - Identity-based equality with optional tenant/shard criteria via `AdditionalEqualityCheck`
 - `IEquatable<BaseEntity<TKey>>` - Type-safe equality
 
 ### Value Objects
@@ -303,13 +313,13 @@ Three base classes for API communication, all implementing `IDataObject`:
 
 | Class | Purpose | Use Case |
 |-------|---------|----------|
-| `BaseDto` | API Input | Create/Update requests from client |
+| `BaseDTO` | API Input | Create/Update requests from client |
 | `BaseVm` | API Output | Responses to client |
 | `BaseModel` | General | Internal data transfer |
 
 ```csharp
 // Input DTO for creating/updating
-public class ProductDto : BaseDto
+public class ProductDto : BaseDTO
 {
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; }
@@ -449,7 +459,7 @@ Create satellite resource files:
 - Events are immutable facts
 
 ### 5. DTOs
-- Use `BaseDto` for input (create/update requests)
+- Use `BaseDTO` for input (create/update requests)
 - Use `BaseVm` for output (API responses)
 - Don't expose domain entities directly via API
 

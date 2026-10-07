@@ -2,15 +2,21 @@ using Craft.Domain.Abstractions;
 
 namespace Craft.Domain.Events;
 
-/// <summary>Immutable event identity and UTC occurrence metadata.</summary>
-/// <remarks>Equality uses EventId only; restoring an event must preserve its original ID.</remarks>
+/// <summary>
+/// Immutable event identity and UTC occurrence metadata.
+/// </summary>
+/// <remarks> Equality uses EventId only; restoring an event must preserve its original ID. </remarks>
 public abstract class DomainEventBase : IDomainEvent, IEquatable<DomainEventBase>
 {
+    #region Protected Constructors
+
     protected DomainEventBase() : this(Guid.NewGuid(), DateTime.UtcNow) { }
 
     protected DomainEventBase(DateTime occurredOnUtc) : this(Guid.NewGuid(), occurredOnUtc) { }
 
-    /// <summary>Restores metadata for a persisted event without generating a new identity.</summary>
+    /// <summary>
+    /// Restores metadata for a persisted event without generating a new identity.
+    /// </summary>
     protected DomainEventBase(Guid eventId, DateTime occurredOnUtc)
     {
         if (eventId == Guid.Empty)
@@ -23,22 +29,30 @@ public abstract class DomainEventBase : IDomainEvent, IEquatable<DomainEventBase
         OccurredOnUtc = occurredOnUtc;
     }
 
+    #endregion Protected Constructors
+
+    #region Public Properties
+
+    public Guid? CausationId { get; init; }
+    public Guid? CorrelationId { get; init; }
     public Guid EventId { get; }
+
+    /// <summary>
+    /// Defaults to the CLR type name; override for a stable external contract name.
+    /// </summary>
+    public virtual string EventType => GetType().Name;
 
     public DateTime OccurredOnUtc { get; }
 
-    /// <summary>Defaults to the CLR type name; override for a stable external contract name.</summary>
-    public virtual string EventType => GetType().Name;
+    #endregion Public Properties
 
-    public Guid? CorrelationId { get; init; }
-
-    public Guid? CausationId { get; init; }
-
-    public static bool operator ==(DomainEventBase? left, DomainEventBase? right)
-        => Equals(left, right);
+    #region Public Methods
 
     public static bool operator !=(DomainEventBase? left, DomainEventBase? right)
         => !Equals(left, right);
+
+    public static bool operator ==(DomainEventBase? left, DomainEventBase? right)
+            => Equals(left, right);
 
     public bool Equals(DomainEventBase? other)
         => other is not null && EventId == other.EventId;
@@ -51,4 +65,6 @@ public abstract class DomainEventBase : IDomainEvent, IEquatable<DomainEventBase
 
     public override string ToString()
         => $"{EventType} ({EventId}) at {OccurredOnUtc:O}";
+
+    #endregion Public Methods
 }

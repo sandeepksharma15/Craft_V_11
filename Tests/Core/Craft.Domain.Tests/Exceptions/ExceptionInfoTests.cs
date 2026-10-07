@@ -1,376 +1,133 @@
-using System.Net;
-using Craft.Domain.Exceptions.Base;
-using Craft.Domain.Exceptions.Domain;
-using Craft.Domain.Exceptions.Infrastructure;
-using Craft.Domain.Exceptions.Security;
-using Craft.Domain.Exceptions.Server;
+using Craft.Domain.Exceptions;
 
 namespace Craft.Domain.Tests.Exceptions;
 
 public class ExceptionInfoTests
 {
-    #region ExceptionInfo Property Tests
-
     [Fact]
-    public void ExceptionInfo_ShouldAllowSettingAllProperties()
+    public void ToErrorInfo_ClientFailure_ExposesMessageErrorsAndStatusWithoutDiagnostics()
     {
-        // Arrange & Act
-        var info = new ExceptionInfo
-        {
-            ExceptionType = "NotFoundException",
-            Message = "Entity not found",
-            StatusCode = 404,
-            Errors = ["Error 1", "Error 2"],
-            StackTrace = "at Some.Method()",
-            InnerException = new ExceptionInfo
-            {
-                ExceptionType = "InvalidOperationException",
-                Message = "Inner error"
-            }
-        };
+        BadRequestException exception = new("Invalid input", new Exception("Private cause"), ["Required"]);
+        ExceptionInfo info = exception.ToErrorInfo();
 
-        // Assert
-        Assert.Equal("NotFoundException", info.ExceptionType);
-        Assert.Equal("Entity not found", info.Message);
-        Assert.Equal(404, info.StatusCode);
-        Assert.Equal(2, info.Errors?.Count);
-        Assert.Equal("at Some.Method()", info.StackTrace);
-        Assert.NotNull(info.InnerException);
-        Assert.Equal("InvalidOperationException", info.InnerException.ExceptionType);
-    }
-
-    [Fact]
-    public void ExceptionInfo_ShouldBeJsonSerializable()
-    {
-        // Arrange
-        var info = new ExceptionInfo
-        {
-            ExceptionType = "BadRequestException",
-            Message = "Invalid input",
-            StatusCode = 400,
-            Errors = ["Field X is required", "Field Y is invalid"]
-        };
-
-        // Act
-        var json = JsonSerializer.Serialize(info);
-        var deserialized = JsonSerializer.Deserialize<ExceptionInfo>(json);
-
-        // Assert
-        Assert.NotNull(deserialized);
-        Assert.Equal(info.ExceptionType, deserialized.ExceptionType);
-        Assert.Equal(info.Message, deserialized.Message);
-        Assert.Equal(info.StatusCode, deserialized.StatusCode);
-        Assert.Equal(info.Errors, deserialized.Errors);
-    }
-
-    [Fact]
-    public void ExceptionInfo_ShouldSerializeWithNestedInnerException()
-    {
-        // Arrange
-        var info = new ExceptionInfo
-        {
-            ExceptionType = "DatabaseException",
-            Message = "Database error",
-            StatusCode = 500,
-            InnerException = new ExceptionInfo
-            {
-                ExceptionType = "SqlException",
-                Message = "Connection failed"
-            }
-        };
-
-        // Act
-        var json = JsonSerializer.Serialize(info);
-        var deserialized = JsonSerializer.Deserialize<ExceptionInfo>(json);
-
-        // Assert
-        Assert.NotNull(deserialized?.InnerException);
-        Assert.Equal("SqlException", deserialized.InnerException.ExceptionType);
-    }
-
-    #endregion ExceptionInfo Property Tests
-}
-
-public class CraftExceptionToErrorInfoTests
-{
-    #region ToErrorInfo Basic Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldIncludeErrors()
-    {
-        // Arrange
-        var errors = new List<string> { "Error 1", "Error 2", "Error 3" };
-        var exception = new BadRequestException("Bad request", errors);
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.NotNull(info.Errors);
-        Assert.Equal(3, info.Errors.Count);
-        Assert.Contains("Error 1", info.Errors);
-        Assert.Contains("Error 2", info.Errors);
-        Assert.Contains("Error 3", info.Errors);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldReturnCorrectExceptionType()
-    {
-        // Arrange
-        var exception = new NotFoundException("Entity not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("NotFoundException", info.ExceptionType);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldReturnCorrectMessage()
-    {
-        // Arrange
-        var message = "The requested resource was not found";
-        var exception = new NotFoundException(message);
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal(message, info.Message);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldReturnCorrectStatusCode()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal(404, info.StatusCode);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldReturnNullErrors_WhenNoErrors()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Null(info.Errors);
-    }
-
-    #endregion ToErrorInfo Basic Tests
-
-    #region StackTrace Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldIncludeStackTrace_WhenRequested()
-    {
-        // Arrange
-        NotFoundException exception;
-        try
-        {
-            throw new NotFoundException("Not found");
-        }
-        catch (NotFoundException ex)
-        {
-            exception = ex;
-        }
-
-        // Act
-        var info = exception.ToErrorInfo(includeStackTrace: true);
-
-        // Assert
-        Assert.NotNull(info.StackTrace);
-        Assert.Contains("ToErrorInfo_ShouldIncludeStackTrace_WhenRequested", info.StackTrace);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldNotIncludeStackTrace_ByDefault()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Null(info.StackTrace);
-    }
-
-    #endregion StackTrace Tests
-
-    #region InnerException Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldIncludeCraftExceptionInnerException()
-    {
-        // Arrange
-        var innerException = new NotFoundException("Inner not found");
-        var outerException = new BadRequestException("Bad request", innerException);
-
-        // Act
-        var info = outerException.ToErrorInfo();
-
-        // Assert
-        Assert.NotNull(info.InnerException);
-        Assert.Equal("NotFoundException", info.InnerException.ExceptionType);
-        Assert.Equal("Inner not found", info.InnerException.Message);
-        Assert.Equal(404, info.InnerException.StatusCode);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldIncludeRegularInnerException()
-    {
-        // Arrange
-        var innerException = new InvalidOperationException("Invalid operation");
-        var outerException = new DatabaseException("Database error", innerException);
-
-        // Act
-        var info = outerException.ToErrorInfo();
-
-        // Assert
-        Assert.NotNull(info.InnerException);
-        Assert.Equal("InvalidOperationException", info.InnerException.ExceptionType);
-        Assert.Equal("Invalid operation", info.InnerException.Message);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldReturnNullInnerException_WhenNone()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Null(info.InnerException);
-    }
-
-    #endregion InnerException Tests
-
-    #region Different Exception Types Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldWork_ForBadRequestException()
-    {
-        // Arrange
-        var exception = new BadRequestException("Invalid input");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("BadRequestException", info.ExceptionType);
+        Assert.Equal("Invalid input", info.Message);
         Assert.Equal(400, info.StatusCode);
+        Assert.Equal(["Required"], info.Errors);
+        Assert.Null(info.ExceptionType);
+        Assert.Null(info.StackTrace);
+        Assert.Null(info.InnerException);
+        Assert.Null(info.ValidationErrors);
     }
 
     [Fact]
-    public void ToErrorInfo_ShouldWork_ForForbiddenException()
+    public void ToErrorInfo_ServerFailure_HidesMessagesErrorsAndCauses()
     {
-        // Arrange
-        var exception = new ForbiddenException("Access denied");
+        DatabaseException exception = new("Connection password=secret", new Exception("Secret"), ["SQL details"]);
+        ExceptionInfo info = exception.ToErrorInfo();
 
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("ForbiddenException", info.ExceptionType);
-        Assert.Equal(403, info.StatusCode);
-    }
-
-    [Fact]
-    public void ToErrorInfo_ShouldWork_ForInternalServerException()
-    {
-        // Arrange
-        var exception = new InternalServerException("Server error");
-
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("InternalServerException", info.ExceptionType);
+        Assert.Equal("An unexpected error occurred.", info.Message);
         Assert.Equal(500, info.StatusCode);
+        Assert.Null(info.Errors);
+        Assert.Null(info.ExceptionType);
+        Assert.Null(info.StackTrace);
+        Assert.Null(info.InnerException);
+        Assert.DoesNotContain("secret", JsonSerializer.Serialize(info));
     }
 
     [Fact]
-    public void ToErrorInfo_ShouldWork_ForUnauthorizedException()
+    public void ToErrorInfo_ValidationFailure_RoundTripsPropertyErrorsThroughJson()
     {
-        // Arrange
-        var exception = new UnauthorizedException("Not authorized");
+        ModelValidationException exception = new(new Dictionary<string, string[]> { ["Name"] = ["Required"] }, "Validation");
+        ExceptionInfo info = exception.ToErrorInfo();
+        ExceptionInfo? restored = JsonSerializer.Deserialize<ExceptionInfo>(JsonSerializer.Serialize(info));
 
-        // Act
-        var info = exception.ToErrorInfo();
-
-        // Assert
-        Assert.Equal("UnauthorizedException", info.ExceptionType);
-        Assert.Equal(401, info.StatusCode);
-    }
-
-    #endregion Different Exception Types Tests
-
-    #region StatusCodeValue Property Tests
-
-    [Fact]
-    public void StatusCodeValue_ShouldReturnIntegerStatusCode()
-    {
-        // Arrange
-        var exception = new NotFoundException("Not found");
-
-        // Act
-        var statusCodeValue = exception.StatusCodeValue;
-
-        // Assert
-        Assert.Equal(404, statusCodeValue);
-        Assert.Equal((int)HttpStatusCode.NotFound, statusCodeValue);
-    }
-
-    #endregion StatusCodeValue Property Tests
-
-    #region JSON Serialization Integration Tests
-
-    [Fact]
-    public void ToErrorInfo_ShouldProduceJsonSerializableResult()
-    {
-        // Arrange
-        var exception = new BadRequestException("Bad request", ["Error 1", "Error 2"]);
-
-        // Act
-        var info = exception.ToErrorInfo();
-        var json = JsonSerializer.Serialize(info);
-
-        // Assert
-        Assert.Contains("BadRequestException", json);
-        Assert.Contains("Bad request", json);
-        Assert.Contains("Error 1", json);
+        Assert.NotNull(restored);
+        Assert.Equal(info.Message, restored.Message);
+        Assert.Equal(info.StatusCode, restored.StatusCode);
+        Assert.Equal(["Required"], restored.Errors);
+        Assert.Equal(["Required"], restored.ValidationErrors!["Name"]);
     }
 
     [Fact]
-    public void ToErrorInfo_ShouldRoundTripThroughJson()
+    public void ToErrorInfo_NoErrors_OmitsErrors()
+        => Assert.Null(new NotFoundException().ToErrorInfo().Errors);
+
+    [Fact]
+    public void ToErrorInfo_Diagnostics_CapturesMixedExceptionChainAndStackTraces()
     {
-        // Arrange
-        var innerEx = new InvalidOperationException("Inner error");
-        var exception = new DatabaseException("Database error", innerEx);
+        NotFoundException root = Assert.Throws<NotFoundException>((Action)(() => { throw new NotFoundException("Root", errors: ["Missing"]); }));
+        InvalidOperationException middle = Assert.Throws<InvalidOperationException>((Action)(() => { throw new InvalidOperationException("Middle", root); }));
+        DatabaseException outer = Assert.Throws<DatabaseException>((Action)(() => { throw new DatabaseException("Database details", middle, ["Query failed"]); }));
+        ExceptionInfo info = outer.ToErrorInfo(includeDetails: true);
 
-        // Act
-        var info = exception.ToErrorInfo(includeStackTrace: false);
-        var json = JsonSerializer.Serialize(info);
-        var deserialized = JsonSerializer.Deserialize<ExceptionInfo>(json);
+        Assert.Equal(nameof(DatabaseException), info.ExceptionType);
+        Assert.Equal("Database details", info.Message);
+        Assert.Equal(["Query failed"], info.Errors);
+        Assert.NotNull(info.StackTrace);
+        Assert.NotNull(info.InnerException);
+        Assert.Equal(nameof(InvalidOperationException), info.InnerException.ExceptionType);
+        Assert.Equal("Middle", info.InnerException.Message);
+        Assert.NotNull(info.InnerException.StackTrace);
+        Assert.Null(info.InnerException.StatusCode);
+        Assert.Null(info.InnerException.Errors);
+        ExceptionInfo? rootInfo = info.InnerException.InnerException;
+        Assert.NotNull(rootInfo);
+        Assert.Equal(404, rootInfo.StatusCode);
+        Assert.Equal(nameof(NotFoundException), rootInfo.ExceptionType);
+        Assert.Equal(["Missing"], rootInfo.Errors);
+        Assert.Null(rootInfo.InnerException);
+        Assert.NotNull(rootInfo.StackTrace);
 
-        // Assert
-        Assert.NotNull(deserialized);
-        Assert.Equal(info.ExceptionType, deserialized.ExceptionType);
-        Assert.Equal(info.Message, deserialized.Message);
-        Assert.Equal(info.StatusCode, deserialized.StatusCode);
+        ExceptionInfo? restored = JsonSerializer.Deserialize<ExceptionInfo>(JsonSerializer.Serialize(info));
+        Assert.Equal(info.ExceptionType, restored!.ExceptionType);
+        Assert.Equal(info.StackTrace, restored.StackTrace);
+        Assert.Equal(rootInfo.Message, restored.InnerException!.InnerException!.Message);
     }
 
-    #endregion JSON Serialization Integration Tests
+    [Theory]
+    [InlineData(1)]
+    [InlineData(15)]
+    [InlineData(16)]
+    [InlineData(100)]
+    public void ToErrorInfo_DeepChain_IsBounded(int depth)
+    {
+        Exception cause = new("Root");
+        for (int index = 1; index < depth; index++)
+            cause = new Exception("Inner", cause);
+        DatabaseException exception = new(innerException: cause);
+        ExceptionInfo? current = exception.ToErrorInfo(includeDetails: true);
+        int count = 0;
+        while (current is not null)
+        {
+            count++;
+            current = current.InnerException;
+        }
+        Assert.Equal(Math.Min(depth + 1, 16), count);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ToErrorInfo_RateLimit_RoundTripsRetryMetadata(bool includeDetails)
+    {
+        ExceptionInfo info = new TooManyRequestsException(60).ToErrorInfo(includeDetails);
+        ExceptionInfo? restored = JsonSerializer.Deserialize<ExceptionInfo>(JsonSerializer.Serialize(info));
+        Assert.Equal(TimeSpan.FromSeconds(60), restored!.RetryAfter);
+        Assert.Equal(429, restored.StatusCode);
+    }
+
+    [Fact]
+    public void ToErrorInfo_ValidationDiagnostics_PreservesPropertyErrors()
+    {
+        ModelValidationException exception = new(new Dictionary<string, string[]> { ["Name"] = ["Required"] }, "Validation");
+        ExceptionInfo info = exception.ToErrorInfo(includeDetails: true);
+        Assert.Equal(["Required"], info.ValidationErrors!["Name"]);
+    }
+
+    [Fact]
+    public void ExceptionInfo_EmptyInstance_RoundTripsDefaultProperties()
+    {
+        ExceptionInfo info = new();
+        Assert.Equal(info, JsonSerializer.Deserialize<ExceptionInfo>(JsonSerializer.Serialize(info)));
+    }
 }

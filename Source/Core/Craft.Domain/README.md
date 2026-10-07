@@ -157,14 +157,14 @@ Craft.Domain/
 ├── Events/                 # Domain events
 │   └── DomainEventBase.cs
 ├── Enums/                  # Domain enumerations
-├── Exceptions/             # Exception hierarchy
-│   ├── Base/
+├── Exceptions/             # One public namespace: Craft.Domain.Exceptions
+│   ├── CraftException.cs
+│   ├── ExceptionInfo.cs
+│   ├── CraftExceptionFactory.cs
 │   ├── Domain/
 │   ├── Security/
 │   ├── Infrastructure/
-│   ├── Client/
-│   ├── Server/
-│   └── Factories/
+│   └── Http/
 ├── Extensions/             # Extension methods
 ├── Helpers/                # Constants and helpers
 └── Resources/              # Localization resources
@@ -391,49 +391,61 @@ public class ProductVm : BaseVm
 
 ## Exception Handling
 
-Categorized exception hierarchy with HTTP status codes:
+Import `Craft.Domain.Exceptions` for all exception types. Folders group domain, security,
+HTTP, and infrastructure responsibilities without requiring separate imports.
 
-### Domain Exceptions (4xx)
-- `BadRequestException` - 400
-- `NotFoundException` - 404
-- `AlreadyExistsException` - 409
-- `ConflictException` - 409
-- `ConcurrencyException` - 409
-- `GoneException` - 410
-- `PreconditionFailedException` - 412
-- `ModelValidationException` - 400
-
-### Security Exceptions
-- `UnauthorizedException` - 401
-- `ForbiddenException` - 403
-- `InvalidCredentialsException` - 401
-
-### Infrastructure Exceptions
-- `DatabaseException` - 500
-- `ConfigurationException` - 500
-- `ExternalServiceException` - 502
-
-### Server Exceptions (5xx)
-- `InternalServerException` - 500
-- `BadGatewayException` - 502
-- `ServiceUnavailableException` - 503
-- `GatewayTimeoutException` - 504
-
-### Usage
+Constructors accept an optional message, cause, and enumerable of errors. Status codes
+are fixed by type; error collections are immutable snapshots. `AlreadyExistsException`
+and `ConcurrencyException` derive from `ConflictException` (409), `InvalidCredentialsException`
+from `UnauthorizedException` (401), and `ExternalServiceException` from `BadGatewayException` (502).
+`ModelValidationException` uses 400 and deep-copies property errors. `UnprocessableEntityException`
+represents 422. `HttpStatusException` preserves other error statuses in the 400–599 range.
 
 ```csharp
-// Throw exceptions
-throw new NotFoundException("Product", productId);
-throw CraftExceptionFactory.NotFound("Product", productId);
+using Craft.Domain.Exceptions;
 
-// Convert to JSON-serializable format (for APIs)
-try { /* ... */ }
-catch (CraftException ex)
+throw new NotFoundException("Product", productId);
+throw new DatabaseException("Save failed", innerException: cause, errors: ["Operation failed"]);
+throw new ModelValidationException(new Dictionary<string, string[]>
 {
-    var errorInfo = ex.ToErrorInfo(includeStackTrace: false);
-    return BadRequest(errorInfo);
+    ["Name"] = ["Name is required"]
+});
+```
+
+`ToErrorInfo()` creates JSON-serializable response data with the original status. It omits
+exception types, stack traces, and inner exceptions, and replaces 5xx messages with a generic
+message while omitting their errors. Client error messages and validation details must be
+safe for your audience. `TooManyRequestsException(int retryAfterSeconds)` exposes `RetryAfter`
+as a `TimeSpan`, also included in response data; HTTP adapters must set the Retry-After header
+explicitly. Timestamped `GoneException` requires UTC deletion time.
+
+```csharp
+catch (CraftException exception)
+{
+    return Results.Json(exception.ToErrorInfo(), statusCode: exception.StatusCodeValue);
 }
 ```
+
+Use `ToErrorInfo(includeDetails: true)` only for trusted diagnostic destinations; it includes
+raw messages and stack traces and follows up to 16 exceptions, including standard .NET causes.
+Log the original exception through your application's Serilog provider when full diagnostics
+are required. The library does not log automatically.
+
+`CraftExceptionFactory.FromStatusCode(status, message, errors, innerException)` converts an
+HTTP error without losing its status, details, or cause. `FromException(exception)` returns
+existing Craft exceptions and cancellation exceptions unchanged. Access denial, timeout,
+and unimplemented operations map to 403, 504, and 501; other runtime faults become 500 with
+the original cause. It does not infer client fault from argument or invalid-operation exceptions.
+The return type is `Exception` because cancellation retains its .NET semantics.
+
+Breaking changes: replace the former category namespaces with `Craft.Domain.Exceptions`,
+pass errors by name (`errors:`), and use constructors instead of forwarding factory methods.
+Custom status overrides on named exception types were removed. `AlreadyExistsException`
+consistently uses 409, and diagnostic export now requires `includeDetails: true`.
+
+For expected business failures, prefer the consuming application's result abstraction over
+throwing exceptions. A future separate HTTP/infrastructure error library would decouple
+transport concerns from pure domain models; this review keeps package boundaries unchanged.
 
 ## Localization
 

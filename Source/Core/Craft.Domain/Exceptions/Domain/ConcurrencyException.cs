@@ -1,29 +1,22 @@
-using System.Net;
-using Craft.Domain.Exceptions.Base;
+namespace Craft.Domain.Exceptions;
 
-namespace Craft.Domain.Exceptions.Domain;
-
-/// <summary>
-/// Exception thrown when a concurrency conflict occurs during data modification.
-/// Typically used when optimistic concurrency checks fail (e.g., row version mismatch).
-/// </summary>
-public class ConcurrencyException : CraftException
+/// <summary>A concurrency conflict occurred. The record has been modified by another user. HTTP 409.</summary>
+public class ConcurrencyException : ConflictException
 {
-    public ConcurrencyException()
-        : base("A concurrency conflict occurred. The record has been modified by another user.", [], HttpStatusCode.Conflict) { }
-
-    public ConcurrencyException(string message)
-        : base(message, [], HttpStatusCode.Conflict) { }
-
-    public ConcurrencyException(string message, Exception innerException)
-        : base(message, innerException, HttpStatusCode.Conflict) { }
-
-    public ConcurrencyException(string message, List<string>? errors = default)
-        : base(message, errors, HttpStatusCode.Conflict) { }
+    public ConcurrencyException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "A concurrency conflict occurred. The record has been modified by another user.", innerException, errors) { }
 
     public ConcurrencyException(string entityName, object key)
-        : base($"Concurrency conflict for entity \"{entityName}\" ({key}). The record has been modified by another user.", [], HttpStatusCode.Conflict) { }
+        : this($"Concurrency conflict for entity \"{entityName}\" ({key}). The record has been modified by another user.")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityName);
+        ArgumentNullException.ThrowIfNull(key);
+    }
 
     public ConcurrencyException(string entityName, object key, string expectedVersion, string actualVersion)
-        : base($"Concurrency conflict for entity \"{entityName}\" ({key}). Expected version: {expectedVersion}, Actual version: {actualVersion}.", [], HttpStatusCode.Conflict) { }
+        : this($"Concurrency conflict for entity \"{entityName}\" ({key}). Expected version: {expectedVersion}, Actual version: {actualVersion}.")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityName);
+        ArgumentNullException.ThrowIfNull(key);
+    }
 }

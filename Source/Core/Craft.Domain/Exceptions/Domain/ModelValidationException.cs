@@ -1,54 +1,42 @@
-﻿using System.Net;
-using Craft.Domain.Exceptions.Base;
+using System.Collections.ObjectModel;
+using System.Net;
 
-namespace Craft.Domain.Exceptions.Domain;
+namespace Craft.Domain.Exceptions;
 
-/// <summary>
-/// Exception thrown when model validation fails.
-/// Contains detailed validation error information for each property that failed validation.
-/// Returns HTTP 400 Bad Request status code.
-/// </summary>
+/// <summary>Validation failure with immutable errors keyed by property name. HTTP 400.</summary>
 public class ModelValidationException : CraftException
 {
-    /// <summary>
-    /// Gets the dictionary of validation errors, keyed by property name.
-    /// </summary>
-    public IDictionary<string, string[]> ValidationErrors { get; } = new Dictionary<string, string[]>();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModelValidationException"/> class with a default message.
-    /// </summary>
-    public ModelValidationException()
-        : base("One or more validation failures have occurred.", [], HttpStatusCode.BadRequest)
+    public ModelValidationException(string? message = null, Exception? innerException = null,
+        IEnumerable<string>? errors = null)
+        : base(message ?? "One or more validation failures have occurred.", HttpStatusCode.BadRequest, innerException, errors)
     {
-        ValidationErrors = new Dictionary<string, string[]>();
+        ValidationErrors = ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModelValidationException"/> class with a specified error message.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    public ModelValidationException(string message)
-        : base(message, [], HttpStatusCode.BadRequest) { }
+    public ModelValidationException(IDictionary<string, string[]> validationErrors, string? message = null,
+        Exception? innerException = null)
+        : this(message ?? "One or more validation failures have occurred.", Snapshot(validationErrors), innerException) { }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModelValidationException"/> class with a specified error message
-    /// and inner exception.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    public ModelValidationException(string message, Exception innerException)
-        : base(message, innerException) { }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModelValidationException"/> class with a specified error message
-    /// and validation errors.
-    /// </summary>
-    /// <param name="message">The message that describes the error.</param>
-    /// <param name="validationErrors">The dictionary of validation errors by property name.</param>
-    public ModelValidationException(string message, IDictionary<string, string[]> validationErrors)
-        : base(message, [.. validationErrors.SelectMany(kvp => kvp.Value)], HttpStatusCode.BadRequest)
+    private ModelValidationException(string message, IReadOnlyDictionary<string, IReadOnlyList<string>> validationErrors,
+        Exception? innerException)
+        : base(message, HttpStatusCode.BadRequest, innerException, validationErrors.Values.SelectMany(errors => errors))
     {
-        ValidationErrors = new Dictionary<string, string[]>(validationErrors);
+        ValidationErrors = validationErrors;
+    }
+
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; }
+
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> Snapshot(IDictionary<string, string[]> validationErrors)
+    {
+        ArgumentNullException.ThrowIfNull(validationErrors);
+        Dictionary<string, IReadOnlyList<string>> snapshot = new(StringComparer.Ordinal);
+
+        foreach ((string property, string[] errors) in validationErrors)
+        {
+            ArgumentNullException.ThrowIfNull(errors);
+            snapshot.Add(property, Array.AsReadOnly(errors.ToArray()));
+        }
+
+        return new ReadOnlyDictionary<string, IReadOnlyList<string>>(snapshot);
     }
 }

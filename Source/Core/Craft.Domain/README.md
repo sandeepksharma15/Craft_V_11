@@ -59,6 +59,16 @@ Entity equality requires the same concrete runtime type and a non-default ID. Di
 
 The base keeps key and concurrency annotations but does not force a key-generation strategy or column order. Configure database-generated numeric keys or application-assigned IDs in the consuming persistence model. Review generated migrations when upgrading an existing model. EF conventions and provider behaviour still apply; no custom JSON or EF value converters are required for these primitive key types.
 
+## Identifier Extensions
+
+Import `Craft.Domain.Abstractions` to use `IsNullOrDefault`, `BelongsToTenant` and `BelongsToUser`. Generic inference also supports the configured non-generic contracts.
+
+- `IsNullOrDefault()` works with any `IHasId<TKey>`, including entities and DTOs. Only `default(TKey)` is unassigned; negative numeric IDs remain valid. This does not determine persistence state.
+- `BelongsToTenant(id)` and `BelongsToUser(id)` return false for null objects or default IDs and otherwise use `EqualityComparer<TKey>.Default`. For nullable keys, zero is assigned; for string keys, empty strings are assigned and comparison is ordinal and case-sensitive.
+- These checks compare associations; callers must still enforce authorization and tenant isolation.
+
+`SetCreatedBy` was removed because `IHasUser` expresses a user association, not creation auditing. Set `UserId` directly or call `SetUserId` through the interface. The general-purpose `string.Parse<T>` extension was removed; use the target type's `Parse`/`TryParse` (or `IParsable<T>` in generic code), with an explicit culture where relevant. Failed conversions no longer silently become default IDs through this library.
+
 ## Features
 
 - ✅ **Base Entity Classes** - `BaseEntity<TKey>` with identity, concurrency, and soft-delete

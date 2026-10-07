@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace Craft.Domain.Abstractions;
 
 /// <summary>Defines a contract for entities that can raise domain events.</summary>
@@ -18,13 +20,19 @@ public interface IHasDomainEvents
     void ClearDomainEvents();
 }
 
-/// <summary>Provides a default implementation for managing domain events.</summary>
+/// <summary>Ordered event buffer with a live read-only view. Not thread-safe.</summary>
 public sealed class DomainEventCollection : IHasDomainEvents
 {
     private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly ReadOnlyCollection<IDomainEvent> _view;
+
+    public DomainEventCollection()
+    {
+        _view = _domainEvents.AsReadOnly();
+    }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public IReadOnlyCollection<IDomainEvent> DomainEvents => _view;
 
     /// <inheritdoc />
     public void AddDomainEvent(IDomainEvent domainEvent)

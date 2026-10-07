@@ -301,11 +301,44 @@ public class Order : BaseEntity, IAggregateRoot, IHasDomainEvents
 ```
 
 **Domain Event Properties:**
-- `EventId` - Unique identifier (auto-generated GUID)
-- `OccurredOnUtc` - Timestamp when the event occurred
-- `EventType` - Type name for routing/serialization
+- `EventId` - Non-empty GUID, generated for new events or restored for persisted events
+- `OccurredOnUtc` - Occurrence timestamp with `DateTimeKind.Utc`
+- `EventType` - CLR type name by default; override for a stable external contract name
 - `CorrelationId` - Optional correlation for tracing
 - `CausationId` - Optional link to causing event
+
+`DomainEventBase()` generates a new ID and UTC timestamp. The timestamp constructor requires `DateTimeKind.Utc`; local and unspecified timestamps now throw `ArgumentException`. Convert known local times explicitly before creating an event.
+
+For persisted events, forward the original ID and UTC timestamp to `base(eventId, occurredOnUtc)`. Equality and hashing use only `EventId`, even across event types; restoring an event must retain that ID. Do not generate a new ID during deserialization.
+
+A concrete event can use a `System.Text.Json` constructor without a custom converter:
+
+```csharp
+public sealed class OrderPlacedEvent : DomainEventBase
+{
+    public long OrderId { get; }
+    public decimal TotalAmount { get; }
+    public override string EventType => "order-placed.v1";
+
+    public OrderPlacedEvent(long orderId, decimal totalAmount)
+    {
+        OrderId = orderId;
+        TotalAmount = totalAmount;
+    }
+
+    [System.Text.Json.Serialization.JsonConstructor]
+    public OrderPlacedEvent(long orderId, decimal totalAmount,
+        Guid eventId, DateTime occurredOnUtc) : base(eventId, occurredOnUtc)
+    {
+        OrderId = orderId;
+        TotalAmount = totalAmount;
+    }
+}
+```
+
+This supports deserialization to the concrete event type. Polymorphic deserialization through `IDomainEvent` still needs a type-discriminator configuration in the consuming application. Keep payloads immutable as well; the base only supplies metadata.
+
+`DomainEventCollection` preserves insertion order and allows duplicates. Its cached read-only view reflects subsequent additions, removals, and clearing; it is not a snapshot. Removal deletes the first equal event. The collection is intended for single-threaded entity use and does not dispatch or persist events.
 
 ### Data Transfer Objects
 

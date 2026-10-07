@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Craft.Domain.Abstractions;
 using Craft.Domain.Events;
 
@@ -15,6 +17,10 @@ public class DomainEventBaseTests
 
         public TestDomainEvent(string data, DateTime occurredOnUtc) : base(occurredOnUtc)
             => Data = data;
+
+        [JsonConstructor]
+        public TestDomainEvent(string data, Guid eventId, DateTime occurredOnUtc) : base(eventId, occurredOnUtc)
+            => Data = data;
     }
 
     private sealed class AnotherDomainEvent : DomainEventBase
@@ -22,9 +28,111 @@ public class DomainEventBaseTests
         public int Value { get; }
 
         public AnotherDomainEvent(int value) => Value = value;
+
+        public AnotherDomainEvent(int value, Guid eventId, DateTime occurredOnUtc) : base(eventId, occurredOnUtc)
+            => Value = value;
+
+        public override string EventType => "another-event.v1";
     }
 
     #endregion
+
+    [Theory]
+    [InlineData(DateTimeKind.Local)]
+    [InlineData(DateTimeKind.Unspecified)]
+    public void Constructor_NonUtcTimestamp_RejectsAmbiguousTime(DateTimeKind kind)
+    {
+        DateTime timestamp = new(2026, 10, 7, 9, 0, 0, kind);
+
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => new TestDomainEvent("data", timestamp));
+
+        Assert.Equal("occurredOnUtc", exception.ParamName);
+        Assert.Throws<ArgumentException>(() => new TestDomainEvent("data", Guid.NewGuid(), timestamp));
+    }
+
+    [Fact]
+    public void Constructor_EmptyRestoredId_RejectsInvalidIdentity()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(
+            () => new TestDomainEvent("data", Guid.Empty, DateTime.UtcNow));
+
+        Assert.Equal("eventId", exception.ParamName);
+    }
+
+    [Fact]
+    public void RestoredEvent_SameId_PreservesEqualityAndHashCollections()
+    {
+        TestDomainEvent original = new("original");
+        TestDomainEvent restored = new("restored", original.EventId, original.OccurredOnUtc);
+
+        Assert.Equal(original.EventId, restored.EventId);
+        Assert.Equal(original.OccurredOnUtc, restored.OccurredOnUtc);
+        Assert.NotSame(original, restored);
+        Assert.True(original.Equals(restored));
+        Assert.True(restored.Equals((object)original));
+        Assert.True(original == restored);
+        Assert.False(original != restored);
+        Assert.Equal(original.GetHashCode(), restored.GetHashCode());
+        Assert.Single(new HashSet<DomainEventBase> { original, restored });
+    }
+
+    [Fact]
+    public void RestoredEvent_EqualityDependsOnlyOnEventId()
+    {
+        TestDomainEvent original = new("data");
+        AnotherDomainEvent restored = new(42, original.EventId, original.OccurredOnUtc.AddSeconds(1));
+
+        Assert.True(original.Equals(restored));
+        Assert.True(restored.Equals(original));
+        Assert.Equal(original.GetHashCode(), restored.GetHashCode());
+    }
+
+    [Fact]
+    public void Equality_NullAndUnrelatedObjects_ReturnFalse()
+    {
+        TestDomainEvent domainEvent = new("data");
+        DomainEventBase? missing = null;
+
+        Assert.False(domainEvent.Equals(new object()));
+        Assert.False(domainEvent == missing);
+        Assert.False(missing == domainEvent);
+        Assert.True(domainEvent != missing);
+        Assert.True(missing != domainEvent);
+        Assert.False(missing != null);
+    }
+
+    [Fact]
+    public void JsonRoundTrip_PreservesIdentityMetadataAndPayload()
+    {
+        TestDomainEvent original = new("payload")
+        {
+            CorrelationId = Guid.NewGuid(),
+            CausationId = Guid.NewGuid()
+        };
+
+        string json = JsonSerializer.Serialize(original);
+        TestDomainEvent restored = JsonSerializer.Deserialize<TestDomainEvent>(json)!;
+
+        Assert.NotNull(restored);
+        Assert.Equal(original.EventId, restored.EventId);
+        Assert.Equal(original.OccurredOnUtc, restored.OccurredOnUtc);
+        Assert.Equal(DateTimeKind.Utc, restored.OccurredOnUtc.Kind);
+        Assert.Equal(original.CorrelationId, restored.CorrelationId);
+        Assert.Equal(original.CausationId, restored.CausationId);
+        Assert.Equal(original.Data, restored.Data);
+        Assert.True(original.Equals(restored));
+    }
+
+    [Fact]
+    public void EventType_Override_IsVisibleThroughContractAndDiagnostics()
+    {
+        AnotherDomainEvent domainEvent = new(42);
+        IDomainEvent contract = domainEvent;
+
+        Assert.Equal("another-event.v1", contract.EventType);
+        Assert.StartsWith("another-event.v1", domainEvent.ToString());
+        Assert.Contains(domainEvent.OccurredOnUtc.ToString("O"), domainEvent.ToString());
+    }
 
     #region Constructor Tests
 
@@ -227,17 +335,6 @@ public class DomainEventBaseTests
 
         // Assert
         Assert.Equal(hash1, hash2);
-    }
-
-    [Fact]
-    public void GetHashCode_ShouldBeDifferent_ForDifferentEvents()
-    {
-        // Arrange
-        var event1 = new TestDomainEvent("test");
-        var event2 = new TestDomainEvent("test");
-
-        // Act & Assert (highly likely to be different due to different EventIds)
-        Assert.NotEqual(event1.GetHashCode(), event2.GetHashCode());
     }
 
     #endregion

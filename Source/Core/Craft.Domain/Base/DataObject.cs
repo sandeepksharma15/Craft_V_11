@@ -6,12 +6,11 @@ namespace Craft.Domain.Base;
 /// Internal abstract base record that consolidates the shared properties of all data transfer types.
 /// </summary>
 /// <remarks>
-/// Consumers should derive from <see cref="BaseDto{TKey}"/>, <see cref="BaseVm{TKey}"/>,
-/// or <see cref="BaseModel{TKey}"/> depending on the transfer direction rather than from this
-/// type directly.
+/// Consumers should derive from <see cref="BaseDTO{TKey}" />, <see cref="BaseVm{TKey}" />, or
+/// <see cref="BaseModel{TKey}" /> depending on the transfer direction rather than from this type directly.
 /// </remarks>
-/// <typeparam name="TKey">The type of the identifier.</typeparam>
-public abstract record BaseTransferObject<TKey> : IDataObject<TKey>
+/// <typeparam name="TKey"> The type of the identifier. </typeparam>
+public abstract record DataObject<TKey> : IDataObject<TKey>
 {
     /// <summary>
     /// Gets or sets the identifier.

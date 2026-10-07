@@ -166,14 +166,14 @@ public class BaseDtoTests
     }
 
     // Test records for testing the abstract BaseDto
-    public record TestDto : BaseDto;
+    public record TestDto : BaseDTO;
 
-    public record TestGenericDto : BaseDto<long>;
+    public record TestGenericDto : BaseDTO<long>;
 
-    public record TestStringDto : BaseDto<string>
+    public record TestStringDto : BaseDTO<string>
     {
         public override string Id { get; set; } = string.Empty;
     }
 
-    public record TestGuidDto : BaseDto<Guid>;
+    public record TestGuidDto : BaseDTO<Guid>;
 }

@@ -7,7 +7,7 @@ public class DataTransferObjectTests
 {
     #region Test Implementations
 
-    private sealed record ProductDto : BaseDto
+    private sealed record ProductDto : BaseDTO
     {
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
@@ -26,7 +26,7 @@ public class DataTransferObjectTests
         public decimal Price { get; set; }
     }
 
-    private sealed record ProductDtoWithGuid : BaseDto<Guid>
+    private sealed record ProductDtoWithGuid : BaseDTO<Guid>
     {
         public string Name { get; set; } = string.Empty;
     }

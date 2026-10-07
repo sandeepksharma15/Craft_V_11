@@ -18,7 +18,7 @@ public abstract record BaseVm : BaseVm<KeyType>, IDataObject;
 /// <b>When to use BaseVm vs BaseDto:</b>
 /// <list type="bullet">
 ///   <item><description><see cref="BaseVm{TKey}"/> - Use for API <b>output</b> (responses from server to client)</description></item>
-///   <item><description><see cref="BaseDto{TKey}"/> - Use for API <b>input</b> (requests from client to server)</description></item>
+///   <item><description><see cref="BaseDTO{TKey}"/> - Use for API <b>input</b> (requests from client to server)</description></item>
 /// </list>
 /// </para>
 /// <para>
@@ -60,4 +60,4 @@ public abstract record BaseVm : BaseVm<KeyType>, IDataObject;
 /// }
 /// </code>
 /// </example>
-public abstract record BaseVm<TKey> : BaseTransferObject<TKey>;
+public abstract record BaseVm<TKey> : DataObject<TKey>;

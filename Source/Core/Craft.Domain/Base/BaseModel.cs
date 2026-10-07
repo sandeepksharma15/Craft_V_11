@@ -9,11 +9,11 @@ namespace Craft.Domain.Base;
 /// <remarks>
 /// <para><b>Purpose:</b> BaseModel serves as a general-purpose data transfer model that can be used
 /// for internal data transfer or scenarios where the specific input/output distinction of
-/// <see cref="BaseDto"/> and <see cref="BaseVm"/> is not required.</para>
+/// <see cref="BaseDTO"/> and <see cref="BaseVm"/> is not required.</para>
 /// <para>
 /// <b>When to use:</b>
 /// <list type="bullet">
-///   <item><description><see cref="BaseDto{TKey}"/> - Use for API <b>input</b> (requests from client)</description></item>
+///   <item><description><see cref="BaseDTO{TKey}"/> - Use for API <b>input</b> (requests from client)</description></item>
 ///   <item><description><see cref="BaseVm{TKey}"/> - Use for API <b>output</b> (responses to client)</description></item>
 ///   <item><description><see cref="BaseModel{TKey}"/> - Use for general data transfer where direction is not significant</description></item>
 /// </list>
@@ -38,4 +38,4 @@ public abstract record BaseModel : BaseModel<KeyType>, IDataObject;
 /// </list>
 /// </para>
 /// </remarks>
-public abstract record BaseModel<TKey> : BaseTransferObject<TKey>;
+public abstract record BaseModel<TKey> : DataObject<TKey>;

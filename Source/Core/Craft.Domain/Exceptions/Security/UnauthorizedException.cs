@@ -1,22 +1,10 @@
-﻿using System.Net;
-using Craft.Domain.Exceptions.Base;
+using System.Net;
 
-namespace Craft.Domain.Exceptions.Security;
+namespace Craft.Domain.Exceptions;
 
+/// <summary>Authentication is required. HTTP 401.</summary>
 public class UnauthorizedException : CraftException
 {
-    public UnauthorizedException()
-        : base("Unauthorized access", [], HttpStatusCode.Unauthorized) { }
-
-    public UnauthorizedException(string message)
-        : base(message, [], HttpStatusCode.Unauthorized) { }
-
-    public UnauthorizedException(string message, Exception innerException)
-        : base(message, innerException, HttpStatusCode.Unauthorized) { }
-
-    public UnauthorizedException(string message, List<string>? errors = default)
-        : base(message, errors, HttpStatusCode.Unauthorized) { }
-
-    public UnauthorizedException(string message, List<string>? errors, HttpStatusCode statusCode)
-        : base(message, errors, statusCode) { }
+    public UnauthorizedException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "Authentication is required", HttpStatusCode.Unauthorized, innerException, errors) { }
 }

@@ -1,4 +1,5 @@
-﻿using Craft.Utilities.Validators;
+﻿using Craft.Testing.Http;
+using Craft.Utilities.Validators;
 
 namespace Craft.Utilities.Tests.Validators;
 
@@ -37,10 +38,11 @@ public class UrlValidatorsTests
     }
 
     [Fact]
-    public async Task IsUrlReachableAsync_WithValidUrl_ReturnsTrue()
+    public async Task IsUrlReachableAsync_WithLocalServer_ReturnsTrue()
     {
         // Arrange
-        string url = "https://www.google.com";
+        await using LoopbackHttpServer server = new();
+        string url = server.Url;
 
         // Act
         bool result = await UrlValidations.IsUrlReachableAsync(url, TestContext.Current.CancellationToken);
@@ -50,10 +52,10 @@ public class UrlValidatorsTests
     }
 
     [Fact]
-    public async Task IsUrlReachableAsync_WithInvalidUrl_ReturnsFalse()
+    public async Task IsUrlReachableAsync_WithUnreachableLocalEndpoint_ReturnsFalse()
     {
         // Arrange
-        string url = "https://this-domain-definitely-does-not-exist-12345.com";
+        string url = "http://127.0.0.1:0";
 
         // Act
         bool result = await UrlValidations.IsUrlReachableAsync(url, TestContext.Current.CancellationToken);
@@ -66,7 +68,7 @@ public class UrlValidatorsTests
     public async Task IsUrlReachableAsync_WithCancellationToken_ReturnsFalse()
     {
         // Arrange
-        string url = "https://www.google.com";
+        string url = "http://127.0.0.1:0";
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
@@ -79,10 +81,11 @@ public class UrlValidatorsTests
     }
 
     [Fact]
-    public async Task IsUrlExistingAsync_WithValidUrl_ReturnsTrue()
+    public async Task IsUrlExistingAsync_WithLocalServer_ReturnsTrue()
     {
         // Arrange
-        string url = "https://www.google.com";
+        await using LoopbackHttpServer server = new();
+        string url = server.Url;
 
         // Act
         bool result = await UrlValidations.IsUrlExistingAsync(url, TestContext.Current.CancellationToken);
@@ -92,10 +95,10 @@ public class UrlValidatorsTests
     }
 
     [Fact]
-    public async Task IsUrlExistingAsync_WithInvalidUrl_ReturnsFalse()
+    public async Task IsUrlExistingAsync_WithUnreachableLocalEndpoint_ReturnsFalse()
     {
         // Arrange
-        string url = "https://this-domain-definitely-does-not-exist-12345.com";
+        string url = "http://127.0.0.1:0";
 
         // Act
         bool result = await UrlValidations.IsUrlExistingAsync(url, TestContext.Current.CancellationToken);
@@ -108,7 +111,7 @@ public class UrlValidatorsTests
     public async Task IsUrlExistingAsync_WithCancellationToken_ReturnsFalse()
     {
         // Arrange
-        string url = "https://www.google.com";
+        string url = "http://127.0.0.1:0";
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 
@@ -149,11 +152,13 @@ public class UrlValidatorsTests
     public async Task RemoveInvalidUrls_WithMixedValidInvalidUrls_ReturnsOnlyValid()
     {
         // Arrange
+        await using LoopbackHttpServer server = new();
         var urls = new List<string?>
         {
-            "https://www.google.com",
+            server.Url,
             "not-a-url",
-            "https://github.com",
+            server.Url + "other",
+            "http://127.0.0.1:0",
             "ftp://example.com",
             null
         };
@@ -163,7 +168,7 @@ public class UrlValidatorsTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.True(result.Count <= 2);
+        Assert.Equal(new[] { server.Url, server.Url + "other" }, result);
         Assert.All(result, url => Assert.True(UrlValidations.IsValidUrl(url!)));
     }
 
@@ -171,7 +176,7 @@ public class UrlValidatorsTests
     public async Task RemoveInvalidUrls_WithCancellationToken_HandlesGracefully()
     {
         // Arrange
-        var urls = new List<string?> { "https://www.google.com", "https://github.com" };
+        var urls = new List<string?> { "http://127.0.0.1:0", "http://127.0.0.1:0/other" };
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cts.Cancel();
 

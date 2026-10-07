@@ -1,26 +1,17 @@
 using System.Net;
-using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain.Exceptions.Domain;
+namespace Craft.Domain.Exceptions;
 
-/// <summary>
-/// Exception thrown when a requested resource cannot be found.
-/// Returns HTTP 404 Not Found status code.
-/// </summary>
+/// <summary>The requested resource was not found. HTTP 404.</summary>
 public class NotFoundException : CraftException
 {
-    public NotFoundException()
-        : base("The requested resource was not found", [], HttpStatusCode.NotFound) { }
-
-    public NotFoundException(string message)
-        : base(message, [], HttpStatusCode.NotFound) { }
-
-    public NotFoundException(string message, Exception innerException)
-        : base(message, innerException, HttpStatusCode.NotFound) { }
-
-    public NotFoundException(string message, List<string>? errors = default)
-        : base(message, errors, HttpStatusCode.NotFound) { }
+    public NotFoundException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "The requested resource was not found", HttpStatusCode.NotFound, innerException, errors) { }
 
     public NotFoundException(string entityName, object key)
-        : base($"Entity \"{entityName}\" ({key}) was not found.", [], HttpStatusCode.NotFound) { }
+        : this($"Entity \"{entityName}\" ({key}) was not found.")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityName);
+        ArgumentNullException.ThrowIfNull(key);
+    }
 }

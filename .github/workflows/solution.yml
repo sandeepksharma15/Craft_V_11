@@ -40,6 +40,26 @@ jobs:
       - name: Test
         run: dotnet test Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify exception coverage
+        env:
+          DOTNET_TEST_RUNNER: VSTest
+        run: |
+          dotnet test Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj \
+            --configuration Release --no-build \
+            -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
+            --filter "FullyQualifiedName~Craft.Domain.Tests.Exceptions" \
+            --collect:"XPlat Code Coverage" --results-directory artifacts/exception-coverage \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="cobertura,opencover" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Domain]Craft.Domain.Exceptions.*"
+          python3 .github/scripts/verify-exception-coverage.py artifacts/exception-coverage
+
+      - name: Upload exception coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: exception-coverage-${{ matrix.os }}
+          path: artifacts/exception-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify utility coverage
         env:
           DOTNET_TEST_RUNNER: VSTest

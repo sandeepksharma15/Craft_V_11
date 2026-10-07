@@ -31,6 +31,8 @@
 
 - 2026-10-07: DomainEventBase requires UTC timestamps and supports restoring a non-empty event ID; event equality remains ID-only. Concrete JSON event constructors must forward persisted metadata rather than regenerate it.
 
+- 2026-10-07: Craft exceptions share Craft.Domain.Exceptions; named types have fixed statuses and immutable error snapshots. ToErrorInfo hides server diagnostics by default; FromException preserves cancellation and never infers client fault from runtime argument errors.
+
 ## Patterns & Conventions
 
 <!-- Recurring patterns discovered in the codebase that new code should follow. -->

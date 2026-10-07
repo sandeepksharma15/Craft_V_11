@@ -1,30 +1,20 @@
-using System.Net;
-using Craft.Domain.Exceptions.Base;
+namespace Craft.Domain.Exceptions;
 
-namespace Craft.Domain.Exceptions.Infrastructure;
-
-/// <summary>
-/// Exception thrown when an external service call fails.
-/// This includes HTTP service failures, API errors, third-party service errors,
-/// and external integration failures.
-/// </summary>
-public class ExternalServiceException : CraftException
+/// <summary>An external service error occurred. HTTP 502.</summary>
+public class ExternalServiceException : BadGatewayException
 {
-    public ExternalServiceException()
-        : base("An external service error occurred", [], HttpStatusCode.BadGateway) { }
-
-    public ExternalServiceException(string message)
-        : base(message, [], HttpStatusCode.BadGateway) { }
-
-    public ExternalServiceException(string message, Exception innerException)
-        : base(message, innerException, HttpStatusCode.BadGateway) { }
-
-    public ExternalServiceException(string message, List<string>? errors = default)
-        : base(message, errors, HttpStatusCode.BadGateway) { }
+    public ExternalServiceException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "An external service error occurred", innerException, errors) { }
 
     public ExternalServiceException(string serviceName, string errorDetails)
-        : base($"External service \"{serviceName}\" error: {errorDetails}", [], HttpStatusCode.BadGateway) { }
+        : this($"External service \"{serviceName}\" error: {errorDetails}")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+    }
 
     public ExternalServiceException(string serviceName, int statusCode, string errorDetails)
-        : base($"External service \"{serviceName}\" returned status {statusCode}: {errorDetails}", [], HttpStatusCode.BadGateway) { }
+        : this($"External service \"{serviceName}\" returned status {statusCode}: {errorDetails}")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
+    }
 }

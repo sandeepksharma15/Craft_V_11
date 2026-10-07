@@ -1,27 +1,16 @@
 using System.Net;
-using Craft.Domain.Exceptions.Base;
 
-namespace Craft.Domain.Exceptions.Infrastructure;
+namespace Craft.Domain.Exceptions;
 
-/// <summary>
-/// Exception thrown when a configuration error occurs.
-/// This includes missing configuration values, invalid configuration formats,
-/// or configuration validation failures.
-/// </summary>
+/// <summary>A configuration error occurred. HTTP 500.</summary>
 public class ConfigurationException : CraftException
 {
-    public ConfigurationException()
-        : base("A configuration error occurred", [], HttpStatusCode.InternalServerError) { }
-
-    public ConfigurationException(string message)
-        : base(message, [], HttpStatusCode.InternalServerError) { }
-
-    public ConfigurationException(string message, Exception innerException)
-        : base(message, innerException, HttpStatusCode.InternalServerError) { }
-
-    public ConfigurationException(string message, List<string>? errors = default)
-        : base(message, errors, HttpStatusCode.InternalServerError) { }
+    public ConfigurationException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "A configuration error occurred", HttpStatusCode.InternalServerError, innerException, errors) { }
 
     public ConfigurationException(string configurationKey, string reason)
-        : base($"Configuration error for key \"{configurationKey}\": {reason}", [], HttpStatusCode.InternalServerError) { }
+        : this($"Configuration error for key \"{configurationKey}\": {reason}")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(configurationKey);
+    }
 }

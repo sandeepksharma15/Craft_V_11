@@ -1,19 +1,8 @@
-﻿using System.Net;
-using Craft.Domain.Exceptions.Base;
+namespace Craft.Domain.Exceptions;
 
-namespace Craft.Domain.Exceptions.Security;
-
-public class InvalidCredentialsException : CraftException
+/// <summary>Invalid credentials. HTTP 401.</summary>
+public class InvalidCredentialsException : UnauthorizedException
 {
-    public InvalidCredentialsException()
-        : base("Invalid Credentials: Please check your credentials", (List<string>?)null, HttpStatusCode.Unauthorized) { }
-
-    public InvalidCredentialsException(string message) 
-        : base(message, (List<string>?)null, HttpStatusCode.Unauthorized) { }
-
-    public InvalidCredentialsException(string message, Exception innerException) 
-        : base(message, innerException, HttpStatusCode.Unauthorized) { }
-
-    public InvalidCredentialsException(string message, List<string> errors = default!,
-        HttpStatusCode statusCode = HttpStatusCode.Unauthorized) : base(message, errors, statusCode) { }
+    public InvalidCredentialsException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
+        : base(message ?? "Invalid credentials", innerException, errors) { }
 }

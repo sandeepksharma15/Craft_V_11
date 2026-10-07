@@ -1,4 +1,4 @@
-﻿using Craft.Domain.Base;
+using Craft.Domain.Base;
 
 namespace Craft.Domain.Tests.Base;
 
@@ -121,6 +121,6 @@ public class BaseModelTests
         Assert.Equal(expectedIsDeleted, isDeleted);
     }
 
-    // TestDto record for testing the abstract BaseModel
-    public record TestDto : BaseModel;
+    // TestDto class for testing the abstract BaseModel
+    public class TestDto : BaseModel { }
 }

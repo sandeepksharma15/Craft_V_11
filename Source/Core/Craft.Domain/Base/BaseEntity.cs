@@ -1,130 +1,43 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using Craft.Domain.Abstractions;
 
 namespace Craft.Domain.Base;
 
-/// <summary>
-/// Abstract base class for domain entities with the default KeyType identifier. Provides common
-/// entity functionality including identity, concurrency control, and soft deletion.
-/// </summary>
+/// <summary>Entity base with the configured default identifier.</summary>
 public abstract class BaseEntity : BaseEntity<KeyType>, IEntity, IModel
 {
-    #region Protected Constructors
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BaseEntity" /> class.
-    /// </summary>
     protected BaseEntity() { }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BaseEntity" /> class with the specified identifier.
-    /// </summary>
-    /// <param name="id"> The entity identifier. </param>
     protected BaseEntity(KeyType id) : base(id) { }
-
-    #endregion Protected Constructors
 }
 
-/// <summary>
-/// Abstract base class for domain entities with a strongly-typed identifier. Implements entity
-/// identity, equality, concurrency control, and soft deletion.
-/// </summary>
-/// <typeparam name="TKey"> The type of the entity identifier. </typeparam>
+/// <summary>Entity identity, concurrency state, and soft-delete state.</summary>
+/// <remarks>Configure key generation in persistence. Do not change IDs while entities are stored in hash collections.</remarks>
 public abstract class BaseEntity<TKey> : IEntity<TKey>, IHasConcurrency, ISoftDelete, IModel<TKey>, IEquatable<BaseEntity<TKey>>
 {
-    #region Protected Constructors
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BaseEntity{TKey}" /> class.
-    /// </summary>
     protected BaseEntity() { }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BaseEntity{TKey}" /> class with the specified identifier.
-    /// </summary>
-    /// <param name="id"> The entity identifier. </param>
     protected BaseEntity(TKey id) { Id = id; }
 
-    #endregion Protected Constructors
+    [Key]
+    public virtual TKey Id { get; set; } = default!;
 
-    #region Protected Methods
-
-    /// <summary>
-    /// Provides an extension point for subclasses to include additional equality criteria.
-    /// </summary>
-    /// <remarks>
-    /// Override this method when two entities with the same <see cref="Id" /> can still be
-    /// considered distinct — for example, entities partitioned by tenant, region, or shard key. The
-    /// default implementation returns <see langword="true" /> (no additional checks).
-    /// </remarks>
-    /// <param name="other">
-    /// The other entity to compare against. Guaranteed to be non-null and the same runtime type.
-    /// </param>
-    /// <returns> True if additional equality conditions are satisfied; otherwise, false. </returns>
-    protected virtual bool AdditionalEqualityCheck(BaseEntity<TKey> other) => true;
-
-    #endregion Protected Methods
-
-    #region Public Properties
-
-    /// <summary>
-    /// Gets or sets the concurrency stamp used for optimistic concurrency control.
-    /// </summary>
     [ConcurrencyCheck]
     [MaxLength(IHasConcurrency.MaxLength)]
     public virtual string? ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the entity is soft-deleted.
-    /// </summary>
-    public virtual bool IsDeleted { get; set; } = false;
+    public virtual bool IsDeleted { get; set; }
 
-    /// <summary>
-    /// Gets or sets the entity identifier.
-    /// </summary>
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    [Column(Order = 0)]
-    public virtual TKey Id { get; set; } = default!;
-
-    #endregion Public Properties
-
-    #region Public Methods
-
-    /// <summary>
-    /// Determines whether two entities are not equal.
-    /// </summary>
-    /// <param name="left">  The first entity to compare. </param>
-    /// <param name="right"> The second entity to compare. </param>
-    /// <returns> True if the entities are not equal; otherwise, false. </returns>
-    public static bool operator !=(BaseEntity<TKey> left, BaseEntity<TKey> right)
-        => !Equals(left, right);
-
-    /// <summary>
-    /// Determines whether two entities are equal.
-    /// </summary>
-    /// <param name="left">  The first entity to compare. </param>
-    /// <param name="right"> The second entity to compare. </param>
-    /// <returns> True if the entities are equal; otherwise, false. </returns>
-    public static bool operator ==(BaseEntity<TKey> left, BaseEntity<TKey> right)
+    public static bool operator ==(BaseEntity<TKey>? left, BaseEntity<TKey>? right)
         => Equals(left, right);
 
-    /// <summary>
-    /// Determines whether the specified object is equal to the current entity.
-    /// </summary>
-    /// <param name="obj"> The object to compare with the current entity. </param>
-    /// <returns> True if the specified object is equal to the current entity; otherwise, false. </returns>
+    public static bool operator !=(BaseEntity<TKey>? left, BaseEntity<TKey>? right)
+        => !Equals(left, right);
+
     public override bool Equals(object? obj)
         => obj is BaseEntity<TKey> other && Equals(other);
 
-    /// <summary>
-    /// Determines whether the specified entity is equal to the current entity. Two entities are
-    /// equal when they share the same runtime type, the same <see cref="Id" />, and any additional
-    /// criteria defined by <see cref="AdditionalEqualityCheck" />.
-    /// </summary>
-    /// <param name="other"> The entity to compare with the current entity. </param>
-    /// <returns> True if the specified entity is equal to the current entity; otherwise, false. </returns>
+    /// <summary>Compares type and assigned ID; distinct entities with default IDs are never equal.</summary>
     public bool Equals(BaseEntity<TKey>? other)
     {
         if (other is null)
@@ -136,29 +49,21 @@ public abstract class BaseEntity<TKey> : IEntity<TKey>, IHasConcurrency, ISoftDe
         if (GetType() != other.GetType())
             return false;
 
-        return AdditionalEqualityCheck(other) && EqualityComparer<TKey>.Default.Equals(Id, other.Id);
+        return !EqualityComparer<TKey>.Default.Equals(Id, default)
+            && EqualityComparer<TKey>.Default.Equals(Id, other.Id)
+            && AdditionalEqualityCheck(other);
     }
 
-    /// <summary>
-    /// Returns the hash code for this entity based on its identifier.
-    /// </summary>
-    /// <returns> A hash code for the current entity. </returns>
-    public override int GetHashCode()
-        => HashCode.Combine(Id);
+    /// <summary>Add identity criteria such as tenant or shard. Overrides must preserve symmetric equality.</summary>
+    protected virtual bool AdditionalEqualityCheck(BaseEntity<TKey> other) => true;
 
-    /// <summary>
-    /// Determines whether the entity is new (has the default identifier value).
-    /// </summary>
-    /// <returns> True if the entity is new; otherwise, false. </returns>
+    public override int GetHashCode()
+        => HashCode.Combine(GetType(), Id);
+
+    /// <summary>Checks for the default ID, not whether the entity has been persisted.</summary>
     public virtual bool IsNew()
         => EqualityComparer<TKey>.Default.Equals(Id, default);
 
-    /// <summary>
-    /// Returns a string representation of the entity.
-    /// </summary>
-    /// <returns> A string containing the entity type name and identifier. </returns>
     public override string ToString()
         => $"[ENTITY: {GetType().Name}] Key = {Id}";
-
-    #endregion Public Methods
 }

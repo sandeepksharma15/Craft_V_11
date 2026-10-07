@@ -1,4 +1,4 @@
-﻿using Craft.Domain.Base;
+using Craft.Domain.Base;
 
 namespace Craft.Domain.Tests.Base;
 
@@ -121,5 +121,5 @@ public class BaseVmTests
         Assert.Equal(expectedIsDeleted, isDeleted);
     }
 
-    public record TestVm : BaseVm;
+    public class TestVm : BaseVm { }
 }

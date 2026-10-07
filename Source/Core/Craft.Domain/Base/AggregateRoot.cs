@@ -11,7 +11,7 @@ public abstract class AggregateRoot<TKey> : BaseEntity<TKey>, IAggregateRoot<TKe
 }
 
 /// <summary>Aggregate root base with the configured default identifier.</summary>
-public abstract class AggregateRoot : AggregateRoot<KeyType>, IAggregateRoot
+public abstract class AggregateRoot : AggregateRoot<KeyType>, IAggregateRoot, IModel
 {
     protected AggregateRoot() { }
 

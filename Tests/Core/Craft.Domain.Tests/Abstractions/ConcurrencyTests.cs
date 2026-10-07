@@ -1,9 +1,39 @@
 ﻿using Craft.Domain.Abstractions;
 
-namespace Craft.Domain.Tests.Contracts;
+namespace Craft.Domain.Tests.Abstractions;
 
 public class ConcurrencyTests
 {
+    #region Private Classes
+
+    private class TestEntity : IHasConcurrency
+    {
+        #region Public Properties
+
+        public string? ConcurrencyStamp { get; set; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
+    [Fact]
+    public void ClearConcurrencyStamp_Should_Set_ConcurrencyStamp_To_Null()
+    {
+        // Arrange
+        IHasConcurrency entity = new TestEntity();
+        entity.SetConcurrencyStamp("test-stamp");
+        Assert.NotNull(entity.ConcurrencyStamp); // Ensure it's set
+
+        // Act
+        entity.ClearConcurrencyStamp();
+
+        // Assert
+        Assert.Null(entity.ConcurrencyStamp);
+    }
+
     [Fact]
     public void GetConcurrencyStamp_Should_ReturnStamp()
     {
@@ -71,23 +101,5 @@ public class ConcurrencyTests
         Assert.NotNull(entity.ConcurrencyStamp);
     }
 
-    [Fact]
-    public void ClearConcurrencyStamp_Should_Set_ConcurrencyStamp_To_Null()
-    {
-        // Arrange
-        IHasConcurrency entity = new TestEntity();
-        entity.SetConcurrencyStamp("test-stamp");
-        Assert.NotNull(entity.ConcurrencyStamp); // Ensure it's set
-
-        // Act
-        entity.ClearConcurrencyStamp();
-
-        // Assert
-        Assert.Null(entity.ConcurrencyStamp);
-    }
-
-    private class TestEntity : IHasConcurrency
-    {
-        public string? ConcurrencyStamp { get; set; }
-    }
+    #endregion Public Methods
 }

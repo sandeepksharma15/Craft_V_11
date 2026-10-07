@@ -1,37 +1,53 @@
 using Craft.Domain.Abstractions;
 using Craft.Domain.Base;
 
-namespace Craft.Domain.Tests.Contracts;
+namespace Craft.Domain.Tests.Abstractions;
 
-public class DataTransferObjectTests
+public class DataObjectTests
 {
     #region Test Implementations
 
     private sealed class ProductDto : BaseDTO
     {
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-    }
+        #region Public Properties
 
-    private sealed class ProductVm : BaseVm
-    {
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public string FormattedPrice => Price.ToString("C");
-    }
 
-    private sealed class ProductModel : BaseModel
-    {
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
+        #endregion Public Properties
     }
 
     private sealed class ProductDtoWithGuid : BaseDTO<Guid>
     {
+        #region Public Properties
+
         public string Name { get; set; } = string.Empty;
+
+        #endregion Public Properties
     }
 
-    #endregion
+    private sealed class ProductModel : BaseModel
+    {
+        #region Public Properties
+
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+
+        #endregion Public Properties
+    }
+
+    private sealed class ProductVm : BaseVm
+    {
+        #region Public Properties
+
+        public string FormattedPrice => Price.ToString("C");
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Test Implementations
 
     #region Interface Implementation Tests
 
@@ -47,17 +63,6 @@ public class DataTransferObjectTests
     }
 
     [Fact]
-    public void BaseVm_ShouldImplementIDataTransferObject()
-    {
-        // Arrange & Act
-        var vm = new ProductVm();
-
-        // Assert
-        Assert.IsType<IDataObject>(vm, exactMatch: false);
-        Assert.IsType<IDataObject<KeyType>>(vm, exactMatch: false);
-    }
-
-    [Fact]
     public void BaseModel_ShouldImplementIDataTransferObject()
     {
         // Arrange & Act
@@ -66,6 +71,17 @@ public class DataTransferObjectTests
         // Assert
         Assert.IsType<IDataObject>(model, exactMatch: false);
         Assert.IsType<IDataObject<KeyType>>(model, exactMatch: false);
+    }
+
+    [Fact]
+    public void BaseVm_ShouldImplementIDataTransferObject()
+    {
+        // Arrange & Act
+        var vm = new ProductVm();
+
+        // Assert
+        Assert.IsType<IDataObject>(vm, exactMatch: false);
+        Assert.IsType<IDataObject<KeyType>>(vm, exactMatch: false);
     }
 
     [Fact]
@@ -78,9 +94,29 @@ public class DataTransferObjectTests
         Assert.IsType<IDataObject<Guid>>(dto, exactMatch: false);
     }
 
-    #endregion
+    #endregion Interface Implementation Tests
 
     #region Interface Inheritance Chain Tests
+
+    [Fact]
+    public void IDataTransferObject_ShouldInheritFromIHasConcurrency()
+    {
+        // Arrange & Act
+        var dto = new ProductDto();
+
+        // Assert
+        Assert.IsType<IHasConcurrency>(dto, exactMatch: false);
+    }
+
+    [Fact]
+    public void IDataTransferObject_ShouldInheritFromIHasId()
+    {
+        // Arrange & Act
+        var dto = new ProductDto();
+
+        // Assert - IDataTransferObject inherits from IModel<TKey> which inherits from IHasId<TKey>
+        Assert.IsType<IHasId<KeyType>>(dto, exactMatch: false);
+    }
 
     [Fact]
     public void IDataTransferObject_ShouldInheritFromIModel()
@@ -94,16 +130,6 @@ public class DataTransferObjectTests
     }
 
     [Fact]
-    public void IDataTransferObject_ShouldInheritFromIHasConcurrency()
-    {
-        // Arrange & Act
-        var dto = new ProductDto();
-
-        // Assert
-        Assert.IsType<IHasConcurrency>(dto, exactMatch: false);
-    }
-
-    [Fact]
     public void IDataTransferObject_ShouldInheritFromISoftDelete()
     {
         // Arrange & Act
@@ -113,33 +139,9 @@ public class DataTransferObjectTests
         Assert.IsType<ISoftDelete>(dto, exactMatch: false);
     }
 
-    [Fact]
-    public void IDataTransferObject_ShouldInheritFromIHasId()
-    {
-        // Arrange & Act
-        var dto = new ProductDto();
-
-        // Assert - IDataTransferObject inherits from IModel<TKey> which inherits from IHasId<TKey>
-        Assert.IsType<IHasId<KeyType>>(dto, exactMatch: false);
-    }
-
-    #endregion
+    #endregion Interface Inheritance Chain Tests
 
     #region Required Properties Tests
-
-    [Fact]
-    public void AllDtoTypes_ShouldHaveIdProperty()
-    {
-        // Arrange
-        var dto = new ProductDto { Id = 42 };
-        var vm = new ProductVm { Id = 43 };
-        var model = new ProductModel { Id = 44 };
-
-        // Assert
-        Assert.Equal((KeyType)42, dto.Id);
-        Assert.Equal((KeyType)43, vm.Id);
-        Assert.Equal((KeyType)44, model.Id);
-    }
 
     [Fact]
     public void AllDtoTypes_ShouldHaveConcurrencyStampProperty()
@@ -157,6 +159,20 @@ public class DataTransferObjectTests
     }
 
     [Fact]
+    public void AllDtoTypes_ShouldHaveIdProperty()
+    {
+        // Arrange
+        var dto = new ProductDto { Id = 42 };
+        var vm = new ProductVm { Id = 43 };
+        var model = new ProductModel { Id = 44 };
+
+        // Assert
+        Assert.Equal((KeyType)42, dto.Id);
+        Assert.Equal((KeyType)43, vm.Id);
+        Assert.Equal((KeyType)44, model.Id);
+    }
+
+    [Fact]
     public void AllDtoTypes_ShouldHaveIsDeletedProperty()
     {
         // Arrange
@@ -170,29 +186,9 @@ public class DataTransferObjectTests
         Assert.True(model.IsDeleted);
     }
 
-    #endregion
+    #endregion Required Properties Tests
 
     #region Polymorphism Tests
-
-    [Fact]
-    public void CanTreatAllTypesAsIDataTransferObject()
-    {
-        // Arrange
-        var dtos = new List<IDataObject>
-        {
-            new ProductDto { Id = 1, Name = "DTO" },
-            new ProductVm { Id = 2, Name = "VM" },
-            new ProductModel { Id = 3, Name = "Model" }
-        };
-
-        // Act & Assert
-        Assert.Equal(3, dtos.Count);
-        Assert.All(dtos, dto =>
-        {
-            Assert.NotEqual(default, dto.Id);
-            Assert.False(dto.IsDeleted);
-        });
-    }
 
     [Fact]
     public void CanFilterByIDataTransferObject()
@@ -214,7 +210,27 @@ public class DataTransferObjectTests
         Assert.Equal(3, dtos.Count);
     }
 
-    #endregion
+    [Fact]
+    public void CanTreatAllTypesAsIDataTransferObject()
+    {
+        // Arrange
+        var dtos = new List<IDataObject>
+        {
+            new ProductDto { Id = 1, Name = "DTO" },
+            new ProductVm { Id = 2, Name = "VM" },
+            new ProductModel { Id = 3, Name = "Model" }
+        };
+
+        // Act & Assert
+        Assert.Equal(3, dtos.Count);
+        Assert.All(dtos, dto =>
+        {
+            Assert.NotEqual(default, dto.Id);
+            Assert.False(dto.IsDeleted);
+        });
+    }
+
+    #endregion Polymorphism Tests
 
     #region Generic Constraint Pattern Tests
 
@@ -243,7 +259,7 @@ public class DataTransferObjectTests
         Assert.Equal(original.IsDeleted, clone.IsDeleted);
     }
 
-    #endregion
+    #endregion Generic Constraint Pattern Tests
 
     #region Default Values Tests
 
@@ -260,18 +276,6 @@ public class DataTransferObjectTests
     }
 
     [Fact]
-    public void BaseVm_ShouldHaveDefaultValues()
-    {
-        // Arrange & Act
-        var vm = new ProductVm();
-
-        // Assert
-        Assert.Equal(default, vm.Id);
-        Assert.Null(vm.ConcurrencyStamp);
-        Assert.False(vm.IsDeleted);
-    }
-
-    [Fact]
     public void BaseModel_ShouldHaveDefaultValues()
     {
         // Arrange & Act
@@ -283,5 +287,17 @@ public class DataTransferObjectTests
         Assert.False(model.IsDeleted);
     }
 
-    #endregion
+    [Fact]
+    public void BaseVm_ShouldHaveDefaultValues()
+    {
+        // Arrange & Act
+        var vm = new ProductVm();
+
+        // Assert
+        Assert.Equal(default, vm.Id);
+        Assert.Null(vm.ConcurrencyStamp);
+        Assert.False(vm.IsDeleted);
+    }
+
+    #endregion Default Values Tests
 }

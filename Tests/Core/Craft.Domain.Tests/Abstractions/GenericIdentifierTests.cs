@@ -1,28 +1,10 @@
 using Craft.Domain.Abstractions;
 
-namespace Craft.Domain.Tests.Contracts;
+namespace Craft.Domain.Tests.Abstractions;
 
 public class GenericIdentifierTests
 {
-    [Fact]
-    public void LongKeys_SupportDefaultAndAssignedValues()
-        => AssertKeyBehavior(0L, 42L);
-
-    [Fact]
-    public void GuidKeys_SupportDefaultAndAssignedValues()
-        => AssertKeyBehavior(Guid.Empty, Guid.NewGuid());
-
-    [Fact]
-    public void NullableKeys_TreatNullAsDefaultAndZeroAsAssigned()
-        => AssertKeyBehavior<long?>(null, 0L);
-
-    [Fact]
-    public void ReferenceKeys_TreatNullAsDefaultWithoutThrowing()
-        => AssertKeyBehavior<string?>(null, "device-1");
-
-    [Fact]
-    public void ReferenceKeys_TreatEmptyStringAsAssigned()
-        => AssertKeyBehavior<string?>(null, string.Empty);
+    #region Private Methods
 
     private static void AssertKeyBehavior<TKey>(TKey defaultValue, TKey assignedValue)
     {
@@ -51,10 +33,44 @@ public class GenericIdentifierTests
         Assert.Equal(assignedValue, tenant.GetTenantId());
     }
 
+    #endregion Private Methods
+
+    #region Private Classes
+
     private sealed class KeyHolder<TKey> : IHasId<TKey>, IHasUser<TKey>, IHasTenant<TKey>
     {
+        #region Public Properties
+
         public TKey Id { get; set; } = default!;
-        public TKey UserId { get; set; } = default!;
         public TKey TenantId { get; set; } = default!;
+        public TKey UserId { get; set; } = default!;
+
+        #endregion Public Properties
     }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
+    [Fact]
+    public void GuidKeys_SupportDefaultAndAssignedValues()
+        => AssertKeyBehavior(Guid.Empty, Guid.NewGuid());
+
+    [Fact]
+    public void LongKeys_SupportDefaultAndAssignedValues()
+        => AssertKeyBehavior(0L, 42L);
+
+    [Fact]
+    public void NullableKeys_TreatNullAsDefaultAndZeroAsAssigned()
+        => AssertKeyBehavior<long?>(null, 0L);
+
+    [Fact]
+    public void ReferenceKeys_TreatEmptyStringAsAssigned()
+        => AssertKeyBehavior<string?>(null, string.Empty);
+
+    [Fact]
+    public void ReferenceKeys_TreatNullAsDefaultWithoutThrowing()
+        => AssertKeyBehavior<string?>(null, "device-1");
+
+    #endregion Public Methods
 }

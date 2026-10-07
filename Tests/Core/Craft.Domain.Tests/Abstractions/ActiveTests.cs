@@ -1,9 +1,24 @@
 ﻿using Craft.Domain.Abstractions;
 
-namespace Craft.Domain.Tests.Contracts;
+namespace Craft.Domain.Tests.Abstractions;
 
 public class ActiveTests
 {
+    #region Private Classes
+
+    private class TestEntity : IHasActive
+    {
+        #region Public Properties
+
+        public bool IsActive { get; set; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
     [Fact]
     public void Activate_Should_SetIsActiveToTrue()
     {
@@ -66,8 +81,5 @@ public class ActiveTests
         Assert.True(entity.IsActive);
     }
 
-    private class TestEntity : IHasActive
-    {
-        public bool IsActive { get; set; }
-    }
+    #endregion Public Methods
 }

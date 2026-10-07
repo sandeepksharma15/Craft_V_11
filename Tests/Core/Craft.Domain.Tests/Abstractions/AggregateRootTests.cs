@@ -1,7 +1,7 @@
 using Craft.Domain.Abstractions;
 using Craft.Domain.Base;
 
-namespace Craft.Domain.Tests.Contracts;
+namespace Craft.Domain.Tests.Abstractions;
 
 public class AggregateRootTests
 {
@@ -9,21 +9,33 @@ public class AggregateRootTests
 
     private sealed class Order : BaseEntity, IAggregateRoot
     {
+        #region Public Properties
+
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
+
+        #endregion Public Properties
     }
 
     private sealed class OrderWithGenericKey : BaseEntity<Guid>, IAggregateRoot<Guid>
     {
+        #region Public Properties
+
         public string CustomerName { get; set; } = string.Empty;
+
+        #endregion Public Properties
     }
 
     private sealed class RegularEntity : BaseEntity
     {
+        #region Public Properties
+
         public string Name { get; set; } = string.Empty;
+
+        #endregion Public Properties
     }
 
-    #endregion
+    #endregion Test Implementations
 
     #region Interface Inheritance Tests
 
@@ -49,21 +61,9 @@ public class AggregateRootTests
         Assert.IsType<IAggregateRoot<Guid>>(order, exactMatch: false);
     }
 
-    #endregion
+    #endregion Interface Inheritance Tests
 
     #region Marker Interface Tests
-
-    [Fact]
-    public void IAggregateRoot_ShouldActAsMarkerInterface()
-    {
-        // Arrange
-        var aggregateRoot = new Order { Id = 1 };
-        var regularEntity = new RegularEntity { Id = 1 };
-
-        // Assert
-        Assert.IsType<IAggregateRoot>(aggregateRoot, exactMatch: false);
-        Assert.False((IEntity)regularEntity is IAggregateRoot);
-    }
 
     [Fact]
     public void CanDistinguishAggregateRootsFromRegularEntities()
@@ -84,19 +84,21 @@ public class AggregateRootTests
         Assert.All(aggregateRoots, ar => Assert.IsType<Order>(ar));
     }
 
-    #endregion
-
-    #region BaseEntity Properties Available Tests
-
     [Fact]
-    public void AggregateRoot_ShouldHaveIdProperty()
+    public void IAggregateRoot_ShouldActAsMarkerInterface()
     {
         // Arrange
-        var order = new Order { Id = 42 };
+        var aggregateRoot = new Order { Id = 1 };
+        var regularEntity = new RegularEntity { Id = 1 };
 
         // Assert
-        Assert.Equal((KeyType)42, order.Id);
+        Assert.IsType<IAggregateRoot>(aggregateRoot, exactMatch: false);
+        Assert.False((IEntity)regularEntity is IAggregateRoot);
     }
+
+    #endregion Marker Interface Tests
+
+    #region BaseEntity Properties Available Tests
 
     [Fact]
     public void AggregateRoot_ShouldHaveConcurrencyStamp()
@@ -110,13 +112,22 @@ public class AggregateRootTests
     }
 
     [Fact]
-    public void AggregateRoot_ShouldSupportSoftDelete()
+    public void AggregateRoot_ShouldHaveIdProperty()
     {
         // Arrange
-        // Act
+        var order = new Order { Id = 42 };
+
+        // Assert
+        Assert.Equal((KeyType)42, order.Id);
+    }
+
+    [Fact]
+    public void AggregateRoot_ShouldSupportSoftDelete()
+    {
+        // Arrange Act
         var order = new Order
         {
-            Id = 1,         
+            Id = 1,
             IsDeleted = true
         };
 
@@ -124,7 +135,7 @@ public class AggregateRootTests
         Assert.True(order.IsDeleted);
     }
 
-    #endregion
+    #endregion BaseEntity Properties Available Tests
 
     #region Type Checking Utility Tests
 
@@ -132,7 +143,7 @@ public class AggregateRootTests
     public void CanUseTypeCheckingForRepositoryPattern()
     {
         // This demonstrates how IAggregateRoot can be used to constrain generic repositories
-        
+
         // Arrange & Act
         bool isAggregateRoot = typeof(IAggregateRoot).IsAssignableFrom(typeof(Order));
         bool isNotAggregateRoot = typeof(IAggregateRoot).IsAssignableFrom(typeof(RegularEntity));
@@ -146,7 +157,7 @@ public class AggregateRootTests
     public void GenericConstraintPattern_ShouldWorkWithIAggregateRoot()
     {
         // This simulates a repository that only accepts aggregate roots
-        
+
         // Arrange
         static void AcceptOnlyAggregateRoot<T>(T entity) where T : IAggregateRoot
         {
@@ -159,5 +170,5 @@ public class AggregateRootTests
         AcceptOnlyAggregateRoot(order);
     }
 
-    #endregion
+    #endregion Type Checking Utility Tests
 }

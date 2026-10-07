@@ -1,4 +1,7 @@
 using Craft.Domain.Exceptions;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Http;
+using Craft.Domain.Exceptions.Infrastructure;
 
 namespace Craft.Domain.Tests.Exceptions;
 

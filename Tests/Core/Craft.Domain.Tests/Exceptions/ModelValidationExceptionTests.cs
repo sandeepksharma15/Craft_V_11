@@ -1,4 +1,4 @@
-using Craft.Domain.Exceptions;
+using Craft.Domain.Exceptions.Domain;
 
 namespace Craft.Domain.Tests.Exceptions;
 

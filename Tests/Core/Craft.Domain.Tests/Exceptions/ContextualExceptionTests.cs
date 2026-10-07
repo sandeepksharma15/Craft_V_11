@@ -1,9 +1,13 @@
-using Craft.Domain.Exceptions;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Http;
+using Craft.Domain.Exceptions.Infrastructure;
 
 namespace Craft.Domain.Tests.Exceptions;
 
 public class ContextualExceptionTests
 {
+    #region Public Methods
+
     [Fact]
     public void Constructors_ContextualValues_ProduceUsefulMessages()
     {
@@ -27,42 +31,6 @@ public class ContextualExceptionTests
             new UnsupportedMediaTypeException("text/plain", ["application/json", "text/csv"]).Message);
         Assert.Contains("bytes exceeds maximum", new PayloadTooLargeException(2000, 1000).Message);
         Assert.StartsWith("Image size", new PayloadTooLargeException("Image", 2000, 1000).Message);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(60)]
-    public void TooManyRequests_RetryDelay_ExposesMetadata(int seconds)
-    {
-        TooManyRequestsException exception = new(seconds);
-        Assert.Equal(TimeSpan.FromSeconds(seconds), exception.RetryAfter);
-        Assert.Equal($"Too many requests. Retry after {seconds} seconds", exception.Message);
-        Assert.Null(new TooManyRequestsException().RetryAfter);
-    }
-
-    [Theory]
-    [InlineData(DateTimeKind.Unspecified)]
-    [InlineData(DateTimeKind.Local)]
-    public void Gone_NonUtcDeletionTime_RejectsInput(DateTimeKind kind)
-        => Assert.Throws<ArgumentException>(() => new GoneException("User", 42, new DateTime(2026, 10, 7, 0, 0, 0, kind)));
-
-    [Theory]
-    [InlineData(-1, 0)]
-    [InlineData(1, -1)]
-    public void PayloadTooLarge_NegativeSizes_RejectsInput(long actual, long maximum)
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new PayloadTooLargeException(actual, maximum));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new PayloadTooLargeException("Image", actual, maximum));
-    }
-
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(1, 1)]
-    [InlineData(0, 1)]
-    public void PayloadTooLarge_WithinLimit_RejectsContradictoryInput(long actual, long maximum)
-    {
-        Assert.Throws<ArgumentException>(() => new PayloadTooLargeException(actual, maximum));
-        Assert.Throws<ArgumentException>(() => new PayloadTooLargeException("Image", actual, maximum));
     }
 
     [Fact]
@@ -91,4 +59,42 @@ public class ContextualExceptionTests
         Assert.Throws<ArgumentException>(() => new TooManyRequestsException(1, " "));
         Assert.Throws<ArgumentNullException>(() => new UnsupportedMediaTypeException("text/plain", supportedTypes: null!));
     }
+
+    [Theory]
+    [InlineData(DateTimeKind.Unspecified)]
+    [InlineData(DateTimeKind.Local)]
+    public void Gone_NonUtcDeletionTime_RejectsInput(DateTimeKind kind)
+        => Assert.Throws<ArgumentException>(() => new GoneException("User", 42, new DateTime(2026, 10, 7, 0, 0, 0, kind)));
+
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(1, -1)]
+    public void PayloadTooLarge_NegativeSizes_RejectsInput(long actual, long maximum)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PayloadTooLargeException(actual, maximum));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PayloadTooLargeException("Image", actual, maximum));
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(0, 1)]
+    public void PayloadTooLarge_WithinLimit_RejectsContradictoryInput(long actual, long maximum)
+    {
+        Assert.Throws<ArgumentException>(() => new PayloadTooLargeException(actual, maximum));
+        Assert.Throws<ArgumentException>(() => new PayloadTooLargeException("Image", actual, maximum));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(60)]
+    public void TooManyRequests_RetryDelay_ExposesMetadata(int seconds)
+    {
+        TooManyRequestsException exception = new(seconds);
+        Assert.Equal(TimeSpan.FromSeconds(seconds), exception.RetryAfter);
+        Assert.Equal($"Too many requests. Retry after {seconds} seconds", exception.Message);
+        Assert.Null(new TooManyRequestsException().RetryAfter);
+    }
+
+    #endregion Public Methods
 }

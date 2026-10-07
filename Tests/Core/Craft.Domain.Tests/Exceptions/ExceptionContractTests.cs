@@ -1,10 +1,16 @@
 using System.Net;
 using Craft.Domain.Exceptions;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Http;
+using Craft.Domain.Exceptions.Infrastructure;
+using Craft.Domain.Exceptions.Security;
 
 namespace Craft.Domain.Tests.Exceptions;
 
 public class ExceptionContractTests
 {
+    #region Public Properties
+
     public static TheoryData<Type, int> ExceptionTypes => new()
     {
         { typeof(AlreadyExistsException), 409 },
@@ -32,6 +38,10 @@ public class ExceptionContractTests
         { typeof(UnprocessableEntityException), 422 }
     };
 
+    #endregion Public Properties
+
+    #region Public Methods
+
     [Theory]
     [MemberData(nameof(ExceptionTypes))]
     public void Constructor_AllExceptionTypes_HaveConsistentImmutableContracts(Type type, int statusCode)
@@ -40,7 +50,7 @@ public class ExceptionContractTests
             [typeof(string), typeof(Exception), typeof(IEnumerable<string>)]);
         Assert.NotNull(constructor);
 
-        CraftException defaults = Assert.IsAssignableFrom<CraftException>(constructor.Invoke([null, null, null]));
+        CraftException defaults = Assert.IsType<CraftException>(constructor.Invoke([null, null, null]), exactMatch: false);
         Assert.False(string.IsNullOrWhiteSpace(defaults.Message));
         Assert.Equal(statusCode, defaults.StatusCodeValue);
         Assert.Equal((HttpStatusCode)statusCode, defaults.StatusCode);
@@ -49,7 +59,7 @@ public class ExceptionContractTests
 
         List<string> errors = ["First", "Second"];
         Exception cause = new("Cause");
-        CraftException custom = Assert.IsAssignableFrom<CraftException>(constructor.Invoke(["Custom", cause, errors]));
+        CraftException custom = Assert.IsType<CraftException>(constructor.Invoke(["Custom", cause, errors]), exactMatch: false);
         errors.Clear();
 
         Assert.Equal("Custom", custom.Message);
@@ -59,27 +69,11 @@ public class ExceptionContractTests
         Assert.Throws<NotSupportedException>(() => ((IList<string>)custom.Errors).Add("Changed"));
     }
 
-    [Fact]
-    public void ExceptionTypes_AreAllIncludedInContractTests()
-    {
-        Type[] actual = typeof(CraftException).Assembly.GetTypes()
-            .Where(type => type.IsSubclassOf(typeof(CraftException)) && !type.IsAbstract && type != typeof(HttpStatusException))
-            .OrderBy(type => type.Name).ToArray();
-        Type[] expected = ExceptionTypes.Select(row => row.Data.Item1).OrderBy(type => type.Name).ToArray();
-        Assert.Equal(expected, actual);
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
     public void Constructor_EmptyMessage_RejectsInput(string message)
         => Assert.Throws<ArgumentException>(() => new BadRequestException(message));
-
-    [Theory]
-    [InlineData(399)]
-    [InlineData(600)]
-    public void HttpStatusException_NonErrorStatus_RejectsInput(int status)
-        => Assert.Throws<ArgumentOutOfRangeException>(() => new HttpStatusException((HttpStatusCode)status, "Error"));
 
     [Fact]
     public void Errors_LazySource_IsEnumeratedOnceAndSnapshotted()
@@ -98,11 +92,29 @@ public class ExceptionContractTests
     }
 
     [Fact]
+    public void ExceptionTypes_AreAllIncludedInContractTests()
+    {
+        Type[] actual = [.. typeof(CraftException).Assembly.GetTypes()
+            .Where(type => type.IsSubclassOf(typeof(CraftException)) && !type.IsAbstract && type != typeof(HttpStatusException))
+            .OrderBy(type => type.Name)];
+        Type[] expected = [.. ExceptionTypes.Select(row => row.Data.Item1).OrderBy(type => type.Name)];
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData(399)]
+    [InlineData(600)]
+    public void HttpStatusException_NonErrorStatus_RejectsInput(int status)
+        => Assert.Throws<ArgumentOutOfRangeException>(() => new HttpStatusException((HttpStatusCode)status, "Error"));
+
+    [Fact]
     public void SpecializedExceptions_AreCatchableByTheirGeneralCategory()
     {
-        Assert.IsAssignableFrom<ConflictException>(new AlreadyExistsException());
-        Assert.IsAssignableFrom<ConflictException>(new ConcurrencyException());
-        Assert.IsAssignableFrom<UnauthorizedException>(new InvalidCredentialsException());
-        Assert.IsAssignableFrom<BadGatewayException>(new ExternalServiceException());
+        Assert.IsType<ConflictException>(new AlreadyExistsException(), exactMatch: false);
+        Assert.IsType<ConflictException>(new ConcurrencyException(), exactMatch: false);
+        Assert.IsType<UnauthorizedException>(new InvalidCredentialsException(), exactMatch: false);
+        Assert.IsType<BadGatewayException>(new ExternalServiceException(), exactMatch: false);
     }
+
+    #endregion Public Methods
 }

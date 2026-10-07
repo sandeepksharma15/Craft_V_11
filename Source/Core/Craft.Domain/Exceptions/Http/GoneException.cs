@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
 /// <summary>The requested resource is no longer available. HTTP 410.</summary>
 public class GoneException : CraftException

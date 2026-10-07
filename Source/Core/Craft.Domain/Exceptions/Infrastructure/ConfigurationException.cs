@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Infrastructure;
 
 /// <summary>A configuration error occurred. HTTP 500.</summary>
 public class ConfigurationException : CraftException

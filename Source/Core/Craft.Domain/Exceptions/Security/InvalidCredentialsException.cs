@@ -1,4 +1,4 @@
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Security;
 
 /// <summary>Invalid credentials. HTTP 401.</summary>
 public class InvalidCredentialsException : UnauthorizedException

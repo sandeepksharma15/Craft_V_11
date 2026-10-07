@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Domain;
 
 /// <summary>A conflict occurred with the current state of the resource. HTTP 409.</summary>
 public class ConflictException : CraftException

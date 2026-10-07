@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
 /// <summary>Bad gateway - invalid response from upstream server. HTTP 502.</summary>
 public class BadGatewayException : CraftException

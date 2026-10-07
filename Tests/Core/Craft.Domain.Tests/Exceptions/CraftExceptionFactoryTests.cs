@@ -1,9 +1,63 @@
 using Craft.Domain.Exceptions;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Http;
+using Craft.Domain.Exceptions.Security;
 
 namespace Craft.Domain.Tests.Exceptions;
 
 public class CraftExceptionFactoryTests
 {
+    #region Public Methods
+
+    [Fact]
+    public void FromException_Cancellation_PreservesIdentityAndToken()
+    {
+        using CancellationTokenSource cancellation = new();
+        OperationCanceledException source = new(cancellation.Token);
+        Assert.Same(source, CraftExceptionFactory.FromException(source));
+        TaskCanceledException taskCancellation = new();
+        Assert.Same(taskCancellation, CraftExceptionFactory.FromException(taskCancellation));
+    }
+
+    [Fact]
+    public void FromException_CraftException_PreservesIdentityAndDetails()
+    {
+        NotFoundException source = new("Missing", errors: ["Detail"]);
+        Assert.Same(source, CraftExceptionFactory.FromException(source));
+    }
+
+    [Fact]
+    public void FromException_Null_RejectsInput()
+        => Assert.Throws<ArgumentNullException>(() => CraftExceptionFactory.FromException(null!));
+
+    [Theory]
+    [InlineData(0, typeof(ForbiddenException))]
+    [InlineData(1, typeof(GatewayTimeoutException))]
+    [InlineData(2, typeof(FeatureNotImplementedException))]
+    [InlineData(3, typeof(InternalServerException))]
+    [InlineData(4, typeof(InternalServerException))]
+    [InlineData(5, typeof(InternalServerException))]
+    [InlineData(6, typeof(InternalServerException))]
+    [InlineData(7, typeof(InternalServerException))]
+    public void FromException_RuntimeFailure_PreservesCauseWithoutInferringClientFault(int sourceType, Type expectedType)
+    {
+        Exception source = sourceType switch
+        {
+            0 => new UnauthorizedAccessException("Denied"),
+            1 => new TimeoutException("Timeout"),
+            2 => new NotImplementedException("Pending"),
+            3 => new ArgumentNullException(message: "Null Argument", null),
+            4 => new ArgumentException("Argument"),
+            5 => new InvalidOperationException("Operation"),
+            6 => new KeyNotFoundException("Key"),
+            _ => new Exception("Unknown")
+        };
+
+        Exception converted = CraftExceptionFactory.FromException(source);
+        Assert.IsType(expectedType, converted);
+        Assert.Same(source, converted.InnerException);
+    }
+
     [Theory]
     [InlineData(400, typeof(BadRequestException))]
     [InlineData(401, typeof(UnauthorizedException))]
@@ -54,52 +108,5 @@ public class CraftExceptionFactoryTests
         Assert.Null(exception.InnerException);
     }
 
-    [Fact]
-    public void FromException_CraftException_PreservesIdentityAndDetails()
-    {
-        NotFoundException source = new("Missing", errors: ["Detail"]);
-        Assert.Same(source, CraftExceptionFactory.FromException(source));
-    }
-
-    [Fact]
-    public void FromException_Cancellation_PreservesIdentityAndToken()
-    {
-        using CancellationTokenSource cancellation = new();
-        OperationCanceledException source = new(cancellation.Token);
-        Assert.Same(source, CraftExceptionFactory.FromException(source));
-        TaskCanceledException taskCancellation = new();
-        Assert.Same(taskCancellation, CraftExceptionFactory.FromException(taskCancellation));
-    }
-
-    [Theory]
-    [InlineData(0, typeof(ForbiddenException))]
-    [InlineData(1, typeof(GatewayTimeoutException))]
-    [InlineData(2, typeof(FeatureNotImplementedException))]
-    [InlineData(3, typeof(InternalServerException))]
-    [InlineData(4, typeof(InternalServerException))]
-    [InlineData(5, typeof(InternalServerException))]
-    [InlineData(6, typeof(InternalServerException))]
-    [InlineData(7, typeof(InternalServerException))]
-    public void FromException_RuntimeFailure_PreservesCauseWithoutInferringClientFault(int sourceType, Type expectedType)
-    {
-        Exception source = sourceType switch
-        {
-            0 => new UnauthorizedAccessException("Denied"),
-            1 => new TimeoutException("Timeout"),
-            2 => new NotImplementedException("Pending"),
-            3 => new ArgumentNullException("Value"),
-            4 => new ArgumentException("Argument"),
-            5 => new InvalidOperationException("Operation"),
-            6 => new KeyNotFoundException("Key"),
-            _ => new Exception("Unknown")
-        };
-
-        Exception converted = CraftExceptionFactory.FromException(source);
-        Assert.IsType(expectedType, converted);
-        Assert.Same(source, converted.InnerException);
-    }
-
-    [Fact]
-    public void FromException_Null_RejectsInput()
-        => Assert.Throws<ArgumentNullException>(() => CraftExceptionFactory.FromException(null!));
+    #endregion Public Methods
 }

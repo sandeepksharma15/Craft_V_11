@@ -1,14 +1,39 @@
 using System.Net;
+using Craft.Domain.Exceptions.Domain;
+using Craft.Domain.Exceptions.Http;
+using Craft.Domain.Exceptions.Security;
 
 namespace Craft.Domain.Exceptions;
 
-/// <summary>Converts failures while preserving their causes and error details.</summary>
+/// <summary>
+/// Converts failures while preserving their causes and error details.
+/// </summary>
 public static class CraftExceptionFactory
 {
-    /// <summary>Maps an error status (400–599); unrecognized error statuses are preserved.</summary>
-    public static CraftException FromStatusCode(int statusCode, string message,
-        IEnumerable<string>? errors = null, Exception? innerException = null)
-        => statusCode switch
+    #region Public Methods
+
+    /// <summary>
+    /// Preserves cancellation and Craft exceptions; runtime faults are not inferred to be client errors.
+    /// </summary>
+    public static Exception FromException(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        return exception switch
+        {
+            CraftException or OperationCanceledException => exception,
+            UnauthorizedAccessException => new ForbiddenException(innerException: exception),
+            TimeoutException => new GatewayTimeoutException(innerException: exception),
+            NotImplementedException => new FeatureNotImplementedException(innerException: exception),
+            _ => new InternalServerException(innerException: exception)
+        };
+    }
+
+    /// <summary>
+    /// Maps an error status (400–599); unrecognized error statuses are preserved.
+    /// </summary>
+    public static CraftException FromStatusCode(int statusCode, string message, IEnumerable<string>? errors = null,
+        Exception? innerException = null) => statusCode switch
         {
             400 => new BadRequestException(message, innerException, errors),
             401 => new UnauthorizedException(message, innerException, errors),
@@ -29,18 +54,5 @@ public static class CraftExceptionFactory
             _ => new HttpStatusException((HttpStatusCode)statusCode, message, innerException, errors)
         };
 
-    /// <summary>Preserves cancellation and Craft exceptions; runtime faults are not inferred to be client errors.</summary>
-    public static Exception FromException(Exception exception)
-    {
-        ArgumentNullException.ThrowIfNull(exception);
-
-        return exception switch
-        {
-            CraftException or OperationCanceledException => exception,
-            UnauthorizedAccessException => new ForbiddenException(innerException: exception),
-            TimeoutException => new GatewayTimeoutException(innerException: exception),
-            NotImplementedException => new FeatureNotImplementedException(innerException: exception),
-            _ => new InternalServerException(innerException: exception)
-        };
-    }
+    #endregion Public Methods
 }

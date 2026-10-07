@@ -1,4 +1,4 @@
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Domain;
 
 /// <summary>This resource already exists. HTTP 409.</summary>
 public class AlreadyExistsException : ConflictException

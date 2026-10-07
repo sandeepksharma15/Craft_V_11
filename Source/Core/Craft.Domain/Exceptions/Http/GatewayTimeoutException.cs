@@ -1,10 +1,14 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
-/// <summary>Gateway timeout - no response from upstream server. HTTP 504.</summary>
+/// <summary>
+/// Gateway timeout - no response from upstream server. HTTP 504.
+/// </summary>
 public class GatewayTimeoutException : CraftException
 {
+    #region Public Constructors
+
     public GatewayTimeoutException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
         : base(message ?? "Gateway timeout - no response from upstream server", HttpStatusCode.GatewayTimeout, innerException, errors) { }
 
@@ -14,4 +18,6 @@ public class GatewayTimeoutException : CraftException
         ArgumentException.ThrowIfNullOrWhiteSpace(upstreamService);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(timeoutSeconds);
     }
+
+    #endregion Public Constructors
 }

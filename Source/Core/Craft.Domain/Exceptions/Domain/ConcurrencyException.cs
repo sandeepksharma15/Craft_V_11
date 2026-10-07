@@ -1,8 +1,12 @@
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Domain;
 
-/// <summary>A concurrency conflict occurred. The record has been modified by another user. HTTP 409.</summary>
+/// <summary>
+/// A concurrency conflict occurred. The record has been modified by another user. HTTP 409.
+/// </summary>
 public class ConcurrencyException : ConflictException
 {
+    #region Public Constructors
+
     public ConcurrencyException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
         : base(message ?? "A concurrency conflict occurred. The record has been modified by another user.", innerException, errors) { }
 
@@ -19,4 +23,6 @@ public class ConcurrencyException : ConflictException
         ArgumentException.ThrowIfNullOrWhiteSpace(entityName);
         ArgumentNullException.ThrowIfNull(key);
     }
+
+    #endregion Public Constructors
 }

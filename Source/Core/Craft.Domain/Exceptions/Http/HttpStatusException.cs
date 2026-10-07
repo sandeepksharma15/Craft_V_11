@@ -1,11 +1,17 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
-/// <summary>Represents an HTTP error status without a dedicated Craft exception type.</summary>
+/// <summary>
+/// Represents an HTTP error status without a dedicated Craft exception type.
+/// </summary>
 public class HttpStatusException : CraftException
 {
+    #region Public Constructors
+
     public HttpStatusException(HttpStatusCode statusCode, string message,
         Exception? innerException = null, IEnumerable<string>? errors = null)
         : base(message, statusCode, innerException, errors) { }
+
+    #endregion Public Constructors
 }

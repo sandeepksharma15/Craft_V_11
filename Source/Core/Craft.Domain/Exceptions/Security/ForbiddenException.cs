@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Security;
 
 /// <summary>Access forbidden. HTTP 403.</summary>
 public class ForbiddenException : CraftException

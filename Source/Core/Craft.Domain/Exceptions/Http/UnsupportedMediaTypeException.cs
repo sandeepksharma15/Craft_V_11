@@ -1,10 +1,14 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
-/// <summary>The media type is not supported. HTTP 415.</summary>
+/// <summary>
+/// The media type is not supported. HTTP 415.
+/// </summary>
 public class UnsupportedMediaTypeException : CraftException
 {
+    #region Public Constructors
+
     public UnsupportedMediaTypeException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
         : base(message ?? "The media type is not supported", HttpStatusCode.UnsupportedMediaType, innerException, errors) { }
 
@@ -13,4 +17,6 @@ public class UnsupportedMediaTypeException : CraftException
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(mediaType);
     }
+
+    #endregion Public Constructors
 }

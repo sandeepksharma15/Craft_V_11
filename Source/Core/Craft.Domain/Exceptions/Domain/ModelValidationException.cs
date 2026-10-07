@@ -1,21 +1,14 @@
 using System.Collections.ObjectModel;
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Domain;
 
-/// <summary>Validation failure with immutable errors keyed by property name. HTTP 400.</summary>
+/// <summary>
+/// Validation failure with immutable errors keyed by property name. HTTP 400.
+/// </summary>
 public class ModelValidationException : CraftException
 {
-    public ModelValidationException(string? message = null, Exception? innerException = null,
-        IEnumerable<string>? errors = null)
-        : base(message ?? "One or more validation failures have occurred.", HttpStatusCode.BadRequest, innerException, errors)
-    {
-        ValidationErrors = ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty;
-    }
-
-    public ModelValidationException(IDictionary<string, string[]> validationErrors, string? message = null,
-        Exception? innerException = null)
-        : this(message ?? "One or more validation failures have occurred.", Snapshot(validationErrors), innerException) { }
+    #region Private Constructors
 
     private ModelValidationException(string message, IReadOnlyDictionary<string, IReadOnlyList<string>> validationErrors,
         Exception? innerException)
@@ -24,12 +17,14 @@ public class ModelValidationException : CraftException
         ValidationErrors = validationErrors;
     }
 
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; }
+    #endregion Private Constructors
+
+    #region Private Methods
 
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> Snapshot(IDictionary<string, string[]> validationErrors)
     {
         ArgumentNullException.ThrowIfNull(validationErrors);
-        Dictionary<string, IReadOnlyList<string>> snapshot = new(StringComparer.Ordinal);
+        Dictionary<string, IReadOnlyList<string>> snapshot = [with(StringComparer.Ordinal)];
 
         foreach ((string property, string[] errors) in validationErrors)
         {
@@ -39,4 +34,27 @@ public class ModelValidationException : CraftException
 
         return new ReadOnlyDictionary<string, IReadOnlyList<string>>(snapshot);
     }
+
+    #endregion Private Methods
+
+    #region Public Constructors
+
+    public ModelValidationException(string? message = null, Exception? innerException = null,
+                IEnumerable<string>? errors = null)
+        : base(message ?? "One or more validation failures have occurred.", HttpStatusCode.BadRequest, innerException, errors)
+    {
+        ValidationErrors = ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty;
+    }
+
+    public ModelValidationException(IDictionary<string, string[]> validationErrors, string? message = null,
+        Exception? innerException = null)
+        : this(message ?? "One or more validation failures have occurred.", Snapshot(validationErrors), innerException) { }
+
+    #endregion Public Constructors
+
+    #region Public Properties
+
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> ValidationErrors { get; }
+
+    #endregion Public Properties
 }

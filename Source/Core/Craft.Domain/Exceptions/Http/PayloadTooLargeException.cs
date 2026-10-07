@@ -1,10 +1,14 @@
 using System.Net;
 
-namespace Craft.Domain.Exceptions;
+namespace Craft.Domain.Exceptions.Http;
 
-/// <summary>The request payload is too large. HTTP 413.</summary>
+/// <summary>
+/// The request payload is too large. HTTP 413.
+/// </summary>
 public class PayloadTooLargeException : CraftException
 {
+    #region Public Constructors
+
     public PayloadTooLargeException(string? message = null, Exception? innerException = null, IEnumerable<string>? errors = null)
         : base(message ?? "The request payload is too large", HttpStatusCode.RequestEntityTooLarge, innerException, errors) { }
 
@@ -26,4 +30,6 @@ public class PayloadTooLargeException : CraftException
         if (actualSize <= maxSize)
             throw new ArgumentException("Actual size must exceed the maximum size.", nameof(actualSize));
     }
+
+    #endregion Public Constructors
 }

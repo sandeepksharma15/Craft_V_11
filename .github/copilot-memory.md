@@ -31,7 +31,7 @@
 
 - 2026-10-07: DomainEventBase requires UTC timestamps and supports restoring a non-empty event ID; event equality remains ID-only. Concrete JSON event constructors must forward persisted metadata rather than regenerate it.
 
-- 2026-10-07: Craft exceptions share Craft.Domain.Exceptions; named types have fixed statuses and immutable error snapshots. ToErrorInfo hides server diagnostics by default; FromException preserves cancellation and never infers client fault from runtime argument errors.
+- 2026-10-07: Craft exceptions are grouped under Craft.Domain.Exceptions subnamespaces; named types have fixed statuses and immutable error snapshots. ToErrorInfo hides server diagnostics by default; FromException preserves cancellation and never infers client fault from runtime argument errors.
 
 ## Patterns & Conventions
 
@@ -44,3 +44,5 @@
 - 2026-09-30: Reflection property value APIs support case-sensitive dotted paths with public-only access by default and explicit non-public opt-in; use strict assignment and write back nested structs. Setters require reference-type roots and reject init-only properties.
 
 - 2026-09-30: Generate simple DOCX/PDF test inputs during Arrange with Craft.Testing.Documents.TestDocumentFactory and isolated disposable Craft.Testing.IO.TemporaryDirectory; avoid copy-to-output binary fixtures for Live Testing portability.
+
+- 2026-10-07: All runnable test projects use native Microsoft Testing Platform via global.json, xunit.v3 and coverlet.MTP; avoid VSTest packages and legacy TestingPlatformDotnetTestSupport. Coverage reports have timestamped filenames.

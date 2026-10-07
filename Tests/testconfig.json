@@ -1,0 +1,12 @@
+{
+  "platformOptions": {
+    "Coverlet": {
+      "include": "[Craft.*]*",
+      "exclude": "[*.Tests]*,[Craft.Testing]*",
+      "excludeByAttribute": "ExcludeFromCodeCoverageAttribute,GeneratedCodeAttribute",
+      "format": "cobertura,opencover",
+      "includeTestAssembly": false,
+      "skipAutoProps": false
+    }
+  }
+}

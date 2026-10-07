@@ -20,8 +20,6 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      DOTNET_TEST_RUNNER: Microsoft.Testing.Platform
 
     steps:
       - uses: actions/checkout@v7
@@ -38,18 +36,15 @@ jobs:
         run: dotnet build Craft_V_11.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test Craft_V_11.slnx --configuration Release --no-build
+        run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
       - name: Verify exception coverage
-        env:
-          DOTNET_TEST_RUNNER: VSTest
         run: |
-          dotnet test Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj \
+          dotnet test --project Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj \
             --configuration Release --no-build \
-            -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
-            --filter "FullyQualifiedName~Craft.Domain.Tests.Exceptions" \
-            --collect:"XPlat Code Coverage" --results-directory artifacts/exception-coverage \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="cobertura,opencover" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Domain]Craft.Domain.Exceptions.*"
+            --coverlet --results-directory artifacts/exception-coverage \
+            --coverlet-output-format cobertura --coverlet-output-format opencover \
+            --coverlet-include "[Craft.Domain]Craft.Domain.Exceptions.*"
           python3 .github/scripts/verify-exception-coverage.py artifacts/exception-coverage
 
       - name: Upload exception coverage
@@ -61,20 +56,20 @@ jobs:
           retention-days: 7
 
       - name: Verify utility coverage
-        env:
-          DOTNET_TEST_RUNNER: VSTest
         run: |
-          dotnet test Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \
+          dotnet test --project Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj \
             --configuration Release --no-build \
-            -p:TestingPlatformDotnetTestSupport=false -p:IsTestingPlatformApplication=false \
-            --filter "FullyQualifiedName~StyleBuilder|FullyQualifiedName~ValueBuilder|FullyQualifiedName~Craft.Utilities.Tests.Passwords|FullyQualifiedName~Craft.Utilities.Tests.Helpers" \
-            --collect:"XPlat Code Coverage" --results-directory artifacts/utility-coverage \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format="cobertura,opencover" DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*,[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder,[Craft.Utilities]Craft.Utilities.Passwords.*,[Craft.Utilities]Craft.Utilities.Helpers.*"
+            --coverlet --results-directory artifacts/utility-coverage \
+            --coverlet-output-format cobertura --coverlet-output-format opencover \
+            --coverlet-include "[Craft.Utilities]Craft.Utilities.Builders.StyleBuilder*" \
+            --coverlet-include "[Craft.Utilities]Craft.Utilities.Builders.ValueBuilder" \
+            --coverlet-include "[Craft.Utilities]Craft.Utilities.Passwords.*" \
+            --coverlet-include "[Craft.Utilities]Craft.Utilities.Helpers.*"
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
-          reports = list(Path("artifacts/utility-coverage").rglob("coverage.cobertura.xml"))
+          reports = list(Path("artifacts/utility-coverage").rglob("coverage.cobertura*.xml"))
           if len(reports) != 1:
               raise SystemExit(f"Expected one coverage report, found {len(reports)}")
           report = ET.parse(reports[0]).getroot()

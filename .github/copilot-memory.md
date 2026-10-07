@@ -29,6 +29,8 @@
 
 - 2026-10-07: Domain transfer bases are mutable classes with reference equality. Entity equality requires an assigned ID and the same runtime type; configure key generation in persistence rather than a generic Identity annotation.
 
+- 2026-10-07: DomainEventBase requires UTC timestamps and supports restoring a non-empty event ID; event equality remains ID-only. Concrete JSON event constructors must forward persisted metadata rather than regenerate it.
+
 ## Patterns & Conventions
 
 <!-- Recurring patterns discovered in the codebase that new code should follow. -->

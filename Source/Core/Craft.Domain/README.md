@@ -465,6 +465,25 @@ For expected business failures, prefer the consuming application's result abstra
 throwing exceptions. A future separate HTTP/infrastructure error library would decouple
 transport concerns from pure domain models; this review keeps package boundaries unchanged.
 
+## Validation patterns
+
+`DomainConstants` exposes .NET regex constants for use with `RegularExpressionAttribute` or `Regex`. All patterns match the whole input using `\A` and `\z`, even with `RegexOptions.Multiline`; no automatic trimming occurs. Direct regex matching rejects empty input. DataAnnotations treats null/empty values as valid, so add `[Required]` separately.
+
+- Names follow the existing ASCII, uppercase-first policy; this is not a universal personal-name validator.
+- Alphabetic/alphanumeric codes use uppercase ASCII letters. Hyphenated codes allow uppercase letters, digits and hyphens in any order, including leading, trailing or repeated hyphens.
+- Digit patterns use ASCII digits. Positive integers permit zeros after the first digit and reject leading zeros. Numbers are unsigned, period-separated integers/decimals; `.5` is accepted, but `5.`, signs, exponents and commas are not.
+- Phone formatting permits Unicode digits, ordinary spaces, parentheses, hyphens and an optional leading `+`; at least one digit is required. It does not validate country-specific lengths or balanced parentheses.
+- Email is a basic ASCII shape check, not full RFC validation or proof of deliverability. URL matching only checks a lowercase HTTP/HTTPS prefix and a nonempty remainder without whitespace/control characters; use `Uri.TryCreate` and explicit scheme/host policy for URI validation.
+
+Use a finite timeout for untrusted input; these constants also support `RegexOptions.NonBacktracking`:
+
+```csharp
+var valid = Regex.IsMatch(value, DomainConstants.AlphaNumCodeRegEx,
+    RegexOptions.NonBacktracking, TimeSpan.FromSeconds(1));
+```
+
+This corrects previous partial/empty matches: for example, `AB1` is no longer an alphabetic code and `12a` is no longer digits-only. No regex objects, caches or new dependencies are needed for attribute consumers.
+
 ## Localization
 
 `DomainResources` supplies validation templates from one English `.resx` catalog. Use resource-backed attributes instead of embedding message constants:

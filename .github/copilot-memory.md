@@ -48,3 +48,5 @@
 - 2026-10-07: All runnable test projects use native Microsoft Testing Platform via global.json, xunit.v3 and coverlet.MTP; avoid VSTest packages and legacy TestingPlatformDotnetTestSupport. Coverage reports have timestamped filenames.
 
 - 2026-10-07: DomainExtensions lives with its contracts in Craft.Domain.Abstractions. Null/default IDs never match tenant/user associations; IsNullOrDefault uses IHasId and exact default-key semantics (negative IDs are assigned). Parsing and creator-audit aliases do not belong in these extensions.
+
+- 2026-10-28: EntityHelper only inspects entity/tenant type contracts. Use entity Equals and existing identifier APIs instead of competing equality/default-ID helpers. Key lookup supports open generics and rejects ambiguous IEntity<TKey> contracts; TryGetEntityKeyType returns false/null for missing or ambiguous contracts.

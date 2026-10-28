@@ -69,6 +69,14 @@ Import `Craft.Domain.Abstractions` to use `IsNullOrDefault`, `BelongsToTenant` a
 
 `SetCreatedBy` was removed because `IHasUser` expresses a user association, not creation auditing. Set `UserId` directly or call `SetUserId` through the interface. The general-purpose `string.Parse<T>` extension was removed; use the target type's `Parse`/`TryParse` (or `IParsable<T>` in generic code), with an explicit culture where relevant. Failed conversions no longer silently become default IDs through this library.
 
+## Entity Type Inspection
+
+`Craft.Domain.Helpers.EntityHelper` provides type inspection without imposing entity equality rules. `IsEntity()` and `IsMultiTenant()` recognize any key type, inherited contracts, interfaces and open generic types. Their `<TKey>` overloads check assignability to a specific closed contract. Tenant-associated objects need not be entities.
+
+`GetEntityKeyType()` returns the unique `IEntity<TKey>` key type; for open generic entities this may be a generic parameter. `TryGetEntityKeyType(out Type? keyType)` returns false and null for non-entities or multiple distinct entity key contracts. The strict method throws `ArgumentException` in those cases. All inspection methods reject null types with `ArgumentNullException`.
+
+Removed APIs: use entity `Equals` (including `BaseEntity<TKey>` custom equality hooks) instead of `EntityEquals`. Use `IHasId<TKey>.IsNew` for the default-ID check or `IsNullOrDefault()` for nullable objects instead of `HasDefaultId`; negative IDs are assigned, and persistence-specific temporary keys belong in the persistence layer. Replace `EntityHelper.IsMultiTenant<TEntity>()` with `typeof(TEntity).IsMultiTenant()`.
+
 ## Features
 
 - ✅ **Base Entity Classes** - `BaseEntity<TKey>` with identity, concurrency, and soft-delete

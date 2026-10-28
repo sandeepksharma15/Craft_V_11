@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net11.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<Authors>Sandeep SHARMA</Authors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="coverlet.MTP" Version="10.1.0" PrivateAssets="all" />
+		<PackageReference Include="Moq" Version="4.21.0" />
+		<PackageReference Include="xunit.v3" Version="4.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\Source\Security\Craft.CryptKey\Craft.CryptKey.csproj" />
+	  <ProjectReference Include="..\..\Support\Craft.Testing\Craft.Testing.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+	</ItemGroup>
+
+</Project>

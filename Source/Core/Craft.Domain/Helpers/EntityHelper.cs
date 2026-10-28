@@ -10,7 +10,7 @@ public static class EntityHelper
         public bool IsEntity()
         {
             ArgumentNullException.ThrowIfNull(type);
-            return HasContract(type, typeof(IEntity<>));
+            return type.HasImplementedInterface(typeof(IEntity<>));
         }
 
         public bool IsEntity<TKey>()
@@ -22,7 +22,7 @@ public static class EntityHelper
         public bool IsMultiTenant()
         {
             ArgumentNullException.ThrowIfNull(type);
-            return HasContract(type, typeof(IHasTenant<>));
+            return type.HasImplementedInterface(typeof(IHasTenant<>));
         }
 
         public bool IsMultiTenant<TKey>()
@@ -43,7 +43,7 @@ public static class EntityHelper
             ArgumentNullException.ThrowIfNull(type);
             keyType = null;
 
-            if (IsContract(type, typeof(IEntity<>)))
+            if (type.IsGenericTypeOf(typeof(IEntity<>)))
             {
                 keyType = type.GetGenericArguments()[0];
                 return true;
@@ -51,7 +51,7 @@ public static class EntityHelper
 
             foreach (var contract in type.GetInterfaces())
             {
-                if (!IsContract(contract, typeof(IEntity<>)))
+                if (!contract.IsGenericTypeOf(typeof(IEntity<>)))
                     continue;
 
                 if (keyType is not null)
@@ -66,20 +66,4 @@ public static class EntityHelper
             return keyType is not null;
         }
     }
-
-    private static bool HasContract(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type type, Type definition)
-    {
-        if (IsContract(type, definition))
-            return true;
-
-        foreach (var contract in type.GetInterfaces())
-            if (IsContract(contract, definition))
-                return true;
-
-        return false;
-    }
-
-    private static bool IsContract(Type type, Type definition)
-        => type.IsGenericType && type.GetGenericTypeDefinition() == definition;
 }

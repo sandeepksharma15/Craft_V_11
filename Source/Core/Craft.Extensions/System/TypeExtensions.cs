@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
@@ -51,10 +52,17 @@ public static class TypeExtensions
         public bool IsEnumType()
             => type?.GetNonNullableType()?.IsEnum == true;
 
-        public bool HasImplementedInterface(Type? interfaceType)
-            => type is not null
-                && interfaceType?.IsInterface == true
-                && interfaceType.IsAssignableFrom(type);
+        /// <summary>Matches the type itself against a generic definition, without searching its ancestors.</summary>
+        public bool IsGenericTypeOf(Type genericTypeDefinition)
+        {
+            ArgumentNullException.ThrowIfNull(genericTypeDefinition);
+
+            if (!genericTypeDefinition.IsGenericTypeDefinition)
+                throw new ArgumentException("A generic type definition is required.", nameof(genericTypeDefinition));
+
+            return type is not null && type.IsGenericType
+                && type.GetGenericTypeDefinition() == genericTypeDefinition;
+        }
 
         public bool IsDerivedFromClass(Type baseType)
         {
@@ -77,6 +85,28 @@ public static class TypeExtensions
 
         public string? GetClassName()
             => type?.ToString().GetStringAfterLastDelimiter();
+    }
+
+    extension([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type? type)
+    {
+        /// <summary>Matches an interface or its implementations, including open generic interface definitions.</summary>
+        public bool HasImplementedInterface(Type? interfaceType)
+        {
+            if (type is null || interfaceType?.IsInterface != true)
+                return false;
+
+            if (!interfaceType.IsGenericTypeDefinition)
+                return interfaceType.IsAssignableFrom(type);
+
+            if (type.IsGenericTypeOf(interfaceType))
+                return true;
+
+            foreach (var implemented in type.GetInterfaces())
+                if (implemented.IsGenericTypeOf(interfaceType))
+                    return true;
+
+            return false;
+        }
     }
 
     extension(MemberInfo? member)

@@ -4,59 +4,36 @@ namespace Craft.Domain.Helpers;
 
 public static class DomainConstants
 {
-    #region Regular Expressions
+    // Whole-input .NET patterns; callers choose regex options and a finite match timeout.
+    /// <summary>ASCII name starting uppercase; allows letters, spaces, periods, apostrophes and parentheses.</summary>
+    public const string NameRegExpr = @"\A[A-Z][A-Za-z.'() ]*\z";
 
-    /// <summary>
-    /// Regular expression for validating names (first character uppercase, allows alphabets and special characters like .'()).
-    /// </summary>
-    public const string NameRegExpr = @"^[A-Z][A-Za-z\.\'\(\) ]*";
+    /// <summary>One or more uppercase ASCII letters.</summary>
+    public const string AlphaCodeRegEx = @"\A[A-Z]+\z";
 
-    /// <summary>
-    /// Regular expression for validating uppercase alphabetic codes.
-    /// </summary>
-    public const string AlphaCodeRegEx = "^[A-Z]+";
+    /// <summary>Uppercase ASCII letters and digits, starting with a letter.</summary>
+    public const string AlphaNumCodeRegEx = @"\A[A-Z][A-Z0-9]*\z";
 
-    /// <summary>
-    /// Regular expression for validating alphanumeric codes (first character uppercase).
-    /// </summary>
-    public const string AlphaNumCodeRegEx = "^[A-Z][A-Z0-9]*";
+    /// <summary>One or more ASCII digits, including leading zeros.</summary>
+    public const string DigitsRegEx = @"\A[0-9]+\z";
 
-    /// <summary>
-    /// Regular expression for validating digit-only strings.
-    /// </summary>
-    public const string DigitsRegEx = "^[0-9]+";
+    /// <summary>Positive ASCII integer without leading zeros.</summary>
+    public const string DigitsGreaterThanZero = @"\A[1-9][0-9]*\z";
 
-    /// <summary>
-    /// Regular expression for validating positive integers (no leading zeros).
-    /// </summary>
-    public const string DigitsGreaterThanZero = "^[1-9]+";
+    /// <summary>Unsigned ASCII integer or decimal using a period; allows <c>.5</c> but not <c>5.</c>.</summary>
+    public const string NumberRegEx = @"\A(?:[0-9]+|[0-9]*\.[0-9]+)\z";
 
-    /// <summary>
-    /// Regular expression for validating numbers (integers and decimals).
-    /// </summary>
-    public const string NumberRegEx = "(^[0-9]*[.])?[0-9]+";
+    /// <summary>Nonempty uppercase ASCII letters, digits and hyphens in any order.</summary>
+    public const string AlphaNumCodeWithHyphenRegEx = @"\A[A-Z0-9-]+\z";
 
-    /// <summary>
-    /// Regular expression for validating alphanumeric codes with hyphens.
-    /// </summary>
-    public const string AlphaNumCodeWithHyphenRegEx = @"[A-Z]*[0-9\-]*";
+    /// <summary>Basic ASCII email format; not complete RFC validation or a deliverability check.</summary>
+    public const string EmailRegExpr = @"\A[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\z";
 
-    /// <summary>
-    /// Regular expression for validating email addresses according to RFC standards.
-    /// </summary>
-    public const string EmailRegExpr = @"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$";
+    /// <summary>Basic phone format: optional leading +, Unicode digits, spaces, hyphens and parentheses; requires a digit.</summary>
+    public const string PhoneRegExpr = @"\A\+?[ ()-]*\d[\d ()-]*\z";
 
-    /// <summary>
-    /// Regular expression for validating phone numbers (allows +, digits, spaces, hyphens, and parentheses).
-    /// </summary>
-    public const string PhoneRegExpr = @"^\+?[\d\s\-\(\)]+$";
-
-    /// <summary>
-    /// Regular expression for validating URLs (HTTP/HTTPS).
-    /// </summary>
-    public const string UrlRegExpr = @"^https?://[^\s]+$";
-
-    #endregion
+    /// <summary>Lowercase HTTP/HTTPS prefix with a nonempty remainder without whitespace or control characters; not URI validation.</summary>
+    public const string UrlRegExpr = @"\Ahttps?://[^\s\p{Cc}]+\z";
 
     /// <summary>Resource-backed templates with FluentValidation's property-name placeholder.</summary>
     public static class Fv

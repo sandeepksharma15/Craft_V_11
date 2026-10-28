@@ -11,6 +11,56 @@ namespace Craft.Domain.Tests.Resources;
 
 public class DomainResourcesTests
 {
+    #region Private Classes
+
+    private sealed class Model
+    {
+        #region Public Properties
+
+        [Range(18, 65, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.RangeError))]
+        public int Age { get; init; }
+
+        [Display(Name = "Full name")]
+        [Required(ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.RequiredError))]
+        [MinLength(2, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.MinLengthError))]
+        [MaxLength(5, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.MaxLengthError))]
+        public string? Name { get; init; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
+    [Fact]
+    public async Task AmbientCultures_AreIsolatedAcrossAsyncOperations()
+    {
+        var original = CultureInfo.CurrentCulture;
+        var originalUi = CultureInfo.CurrentUICulture;
+        static async Task<string> FormatInCulture(string name)
+        {
+            var previous = CultureInfo.CurrentCulture;
+            var previousUi = CultureInfo.CurrentUICulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
+                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("de-DE");
+                await Task.Yield();
+                return DomainResources.FormatRangeError("Price", 1.5m, 2.5m);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = previous;
+                CultureInfo.CurrentUICulture = previousUi;
+            }
+        }
+        var results = await Task.WhenAll(FormatInCulture("fr-FR"), FormatInCulture("en-US"));
+        Assert.Equal(["Price must be between 1,5 and 2,5", "Price must be between 1.5 and 2.5"], results);
+        Assert.Same(original, CultureInfo.CurrentCulture);
+        Assert.Same(originalUi, CultureInfo.CurrentUICulture);
+    }
+
     [Fact]
     public void Catalog_ContainsExactlyThePublicTemplates_WithoutMalformedOrRedundantText()
     {
@@ -39,82 +89,11 @@ public class DomainResourcesTests
         Assert.Equal("en", typeof(DomainResources).Assembly.GetCustomAttribute<NeutralResourcesLanguageAttribute>()!.CultureName);
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" \t")]
-    public void Lookup_RejectsMissingNames(string? name)
-        => Assert.ThrowsAny<ArgumentException>(() => DomainResources.GetString(name!));
-
-    [Theory]
-    [InlineData("Unknown")]
-    [InlineData("requirederror")]
-    public void Lookup_RejectsUnknownOrIncorrectlyCasedNames(string name)
-        => Assert.Throws<KeyNotFoundException>(() => DomainResources.GetString(name));
-
     [Fact]
-    public void Lookup_FallsBackToEnglish()
-        => Assert.Equal("{0} is required", DomainResources.GetString(nameof(DomainResources.RequiredError), CultureInfo.GetCultureInfo("fr-FR")));
-
-    [Fact]
-    public void Format_RejectsInvalidArguments()
+    public void DataAnnotations_AcceptsValidValues()
     {
-        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(nameof(DomainResources.RequiredError), (object?[])null!));
-        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(null!, nameof(DomainResources.RequiredError), "Name"));
-        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(CultureInfo.InvariantCulture, nameof(DomainResources.RequiredError), (object?[])null!));
-        Assert.Throws<FormatException>(() => DomainResources.Format(nameof(DomainResources.RangeError), "Age"));
-        Assert.Throws<FormatException>(() => DomainResources.Format(CultureInfo.InvariantCulture, nameof(DomainResources.RangeError), "Age"));
-        Assert.Throws<KeyNotFoundException>(() => DomainResources.Format("Missing"));
-        Assert.Throws<KeyNotFoundException>(() => DomainResources.Format(CultureInfo.InvariantCulture, "Missing"));
-    }
-
-    [Fact]
-    public void TypedFormatters_InsertArguments()
-    {
-        Assert.Equal("End must be after Start", DomainResources.FormatAfterError("End", "Start"));
-        Assert.Equal("Name is required", DomainResources.FormatRequiredError("Name"));
-        Assert.Equal("Age must be between 18 and 65", DomainResources.FormatRangeError("Age", 18, 65));
-        Assert.Equal("Name must be at least 2 characters", DomainResources.FormatMinLengthError("Name", 2));
-        Assert.Equal("Name must not exceed 20 characters", DomainResources.FormatMaxLengthError("Name", 20));
-        Assert.Equal("Code must be exactly 6 characters", DomainResources.FormatExactLengthError("Code", 6));
-    }
-
-    [Fact]
-    public void ExplicitCulture_FormatsWithoutChangingAmbientCulture()
-    {
-        var original = CultureInfo.CurrentCulture;
-        var originalUi = CultureInfo.CurrentUICulture;
-        Assert.Equal("Price must be between 1,5 and 2,5", DomainResources.Format(CultureInfo.GetCultureInfo("fr-FR"), nameof(DomainResources.RangeError), "Price", 1.5m, 2.5m));
-        Assert.Same(original, CultureInfo.CurrentCulture);
-        Assert.Same(originalUi, CultureInfo.CurrentUICulture);
-    }
-
-    [Fact]
-    public async Task AmbientCultures_AreIsolatedAcrossAsyncOperations()
-    {
-        var original = CultureInfo.CurrentCulture;
-        var originalUi = CultureInfo.CurrentUICulture;
-        async Task<string> FormatInCulture(string name)
-        {
-            var previous = CultureInfo.CurrentCulture;
-            var previousUi = CultureInfo.CurrentUICulture;
-            try
-            {
-                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
-                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("de-DE");
-                await Task.Yield();
-                return DomainResources.FormatRangeError("Price", 1.5m, 2.5m);
-            }
-            finally
-            {
-                CultureInfo.CurrentCulture = previous;
-                CultureInfo.CurrentUICulture = previousUi;
-            }
-        }
-        var results = await Task.WhenAll(FormatInCulture("fr-FR"), FormatInCulture("en-US"));
-        Assert.Equal(["Price must be between 1,5 and 2,5", "Price must be between 1.5 and 2.5"], results);
-        Assert.Same(original, CultureInfo.CurrentCulture);
-        Assert.Same(originalUi, CultureInfo.CurrentUICulture);
+        var model = new Model { Name = "Alice", Age = 30 };
+        Assert.True(Validator.TryValidateObject(model, new ValidationContext(model), [], true));
     }
 
     [Theory]
@@ -131,10 +110,13 @@ public class DomainResourcesTests
     }
 
     [Fact]
-    public void DataAnnotations_AcceptsValidValues()
+    public void ExplicitCulture_FormatsWithoutChangingAmbientCulture()
     {
-        var model = new Model { Name = "Alice", Age = 30 };
-        Assert.True(Validator.TryValidateObject(model, new ValidationContext(model), [], true));
+        var original = CultureInfo.CurrentCulture;
+        var originalUi = CultureInfo.CurrentUICulture;
+        Assert.Equal("Price must be between 1,5 and 2,5", DomainResources.Format(CultureInfo.GetCultureInfo("fr-FR"), nameof(DomainResources.RangeError), "Price", 1.5m, 2.5m));
+        Assert.Same(original, CultureInfo.CurrentCulture);
+        Assert.Same(originalUi, CultureInfo.CurrentUICulture);
     }
 
     [Fact]
@@ -160,15 +142,45 @@ public class DomainResourcesTests
         }
     }
 
-    private sealed class Model
+    [Fact]
+    public void Format_RejectsInvalidArguments()
     {
-        [Display(Name = "Full name")]
-        [Required(ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.RequiredError))]
-        [MinLength(2, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.MinLengthError))]
-        [MaxLength(5, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.MaxLengthError))]
-        public string? Name { get; init; }
-
-        [Range(18, 65, ErrorMessageResourceType = typeof(DomainResources), ErrorMessageResourceName = nameof(DomainResources.RangeError))]
-        public int Age { get; init; }
+        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(nameof(DomainResources.RequiredError), (object?[])null!));
+        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(null!, nameof(DomainResources.RequiredError), "Name"));
+        Assert.Throws<ArgumentNullException>(() => DomainResources.Format(CultureInfo.InvariantCulture, nameof(DomainResources.RequiredError), (object?[])null!));
+        Assert.Throws<FormatException>(() => DomainResources.Format(nameof(DomainResources.RangeError), "Age"));
+        Assert.Throws<FormatException>(() => DomainResources.Format(CultureInfo.InvariantCulture, nameof(DomainResources.RangeError), "Age"));
+        Assert.Throws<KeyNotFoundException>(() => DomainResources.Format("Missing"));
+        Assert.Throws<KeyNotFoundException>(() => DomainResources.Format(CultureInfo.InvariantCulture, "Missing"));
     }
+
+    [Fact]
+    public void Lookup_FallsBackToEnglish()
+        => Assert.Equal("{0} is required", DomainResources.GetString(nameof(DomainResources.RequiredError), CultureInfo.GetCultureInfo("fr-FR")));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" \t")]
+    public void Lookup_RejectsMissingNames(string? name)
+        => Assert.ThrowsAny<ArgumentException>(() => DomainResources.GetString(name!));
+
+    [Theory]
+    [InlineData("Unknown")]
+    [InlineData("requirederror")]
+    public void Lookup_RejectsUnknownOrIncorrectlyCasedNames(string name)
+        => Assert.Throws<KeyNotFoundException>(() => DomainResources.GetString(name));
+
+    [Fact]
+    public void TypedFormatters_InsertArguments()
+    {
+        Assert.Equal("End must be after Start", DomainResources.FormatAfterError("End", "Start"));
+        Assert.Equal("Name is required", DomainResources.FormatRequiredError("Name"));
+        Assert.Equal("Age must be between 18 and 65", DomainResources.FormatRangeError("Age", 18, 65));
+        Assert.Equal("Name must be at least 2 characters", DomainResources.FormatMinLengthError("Name", 2));
+        Assert.Equal("Name must not exceed 20 characters", DomainResources.FormatMaxLengthError("Name", 20));
+        Assert.Equal("Code must be exactly 6 characters", DomainResources.FormatExactLengthError("Code", 6));
+    }
+
+    #endregion Public Methods
 }

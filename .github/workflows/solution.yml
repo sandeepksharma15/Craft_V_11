@@ -62,7 +62,9 @@ jobs:
             --coverlet --results-directory artifacts/domain-extension-coverage \
             --coverlet-output-format cobertura \
             --coverlet-include "[Craft.Domain]Craft.Domain.Abstractions.DomainExtensions*" \
-            --coverlet-include "[Craft.Domain]Craft.Domain.Helpers.EntityHelper*"
+            --coverlet-include "[Craft.Domain]Craft.Domain.Helpers.EntityHelper*" \
+            --coverlet-include "[Craft.Domain]Craft.Domain.Resources.DomainResources*" \
+            --coverlet-include "[Craft.Domain]Craft.Domain.Helpers.DomainConstants*"
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
@@ -72,7 +74,7 @@ jobs:
               raise SystemExit(f"Expected one domain extension report, found {len(reports)}")
           report = ET.parse(reports[0]).getroot()
           names = {item.attrib["name"] for item in report.findall(".//class")}
-          expected = {"Craft.Domain.Abstractions.DomainExtensions", "Craft.Domain.Helpers.EntityHelper"}
+          expected = {"Craft.Domain.Abstractions.DomainExtensions", "Craft.Domain.Helpers.EntityHelper", "Craft.Domain.Resources.DomainResources", "Craft.Domain.Helpers.DomainConstants/Fv"}
           if not expected <= names:
               raise SystemExit(f"Domain helper coverage is missing: {expected - names}")
           print(f"Domain extension lines: {report.attrib['lines-covered']}/{report.attrib['lines-valid']}")

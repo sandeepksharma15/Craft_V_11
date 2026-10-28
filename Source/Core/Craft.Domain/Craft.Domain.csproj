@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<Authors>Sandeep SHARMA</Authors>
 		<RootNamespace>Craft.Domain</RootNamespace>
+		<NeutralLanguage>en</NeutralLanguage>
 	</PropertyGroup>
 
 	<ItemGroup>

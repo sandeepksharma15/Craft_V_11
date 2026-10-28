@@ -467,37 +467,29 @@ transport concerns from pure domain models; this review keeps package boundaries
 
 ## Localization
 
-Error messages support localization via resource files.
-
-### Using Constants in Attributes (compile-time)
+`DomainResources` supplies validation templates from one English `.resx` catalog. Use resource-backed attributes instead of embedding message constants:
 
 ```csharp
-[Required(ErrorMessage = DomainConstants.RequiredError)]
-[StringLength(100, ErrorMessage = DomainConstants.MaxLengthError)]
-public string Name { get; set; }
+[Required(ErrorMessageResourceType = typeof(DomainResources),
+    ErrorMessageResourceName = nameof(DomainResources.RequiredError))]
+public string? Name { get; set; }
+
+var message = DomainResources.FormatRequiredError("Name");
+var localized = DomainResources.Format(CultureInfo.GetCultureInfo("fr-FR"),
+    nameof(DomainResources.RangeError), "Price", 1.5m, 2.5m);
 ```
 
-### Using Localized Messages at Runtime
+Default lookup uses `CurrentUICulture`; formatting uses `CurrentCulture`. The explicit-culture overload uses its culture for both operations without changing ambient state. Unknown resource names throw `KeyNotFoundException`; malformed format arguments throw `FormatException`.
+
+Only English translations ship today. Additional `DomainResources.fr.resx` files must be built into Craft.Domain satellite assemblies and distributed with the library. Adding a resource file to a consuming application does not override this catalog. Missing translations fall back to English.
+
+`DomainConstants.Fv` adapts these resources to FluentValidation's `{PropertyName}` token without adding a FluentValidation dependency. Evaluate messages during validation so long-lived validators use the request culture:
 
 ```csharp
-// Access localized messages
-var message = DomainConstants.Localized.RequiredError;
-
-// Use formatting helpers
-var formatted = DomainConstants.Localized.FormatRequired("FirstName");
-// Result: "FirstName is required"
-
-// Or use DomainResources directly
-var message = DomainResources.FormatEntityNotFound("Product", 42);
-// Result: "Entity "Product" (42) was not found."
+RuleFor(x => x.Name).NotEmpty().WithMessage(_ => DomainConstants.Fv.Required);
 ```
 
-### Adding Translations
-
-Create satellite resource files:
-- `DomainResources.fr.resx` - French
-- `DomainResources.de.resx` - German
-- etc.
+The duplicated message constants, `DomainConstants.Localized`, `LengthError`, global `Culture` override, and public resource manager have been removed. Use `DomainResources` directly, `MaxLengthError` for maximum length, and the explicit-culture overload when needed. Unused exception templates and their formatters have also been removed; exception diagnostics remain owned by their exception classes.
 
 ## Best Practices
 

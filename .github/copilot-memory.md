@@ -52,3 +52,5 @@
 - 2026-10-28: EntityHelper only inspects entity/tenant type contracts. Use entity Equals and existing identifier APIs instead of competing equality/default-ID helpers. Key lookup supports open generics and rejects ambiguous IEntity<TKey> contracts; TryGetEntityKeyType returns false/null for missing or ambiguous contracts.
 
 - 2026-10-28: Reusable type-contract reflection lives in Craft.Extensions TypeExtensions: HasImplementedInterface supports open generic interface definitions; IsGenericTypeOf matches only the type itself. EntityHelper delegates these checks and retains domain key selection/ambiguity rules.
+
+- DomainResources is a manually maintained validation facade over the sole English .resx catalog. Use resource-backed DataAnnotations, ambient UI/format cultures or explicit-culture Format; no global Culture override, duplicate constants/Localized wrappers, or unused exception catalog. DomainConstants.Fv adapts resource templates to FluentValidation tokens.

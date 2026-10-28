@@ -1,305 +1,137 @@
-﻿using Craft.Domain.Abstractions;
+using Craft.Domain.Abstractions;
+using Craft.Domain.Base;
 using Craft.Domain.Helpers;
 
 namespace Craft.Domain.Tests.Helpers;
 
 public class EntityHelperTests
 {
-    [Fact]
-    public void EntityEquals_WithDifferentEntities_ShouldReturnFalse()
+    [Theory]
+    [InlineData(typeof(IEntity), true)]
+    [InlineData(typeof(IEntity<int>), true)]
+    [InlineData(typeof(IEntity<>), true)]
+    [InlineData(typeof(Entity<Guid>), true)]
+    [InlineData(typeof(Entity<>), true)]
+    [InlineData(typeof(DerivedEntity), true)]
+    [InlineData(typeof(EntityValue), true)]
+    [InlineData(typeof(IMergedEntity), true)]
+    [InlineData(typeof(AmbiguousEntity), true)]
+    [InlineData(typeof(BaseDTO<int>), false)]
+    [InlineData(typeof(IHasId<int>), false)]
+    [InlineData(typeof(IHasTenant<Guid>), false)]
+    [InlineData(typeof(List<>), false)]
+    [InlineData(typeof(object), false)]
+    public void IsEntity_RecognizesEntityContracts(Type type, bool expected)
+        => Assert.Equal(expected, type.IsEntity());
+
+    [Theory]
+    [InlineData(typeof(IEntity<int>), true)]
+    [InlineData(typeof(Entity<int>), true)]
+    [InlineData(typeof(DerivedEntity), true)]
+    [InlineData(typeof(AmbiguousEntity), true)]
+    [InlineData(typeof(Entity<Guid>), false)]
+    [InlineData(typeof(Entity<>), false)]
+    [InlineData(typeof(object), false)]
+    public void IsEntity_WithKeyType_RequiresMatchingContract(Type type, bool expected)
+        => Assert.Equal(expected, type.IsEntity<int>());
+
+    [Theory]
+    [InlineData(typeof(IHasTenant), true)]
+    [InlineData(typeof(IHasTenant<Guid>), true)]
+    [InlineData(typeof(IHasTenant<>), true)]
+    [InlineData(typeof(Tenant<Guid>), true)]
+    [InlineData(typeof(Tenant<>), true)]
+    [InlineData(typeof(DerivedTenant), true)]
+    [InlineData(typeof(Entity<int>), false)]
+    [InlineData(typeof(IHasUser<Guid>), false)]
+    [InlineData(typeof(List<>), false)]
+    [InlineData(typeof(object), false)]
+    public void IsMultiTenant_RecognizesTenantContractsWithoutRequiringEntity(Type type, bool expected)
+        => Assert.Equal(expected, type.IsMultiTenant());
+
+    [Theory]
+    [InlineData(typeof(IHasTenant<Guid>), true)]
+    [InlineData(typeof(Tenant<Guid>), true)]
+    [InlineData(typeof(DerivedTenant), true)]
+    [InlineData(typeof(Tenant<int>), false)]
+    [InlineData(typeof(Tenant<>), false)]
+    [InlineData(typeof(object), false)]
+    public void IsMultiTenant_WithKeyType_RequiresMatchingContract(Type type, bool expected)
+        => Assert.Equal(expected, type.IsMultiTenant<Guid>());
+
+    [Theory]
+    [InlineData(typeof(IEntity), typeof(KeyType))]
+    [InlineData(typeof(IEntity<int>), typeof(int))]
+    [InlineData(typeof(Entity<Guid>), typeof(Guid))]
+    [InlineData(typeof(Entity<string>), typeof(string))]
+    [InlineData(typeof(Entity<int?>), typeof(int?))]
+    [InlineData(typeof(DerivedEntity), typeof(int))]
+    [InlineData(typeof(EntityValue), typeof(int))]
+    [InlineData(typeof(IMergedEntity), typeof(int))]
+    public void GetEntityKeyType_UniqueContract_ReturnsKey(Type type, Type expected)
     {
-        // Arrange
-        IEntity entity1 = new TestEntity { Id = 1 };
-        IEntity entity2 = new TestEntity { Id = 2 };
+        Assert.Equal(expected, type.GetEntityKeyType());
+        Assert.True(type.TryGetEntityKeyType(out var key));
+        Assert.Equal(expected, key);
+    }
 
-        // Act
-        bool result = entity1.EntityEquals(entity2);
+    [Theory]
+    [InlineData(typeof(IEntity<>))]
+    [InlineData(typeof(Entity<>))]
+    public void GetEntityKeyType_OpenGeneric_ReturnsGenericParameter(Type type)
+        => Assert.Equal(type.GetGenericArguments()[0], type.GetEntityKeyType());
 
-        // Assert
-        Assert.False(result);
+    [Theory]
+    [InlineData(typeof(object))]
+    [InlineData(typeof(IHasId<int>))]
+    [InlineData(typeof(BaseDTO<int>))]
+    [InlineData(typeof(AmbiguousEntity))]
+    public void GetEntityKeyType_MissingOrAmbiguousContract_FailsExplicitly(Type type)
+    {
+        Assert.False(type.TryGetEntityKeyType(out var key));
+        Assert.Null(key);
+        Assert.Throws<ArgumentException>("type", () => type.GetEntityKeyType());
     }
 
     [Fact]
-    public void EntityEquals_WithEqualEntities_ShouldReturnTrue()
+    public void TypeInspection_NullArgument_ThrowsConsistently()
     {
-        // Arrange
-        IEntity entity1 = new TestEntity { Id = 1 };
-        IEntity entity2 = new TestEntity { Id = 1 };
-
-        // Act
-        bool result = entity1.EntityEquals(entity2);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void EntityEquals_WithNullEntity1_ShouldReturnFalse()
-    {
-        // Arrange
-        IEntity entity1 = null!;
-        IEntity entity2 = new TestEntity { Id = 1 };
-
-        // Act
-        bool result = entity1.EntityEquals(entity2);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void EntityEquals_WithNullEntity2_ShouldReturnFalse()
-    {
-        // Arrange
-        IEntity entity1 = new TestEntity { Id = 1 };
-        IEntity entity2 = null!;
-
-        // Act
-        bool result = entity1.EntityEquals(entity2);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void EntityEquals_WithSameReference_ShouldReturnTrue()
-    {
-        // Arrange
-        IEntity entity1 = new TestEntity { Id = 1 };
-        IEntity entity2 = entity1;
-
-        // Act
-        bool result = entity1.EntityEquals(entity2);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnFalse_WhenEntityIdIsNotDefault()
-    {
-        // Arrange
-        var entity = new FakeEntity<int> { Id = 1 };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnFalse_WhenEntityIdIsPositiveInt()
-    {
-        // Arrange
-        var entity = new FakeEntity<int> { Id = 10 };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnFalse_WhenEntityIdIsPositiveLong()
-    {
-        // Arrange
-        var entity = new FakeEntity<long> { Id = 1 };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnTrue_WhenEntityIdIsDefault()
-    {
-        // Arrange
-        var entity = new FakeEntity<int> { Id = default };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnTrue_WhenEntityImplemented()
-    {
-        // Arrange
-        var entity = new TestEntity();
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnTrue_WhenEntityIdIsNegativeInt()
-    {
-        // Arrange
-        var entity = new FakeEntity<int> { Id = -1 };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void HasDefaultId_ShouldReturnTrue_WhenEntityIdIsNegativeLong()
-    {
-        // Arrange
-        var entity = new FakeEntity<long> { Id = -1 };
-
-        // Act
-        var result = entity.HasDefaultId();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void IsEntity_WithEntity_ShouldReturnTrue()
-    {
-        // Arrange
-        Type type = typeof(TestEntity);
-
-        // Act
-        bool result = type.IsEntity();
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public void IsEntity_WithNonEntity_ShouldReturnFalse()
-    {
-        // Arrange
-        Type type = typeof(NonEntityClass);
-
-        // Act
-        bool result = type.IsEntity();
-
-        // Assert
-        Assert.False(result);
-    }
-
-    [Fact]
-    public void IsEntity_WithNullType_ShouldThrowArgumentNullException()
-    {
-        // Arrange
         Type type = null!;
 
-        // Act
-        void action() => type.IsEntity();
-
-        // Assert
-        Assert.Throws<ArgumentNullException>(action);
+        Assert.Throws<ArgumentNullException>("type", () => type.IsEntity());
+        Assert.Throws<ArgumentNullException>("type", () => type.IsEntity<int>());
+        Assert.Throws<ArgumentNullException>("type", () => type.IsMultiTenant());
+        Assert.Throws<ArgumentNullException>("type", () => type.IsMultiTenant<Guid>());
+        Assert.Throws<ArgumentNullException>("type", () => type.GetEntityKeyType());
+        Assert.Throws<ArgumentNullException>("type", () => type.TryGetEntityKeyType(out _));
     }
 
-    [Fact]
-    public void IsMultiTenant_WithMultiTenantEntity_ShouldReturnTrue()
+    private class Entity<TKey> : IEntity<TKey>
     {
-        // Arrange
-        const bool expectedResult = true;
-
-        // Act
-        bool result = EntityHelper.IsMultiTenant<MultiTenantEntity>();
-
-        // Assert
-        Assert.Equal(expectedResult, result);
+        public TKey Id { get; set; } = default!;
     }
 
-    [Fact]
-    public void IsMultiTenant_WithNonMultiTenantEntity_ShouldReturnFalse()
+    private sealed class DerivedEntity : Entity<int>;
+
+    private struct EntityValue : IEntity<int>
     {
-        // Arrange
-        const bool expectedResult = false;
-
-        // Act
-        bool result = EntityHelper.IsMultiTenant<NonMultiTenantEntity>();
-
-        // Assert
-        Assert.Equal(expectedResult, result);
+        public int Id { get; set; }
     }
 
-    [Fact]
-    public void IsMultiTenant_WithNullType_ShouldReturnFalse()
+    private interface IFirstEntity : IEntity<int>;
+    private interface ISecondEntity : IEntity<int>;
+    private interface IMergedEntity : IFirstEntity, ISecondEntity;
+
+    private sealed class AmbiguousEntity : IEntity<int>, IEntity<Guid>
     {
-        // Arrange
-        Type type = null!;
-
-        // Act
-        bool result = type.IsMultiTenant();
-
-        // Assert
-        Assert.False(result);
+        int IHasId<int>.Id { get; set; }
+        Guid IHasId<Guid>.Id { get; set; }
     }
 
-    [Fact]
-    public void GetEntityKeyType_NullInput_ReturnsNull()
+    private class Tenant<TKey> : IHasTenant<TKey>
     {
-        // Arrange
-        Type type = null!;
-
-        // Act
-        var keyType = type.GetEntityKeyType();
-
-        // Assert
-        Assert.Null(keyType);
+        public TKey TenantId { get; set; } = default!;
     }
 
-    [Fact]
-    public void GetEntityKeyType_NonEntityType_ThrowsArgumentException()
-    {
-        // Act & Assert
-        static void act() => typeof(NonEntityClass).GetEntityKeyType();
-
-        Assert.Throws<ArgumentException>(act);
-    }
-
-    [Fact]
-    public void GetEntityKeyType_ValidEntityType_ReturnsKeyType()
-    {
-        // Arrange
-        // Act
-        var keyType = typeof(TestEntity).GetEntityKeyType();
-
-        // Assert
-        Assert.Equal(typeof(KeyType), keyType);
-    }
-}
-
-public class MultiTenantEntity : IEntity, IHasTenant
-{
-    public KeyType Id { get; set; }
-    public KeyType TenantId { get; set; }
-}
-
-public class NonEntityClass
-{
-    public KeyType Id { get; set; }
-}
-
-public class NonMultiTenantEntity : IEntity
-{
-    public KeyType Id { get; set; }
-}
-
-public class TestEntity : IEntity
-{
-    public KeyType Id { get; set; }
-}
-
-public class FakeEntity<TKey> : IEntity<TKey>
-{
-    public TKey Id { get; set; } = default!;
+    private sealed class DerivedTenant : Tenant<Guid>;
 }

@@ -161,6 +161,52 @@ public class TypeTests
         => Assert.Equal(expected, type.HasImplementedInterface(interfaceType));
 
     [Theory]
+    [InlineData(typeof(List<int>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(List<>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(IEnumerable<int>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(IEnumerable<>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(IList<>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(DerivedList), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(int[]), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(int), typeof(IComparable<>), true)]
+    [InlineData(typeof(List<string>), typeof(IEnumerable<object>), true)]
+    [InlineData(typeof(List<int>), typeof(IEnumerable<string>), false)]
+    [InlineData(typeof(List<>), typeof(IEnumerable<int>), false)]
+    [InlineData(typeof(List<int>), typeof(IDictionary<,>), false)]
+    [InlineData(typeof(object), typeof(IEnumerable<>), false)]
+    [InlineData(typeof(List<int>), typeof(List<>), false)]
+    [InlineData(null, typeof(IEnumerable<>), false)]
+    [InlineData(null, null, false)]
+    [InlineData(typeof(IInterface), typeof(IInterface), true)]
+    public void HasImplementedInterface_GenericAndInheritedContracts_ReturnsExpectedResult(
+        Type? type, Type? interfaceType, bool expected)
+        => Assert.Equal(expected, type.HasImplementedInterface(interfaceType));
+
+    [Theory]
+    [InlineData(typeof(List<int>), typeof(List<>), true)]
+    [InlineData(typeof(List<>), typeof(List<>), true)]
+    [InlineData(typeof(IEnumerable<int>), typeof(IEnumerable<>), true)]
+    [InlineData(typeof(Dictionary<string, int>), typeof(Dictionary<,>), true)]
+    [InlineData(typeof(int?), typeof(Nullable<>), true)]
+    [InlineData(typeof(List<int>), typeof(IEnumerable<>), false)]
+    [InlineData(typeof(DerivedList), typeof(List<>), false)]
+    [InlineData(typeof(List<int>), typeof(Dictionary<,>), false)]
+    [InlineData(typeof(int), typeof(List<>), false)]
+    [InlineData(null, typeof(List<>), false)]
+    public void IsGenericTypeOf_MatchesOnlyTheTypeItself(Type? type, Type definition, bool expected)
+        => Assert.Equal(expected, type.IsGenericTypeOf(definition));
+
+    [Theory]
+    [InlineData(typeof(int))]
+    [InlineData(typeof(List<int>))]
+    public void IsGenericTypeOf_NonDefinition_Throws(Type definition)
+        => Assert.Throws<ArgumentException>("genericTypeDefinition", () => typeof(List<int>).IsGenericTypeOf(definition));
+
+    [Fact]
+    public void IsGenericTypeOf_NullDefinition_Throws()
+        => Assert.Throws<ArgumentNullException>("genericTypeDefinition", () => typeof(List<int>).IsGenericTypeOf(null!));
+
+    [Theory]
     [InlineData(typeof(bool), true)]
     [InlineData(typeof(bool?), true)]
     [InlineData(typeof(int), false)]
@@ -276,6 +322,8 @@ public class TypeTests
 
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     private sealed class AnotherAttribute : Attribute;
+
+    private sealed class DerivedList : List<int>;
 
     private class BaseClass;
 

@@ -82,6 +82,15 @@ jobs:
           if lines_valid == 0 or line_rate < 1.0:
               print("Required line coverage is 100%.")
               sys.exit(1)
+          expected = {"HasImplementedInterface", "IsGenericTypeOf"}
+          methods = [method for cls in root.findall(".//class") if cls.attrib["name"] == "System.TypeExtensions"
+              for method in cls.findall("./methods/method") if method.attrib["name"] in expected]
+          if {method.attrib["name"] for method in methods} != expected:
+              raise SystemExit("Type contract coverage is missing")
+          for method in methods:
+              print(f"{method.attrib['name']}: lines={method.attrib['line-rate']}, branches={method.attrib['branch-rate']}")
+              if float(method.attrib["line-rate"]) != 1 or float(method.attrib["branch-rate"]) != 1:
+                  raise SystemExit("Type contract checks require 100% line and branch coverage")
           PY
 
       - name: Upload test and coverage results

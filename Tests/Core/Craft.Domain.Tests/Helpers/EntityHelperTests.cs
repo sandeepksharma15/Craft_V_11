@@ -90,7 +90,7 @@ public class EntityHelperTests
     {
         Assert.False(type.TryGetEntityKeyType(out var key));
         Assert.Null(key);
-        Assert.Throws<ArgumentException>("type", () => type.GetEntityKeyType());
+        Assert.Throws<ArgumentException>(nameof(type), () => type.GetEntityKeyType());
     }
 
     [Fact]
@@ -119,7 +119,9 @@ public class EntityHelperTests
     }
 
     private interface IFirstEntity : IEntity<int>;
+
     private interface ISecondEntity : IEntity<int>;
+
     private interface IMergedEntity : IFirstEntity, ISecondEntity;
 
     private sealed class AmbiguousEntity : IEntity<int>, IEntity<Guid>

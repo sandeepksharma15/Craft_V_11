@@ -38,6 +38,24 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify CryptKey coverage
+        run: |
+          dotnet test --project Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj \
+            --configuration Release --no-build \
+            --coverlet --results-directory artifacts/cryptkey-coverage \
+            --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.CryptKey]*"
+          python3 .github/scripts/verify-cryptkey-coverage.py artifacts/cryptkey-coverage
+
+      - name: Upload CryptKey coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cryptkey-coverage-${{ matrix.os }}
+          path: artifacts/cryptkey-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify exception coverage
         run: |
           dotnet test --project Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj \
@@ -48,7 +66,7 @@ jobs:
           python3 .github/scripts/verify-exception-coverage.py artifacts/exception-coverage
 
       - name: Upload exception coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: exception-coverage-${{ matrix.os }}
           path: artifacts/exception-coverage/**/coverage.*.xml
@@ -86,7 +104,7 @@ jobs:
           PY
 
       - name: Upload domain extension coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: domain-extension-coverage-${{ matrix.os }}
           path: artifacts/domain-extension-coverage/**/coverage.*.xml
@@ -137,7 +155,7 @@ jobs:
           PY
 
       - name: Upload utility coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: utility-coverage-${{ matrix.os }}
           path: artifacts/utility-coverage/**/coverage.*.xml
@@ -149,7 +167,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: utility-coverage-*
           path: artifacts/combined-coverage
@@ -166,3 +184,14 @@ jobs:
           dotnet-quality: preview
       - name: Build domain with GUID default keys
         run: dotnet build Source/Core/Craft.Domain/Craft.Domain.csproj --configuration Release -p:CraftDefaultKeyType=System.Guid
+
+  guid-key-cryptkey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '11.0'
+          dotnet-quality: preview
+      - name: Test CryptKey with GUID default keys
+        run: dotnet test --project Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj --configuration Release -p:CraftDefaultKeyType=System.Guid

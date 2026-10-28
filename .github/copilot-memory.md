@@ -56,3 +56,5 @@
 - DomainResources is a manually maintained validation facade over the sole English .resx catalog. Use resource-backed DataAnnotations, ambient UI/format cultures or explicit-culture Format; no global Culture override, duplicate constants/Localized wrappers, or unused exception catalog. DomainConstants.Fv adapts resource templates to FluentValidation tokens.
 
 - DomainConstants regexes use \A/\z whole-input anchors and support NonBacktracking. Preserve documented ASCII/code and unsigned numeric policies; phone permits Unicode digits but only literal spaces. Email/URL/phone are basic format checks, not complete semantic validators; DataAnnotations still needs Required for empty values.
+
+- Craft.CryptKey uses an explicitly configured singleton IHashKeys and a typed Hashids payload for int/long/Guid; no implicit encoder/salt or service-locator extensions. Configuration is validated/snapshotted; strict decoding throws FormatException and Try decoding rejects invalid input. Tokens are obfuscation, not authorization or authenticated encryption.

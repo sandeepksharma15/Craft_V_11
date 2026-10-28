@@ -1,304 +1,175 @@
+using System.Globalization;
+using Craft.CryptKey;
+using HashidsNet;
+using Microsoft.Extensions.Options;
+
 namespace Craft.CryptKey.Tests;
 
 public class HashKeysTests
 {
-    [Fact]
-    public void Constructor_WithDefaultOptions_CreatesInstance()
+    internal static HashKeyOptions Configuration() => new() { Salt = "test-application" };
+    private static HashKeys Create() => new(Configuration());
+    private static string Raw(params long[] values)
     {
-        // Arrange
-        var options = new HashKeyOptions();
-
-        // Act
-        var hashKeys = new HashKeys(options);
-
-        // Assert
-        Assert.NotNull(hashKeys);
-        Assert.IsType<IHashKeys>(hashKeys, exactMatch: false);
+        var options = Configuration();
+        return new Hashids(options.Salt, options.MinHashLength, options.Alphabet, options.Separators).EncodeLong(values);
     }
 
     [Fact]
-    public void Constructor_WithCustomOptions_CreatesInstance()
+    public void IntegerKeys_RoundTripAcrossTheirFullRanges()
     {
-        // Arrange
-        var options = new HashKeyOptions
-        {
-            Salt = "CustomSalt",
-            MinHashLength = 15,
-            Alphabet = "abcdefghijklmnopqrstuvwxyz1234567890",
-            Steps = "cfhistu"
-        };
-
-        // Act
-        var hashKeys = new HashKeys(options);
-
-        // Assert
-        Assert.NotNull(hashKeys);
+        var keys = Create();
+        foreach (var key in new[] { int.MinValue, int.MinValue + 1, -1, 0, 1, int.MaxValue })
+            RoundTrip(keys, key);
+        foreach (var key in new[] { long.MinValue, long.MinValue + 1, -1, 0, 1, (long)int.MaxValue + 1, long.MaxValue })
+            RoundTrip(keys, key);
     }
 
     [Fact]
-    public void EncodeLong_WithSingleValue_ReturnsHashString()
+    public void GuidKeys_RoundTripIncludingEmptyAndEveryBitSet()
     {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long value = 12345;
+        var keys = Create();
+        foreach (var key in new[] { Guid.Empty, Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"), Guid.NewGuid() })
+            RoundTrip(keys, key);
+    }
 
-        // Act
-        var hash = hashKeys.EncodeLong(value);
-
-        // Assert
-        Assert.NotNull(hash);
-        Assert.NotEmpty(hash);
-        Assert.True(hash.Length >= options.MinHashLength);
+    private static void RoundTrip<TKey>(IHashKeys keys, TKey key) where TKey : struct
+    {
+        var token = keys.Encode(key);
+        Assert.Matches("\\A[A-Za-z0-9_-]+\\z", token);
+        Assert.True(token.Length >= 10);
+        Assert.Equal(key, keys.Decode<TKey>(token));
+        Assert.True(keys.TryDecode<TKey>(token, out var decoded));
+        Assert.Equal(key, decoded);
+        Assert.Equal(token, Create().Encode(key));
     }
 
     [Fact]
-    public void DecodeLong_WithValidHash_ReturnsOriginalValue()
+    public void DifferentKeysAndTypes_HaveDistinctTokens()
     {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long original = 98765;
-        var hash = hashKeys.EncodeLong(original);
+        var keys = Create();
+        var tokens = Enumerable.Range(-500, 1001).SelectMany(i => new[] { keys.Encode(i), keys.Encode((long)i) }).ToArray();
+        Assert.Equal(tokens.Length, tokens.Distinct().Count());
+        Assert.False(keys.TryDecode<int>(keys.Encode(42L), out _));
+        Assert.False(keys.TryDecode<long>(keys.Encode(42), out _));
+        Assert.False(keys.TryDecode<Guid>(keys.Encode(42L), out _));
+    }
 
-        // Act
-        var decoded = hashKeys.DecodeLong(hash);
+    [Fact]
+    public void Configuration_IsSnapshottedAtConstruction()
+    {
+        var options = Configuration();
+        var keys = new HashKeys(options);
+        var token = keys.Encode(42L);
+        options.Salt = "different";
+        options.Alphabet = "";
+        options.Separators = "";
+        options.MinHashLength = 0;
+        options.MaxHashLength = 1;
+        Assert.Equal(token, keys.Encode(42L));
+        Assert.Equal(42L, keys.Decode<long>(token));
+    }
 
-        // Assert
-        Assert.NotNull(decoded);
-        var item = Assert.Single(decoded);
-        Assert.Equal(original, item);
+    [Fact]
+    public void DifferentConfiguration_DoesNotDecodeTheOriginalToken()
+    {
+        var options = Configuration();
+        options.Salt = "another-application";
+        var other = new HashKeys(options);
+        var token = Create().Encode(123L);
+        Assert.NotEqual(token, other.Encode(123L));
+        Assert.False(other.TryDecode<long>(token, out _));
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(100)]
-    [InlineData(999999)]
-    [InlineData(long.MaxValue)]
-    public void EncodeDecode_RoundTrip_PreservesValue(long original)
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("not/a/token")]
+    [InlineData("a")]
+    [InlineData("abc")]
+    public void InvalidTokens_ReturnFalseOrThrowFormatException(string? token)
     {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-
-        // Act
-        var encoded = hashKeys.EncodeLong(original);
-        var decoded = hashKeys.DecodeLong(encoded);
-
-        // Assert
-        Assert.Equal(original, decoded[0]);
+        var keys = Create();
+        Assert.False(keys.TryDecode<long>(token, out var value));
+        Assert.Equal(0L, value);
+        Assert.Throws<FormatException>(() => keys.Decode<long>(token!));
     }
 
     [Fact]
-    public void EncodeLong_WithMultipleValues_ReturnsHashString()
+    public void TokenLength_IsBoundedOnBothPaths()
     {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long[] values = [1, 2, 3, 4, 5];
-
-        // Act
-        var hash = hashKeys.EncodeLong(values);
-
-        // Assert
-        Assert.NotNull(hash);
-        Assert.NotEmpty(hash);
+        var keys = Create();
+        Assert.False(keys.TryDecode<long>(new string('a', Configuration().MaxHashLength + 1), out _));
+        var options = Configuration();
+        options.MinHashLength = 0;
+        options.MaxHashLength = 1;
+        Assert.Throws<InvalidOperationException>(() => new HashKeys(options).Encode(long.MaxValue));
+        options.MinHashLength = 64;
+        options.MaxHashLength = 64;
+        keys = new HashKeys(options);
+        var token = keys.Encode(1L);
+        Assert.Equal(64, token.Length);
+        Assert.Equal(1L, keys.Decode<long>(token));
     }
 
     [Fact]
-    public void DecodeLong_WithMultipleValues_ReturnsAllOriginalValues()
+    public void MalformedTypedPayloads_AreRejected()
     {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long[] original = [10, 20, 30, 40, 50];
-        var hash = hashKeys.EncodeLong(original);
-
-        // Act
-        var decoded = hashKeys.DecodeLong(hash);
-
-        // Assert
-        Assert.Equal(original.Length, decoded.Length);
-        Assert.Equal(original, decoded);
+        var keys = Create();
+        long[][] invalidIntegers = [[], [1], [1, 0], [1, 0, 0, 0], [9, 0, 0],
+            [1, (long)int.MaxValue + 1, 0], [1, 1, 2]];
+        foreach (var values in invalidIntegers)
+            Assert.False(keys.TryDecode<int>(Raw(values), out _));
+        long[][] invalidLongs = [[2], [2, 1], [2, 0, 0, 0], [9, 0, 0], [2, 1, 2]];
+        foreach (var values in invalidLongs)
+            Assert.False(keys.TryDecode<long>(Raw(values), out _));
+        long[][] invalidGuids = [[3], [3, 0, 0, 0], [3, 0, 0, 0, 0, 0], [9, 0, 0, 0, 0],
+            [3, (long)uint.MaxValue + 1, 0, 0, 0], [3, 0, (long)uint.MaxValue + 1, 0, 0],
+            [3, 0, 0, (long)uint.MaxValue + 1, 0], [3, 0, 0, 0, (long)uint.MaxValue + 1]];
+        foreach (var values in invalidGuids)
+            Assert.False(keys.TryDecode<Guid>(Raw(values), out _));
+        Assert.False(keys.TryDecode<long>(Raw(42), out _));
     }
 
     [Fact]
-    public void DifferentSalts_ProduceDifferentHashes()
+    public void UnsupportedTypes_ThrowInsteadOfSilentlyConverting()
     {
-        // Arrange
-        var options1 = new HashKeyOptions { Salt = "Salt1" };
-        var options2 = new HashKeyOptions { Salt = "Salt2" };
-        var hashKeys1 = new HashKeys(options1);
-        var hashKeys2 = new HashKeys(options2);
-        long value = 12345;
-
-        // Act
-        var hash1 = hashKeys1.EncodeLong(value);
-        var hash2 = hashKeys2.EncodeLong(value);
-
-        // Assert
-        Assert.NotEqual(hash1, hash2);
+        var keys = Create();
+        Assert.Throws<NotSupportedException>(() => keys.Encode(1m));
+        Assert.Throws<NotSupportedException>(() => keys.TryDecode<decimal>(null, out _));
+        Assert.Throws<NotSupportedException>(() => keys.Decode<ulong>(keys.Encode(1L)));
     }
 
     [Fact]
-    public void DifferentAlphabets_ProduceDifferentHashes()
+    public void MalformedInput_DoesNotEscapeTryDecode()
     {
-        // Arrange
-        var options1 = new HashKeyOptions { Alphabet = "abcdefghijklmnopqrstuvwxyz" };
-        var options2 = new HashKeyOptions { Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
-        var hashKeys1 = new HashKeys(options1);
-        var hashKeys2 = new HashKeys(options2);
-        long value = 12345;
-
-        // Act
-        var hash1 = hashKeys1.EncodeLong(value);
-        var hash2 = hashKeys2.EncodeLong(value);
-
-        // Assert
-        Assert.NotEqual(hash1, hash2);
-    }
-
-    [Fact]
-    public void MinHashLength_IsRespected()
-    {
-        // Arrange
-        var options = new HashKeyOptions { MinHashLength = 20 };
-        var hashKeys = new HashKeys(options);
-        long value = 1;
-
-        // Act
-        var hash = hashKeys.EncodeLong(value);
-
-        // Assert
-        Assert.True(hash.Length >= 20);
-    }
-
-    [Fact]
-    public void SameOptionsInstance_ProducesConsistentHashes()
-    {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long value = 54321;
-
-        // Act
-        var hash1 = hashKeys.EncodeLong(value);
-        var hash2 = hashKeys.EncodeLong(value);
-
-        // Assert
-        Assert.Equal(hash1, hash2);
-    }
-
-    [Fact]
-    public void IHashKeys_Interface_ImplementedCorrectly()
-    {
-        // Arrange
-        var options = new HashKeyOptions();
-        IHashKeys hashKeys = new HashKeys(options);
-        long value = 789;
-
-        // Act
-        var hash = hashKeys.EncodeLong(value);
-        var decoded = hashKeys.DecodeLong(hash);
-
-        // Assert
-        Assert.Equal(value, decoded[0]);
-    }
-
-    [Theory]
-    [InlineData(0, 1)]
-    [InlineData(1, 100)]
-    [InlineData(100, 1000)]
-    [InlineData(1000, 10000)]
-    public void DifferentValues_ProduceDifferentHashes(long value1, long value2)
-    {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-
-        // Act
-        var hash1 = hashKeys.EncodeLong(value1);
-        var hash2 = hashKeys.EncodeLong(value2);
-
-        // Assert
-        Assert.NotEqual(hash1, hash2);
-    }
-
-    [Fact]
-    public void Encode_EmptyArray_ReturnsEmptyString()
-    {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-        long[] emptyArray = [];
-
-        // Act
-        var hash = hashKeys.EncodeLong(emptyArray);
-
-        // Assert
-        Assert.NotNull(hash);
-        Assert.Empty(hash);
-    }
-
-    [Fact]
-    public void Decode_EmptyString_ReturnsEmptyArray()
-    {
-        // Arrange
-        var options = new HashKeyOptions();
-        var hashKeys = new HashKeys(options);
-
-        // Act
-        var decoded = hashKeys.DecodeLong(string.Empty);
-
-        // Assert
-        Assert.NotNull(decoded);
-        Assert.Empty(decoded);
-    }
-
-    [Fact]
-    public void CustomSteps_AffectsEncoding()
-    {
-        // Arrange
-        var options1 = new HashKeyOptions { Steps = "cfhistu" };
-        var options2 = new HashKeyOptions { Steps = "abcdefg" };
-        var hashKeys1 = new HashKeys(options1);
-        var hashKeys2 = new HashKeys(options2);
-        long value = 12345;
-
-        // Act
-        var hash1 = hashKeys1.EncodeLong(value);
-        var hash2 = hashKeys2.EncodeLong(value);
-
-        // Assert
-        Assert.NotEqual(hash1, hash2);
-    }
-
-    [Fact]
-    public void MultipleInstancesWithSameOptions_ProduceIdenticalResults()
-    {
-        // Arrange
-        var options1 = new HashKeyOptions
+        var keys = Create();
+        var random = new Random(937);
+        var alphabet = Configuration().Alphabet;
+        foreach (var character in alphabet)
+            keys.TryDecode<long>(character.ToString(), out _);
+        for (var i = 0; i < 2000; i++)
         {
-            Salt = "TestSalt",
-            MinHashLength = 12,
-            Alphabet = "abcdefghijklmnopqrstuvwxyz1234567890"
-        };
-        var options2 = new HashKeyOptions
+            var token = new string(Enumerable.Range(0, random.Next(1, 257)).Select(_ => alphabet[random.Next(alphabet.Length)]).ToArray());
+            if (keys.TryDecode<long>(token, out var value))
+                Assert.Equal(token, keys.Encode(value));
+        }
+    }
+
+    [Fact]
+    public async Task Singleton_IsDeterministicAcrossConcurrentCultures()
+    {
+        var keys = Create();
+        var expected = keys.Encode(-987654321L);
+        var tasks = Enumerable.Range(0, 64).Select(async i =>
         {
-            Salt = "TestSalt",
-            MinHashLength = 12,
-            Alphabet = "abcdefghijklmnopqrstuvwxyz1234567890"
-        };
-        var hashKeys1 = new HashKeys(options1);
-        var hashKeys2 = new HashKeys(options2);
-        long value = 99999;
-
-        // Act
-        var hash1 = hashKeys1.EncodeLong(value);
-        var hash2 = hashKeys2.EncodeLong(value);
-
-        // Assert
-        Assert.Equal(hash1, hash2);
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(i % 2 == 0 ? "ar-SA" : "fr-FR");
+            await Task.Yield();
+            Assert.Equal(expected, keys.Encode(-987654321L));
+            Assert.Equal(-987654321L, keys.Decode<long>(expected));
+        });
+        await Task.WhenAll(tasks);
     }
 }

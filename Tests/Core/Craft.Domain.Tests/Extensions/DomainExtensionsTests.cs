@@ -5,6 +5,79 @@ namespace Craft.Domain.Tests.Extensions;
 
 public class DomainExtensionsTests
 {
+    private static void AssertKeyBehavior<TKey>(TKey key, TKey other, bool isDefault)
+    {
+        var holder = new KeyHolder<TKey> { Id = key, TenantId = key, UserId = key };
+        IHasId<TKey>? missingId = null;
+        IHasTenant<TKey>? missingTenant = null;
+        IHasUser<TKey>? missingUser = null;
+
+        Assert.True(missingId.IsNullOrDefault());
+        Assert.False(missingTenant.BelongsToTenant(key));
+        Assert.False(missingUser.BelongsToUser(key));
+        Assert.Equal(isDefault, holder.IsNullOrDefault());
+        Assert.Equal(!isDefault, holder.BelongsToTenant(key));
+        Assert.Equal(!isDefault, holder.BelongsToUser(key));
+        Assert.False(holder.BelongsToTenant(other));
+        Assert.False(holder.BelongsToUser(other));
+        Assert.False(holder.BelongsToTenant(default!));
+        Assert.False(holder.BelongsToUser(default!));
+        Assert.Equal(key, holder.Id);
+        Assert.Equal(key, holder.TenantId);
+        Assert.Equal(key, holder.UserId);
+    }
+
+    private static void AssertNullableFlow(KeyHolder<int>? holder)
+    {
+        if (!holder.IsNullOrDefault())
+            Assert.Equal(42, holder.Id);
+        if (holder.BelongsToTenant(42))
+            Assert.Equal(42, holder.TenantId);
+        if (holder.BelongsToUser(42))
+            Assert.Equal(42, holder.UserId);
+    }
+
+    private readonly struct EquatableKey(int value) : IEquatable<EquatableKey>
+    {
+        #region Private Properties
+
+        private int Value { get; } = value;
+
+        #endregion Private Properties
+
+        #region Public Methods
+
+        public bool Equals(EquatableKey other) => Value == other.Value;
+
+        public override bool Equals(object? obj) => throw new InvalidOperationException("Use typed equality.");
+
+        public override int GetHashCode() => Value.GetHashCode();
+
+        #endregion Public Methods
+    }
+
+    private sealed class DefaultKeyHolder : IEntity, IHasTenant, IHasUser
+    {
+        #region Public Properties
+
+        public KeyType Id { get; set; }
+        public KeyType TenantId { get; set; }
+        public KeyType UserId { get; set; }
+
+        #endregion Public Properties
+    }
+
+    private sealed class KeyHolder<TKey> : IEntity<TKey>, IHasTenant<TKey>, IHasUser<TKey>
+    {
+        #region Public Properties
+
+        public TKey Id { get; set; } = default!;
+        public TKey TenantId { get; set; } = default!;
+        public TKey UserId { get; set; } = default!;
+
+        #endregion Public Properties
+    }
+
     [Theory]
     [InlineData(0L, true)]
     [InlineData(42L, false)]
@@ -43,7 +116,7 @@ public class DomainExtensionsTests
     [Fact]
     public void IdentifierChecks_CustomKeys_UseTypedEquality()
     {
-        AssertKeyBehavior(default(EquatableKey), new EquatableKey(17), true);
+        AssertKeyBehavior(default, new EquatableKey(17), true);
         AssertKeyBehavior(new EquatableKey(42), new EquatableKey(17), false);
     }
 
@@ -72,60 +145,5 @@ public class DomainExtensionsTests
     public void IdentifierChecks_NullableFlow_RecognizesNonNullReceiver()
         => AssertNullableFlow(new KeyHolder<int> { Id = 42, TenantId = 42, UserId = 42 });
 
-    private static void AssertNullableFlow(KeyHolder<int>? holder)
-    {
-        if (!holder.IsNullOrDefault())
-            Assert.Equal(42, holder.Id);
-        if (holder.BelongsToTenant(42))
-            Assert.Equal(42, holder.TenantId);
-        if (holder.BelongsToUser(42))
-            Assert.Equal(42, holder.UserId);
-    }
-
-    private static void AssertKeyBehavior<TKey>(TKey key, TKey other, bool isDefault)
-    {
-        var holder = new KeyHolder<TKey> { Id = key, TenantId = key, UserId = key };
-        IHasId<TKey>? missingId = null;
-        IHasTenant<TKey>? missingTenant = null;
-        IHasUser<TKey>? missingUser = null;
-
-        Assert.True(missingId.IsNullOrDefault());
-        Assert.False(missingTenant.BelongsToTenant(key));
-        Assert.False(missingUser.BelongsToUser(key));
-        Assert.Equal(isDefault, holder.IsNullOrDefault());
-        Assert.Equal(!isDefault, holder.BelongsToTenant(key));
-        Assert.Equal(!isDefault, holder.BelongsToUser(key));
-        Assert.False(holder.BelongsToTenant(other));
-        Assert.False(holder.BelongsToUser(other));
-        Assert.False(holder.BelongsToTenant(default!));
-        Assert.False(holder.BelongsToUser(default!));
-        Assert.Equal(key, holder.Id);
-        Assert.Equal(key, holder.TenantId);
-        Assert.Equal(key, holder.UserId);
-    }
-
-    private sealed class KeyHolder<TKey> : IEntity<TKey>, IHasTenant<TKey>, IHasUser<TKey>
-    {
-        public TKey Id { get; set; } = default!;
-        public TKey TenantId { get; set; } = default!;
-        public TKey UserId { get; set; } = default!;
-    }
-
-    private sealed class DefaultKeyHolder : IEntity, IHasTenant, IHasUser
-    {
-        public KeyType Id { get; set; }
-        public KeyType TenantId { get; set; }
-        public KeyType UserId { get; set; }
-    }
-
     private sealed class TestDto : BaseDTO<int>;
-
-    private readonly struct EquatableKey(int value) : IEquatable<EquatableKey>
-    {
-        private int Value { get; } = value;
-
-        public bool Equals(EquatableKey other) => Value == other.Value;
-        public override bool Equals(object? obj) => throw new InvalidOperationException("Use typed equality.");
-        public override int GetHashCode() => Value.GetHashCode();
-    }
 }

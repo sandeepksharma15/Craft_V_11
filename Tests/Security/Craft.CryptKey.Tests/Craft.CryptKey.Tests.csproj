@@ -25,6 +25,7 @@
 
 	<ItemGroup>
 		<Using Include="Xunit" />
+		<None Include="..\..\testconfig.json" Link="$(AssemblyName).testconfig.json" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 </Project>

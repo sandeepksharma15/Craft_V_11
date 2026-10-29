@@ -23,6 +23,17 @@ public class ConfigurationAndRetentionTests
         Assert.Throws<ArgumentNullException>(() => ServiceCollectionExtensions.AddCraftAuditing(null!));
     }
 
+    [Fact]
+    public void DefaultOptions_AllowIndefiniteRetention()
+    {
+        var services = new ServiceCollection();
+        services.AddCraftAuditing();
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<AuditOptions>>().Value;
+        Assert.Null(options.RetentionPeriod);
+        Assert.Equal("[REDACTED]", options.RedactionText);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

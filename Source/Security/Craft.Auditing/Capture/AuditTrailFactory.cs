@@ -83,7 +83,7 @@ public sealed class AuditTrailFactory
         {
             var flag = entry.Property(nameof(ISoftDelete.IsDeleted));
             if (!Equals(flag.OriginalValue, flag.CurrentValue))
-                return flag.CurrentValue is true ? AuditOperation.SoftDeleted : AuditOperation.Restored;
+                return (bool)flag.CurrentValue! ? AuditOperation.SoftDeleted : AuditOperation.Restored;
         }
         return AuditOperation.Updated;
     }

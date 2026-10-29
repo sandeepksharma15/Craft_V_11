@@ -17,7 +17,7 @@ if not expected <= reported:
 for item in classes:
     missing = [line.attrib["number"] for line in item.findall("./lines/line") if int(line.attrib["hits"]) == 0]
     partial = [(line.attrib["number"], line.attrib.get("condition-coverage")) for line in item.findall("./lines/line")
-               if line.attrib.get("branch") == "true" and not line.attrib.get("condition-coverage", "").startswith("100%")]
+               if line.attrib.get("branch", "").lower() == "true" and not line.attrib.get("condition-coverage", "").startswith("100%")]
     print(f"{item.attrib['name']}: uncovered lines={missing}; partial branches={partial}")
 print(f"Lines: {report.attrib['lines-covered']}/{report.attrib['lines-valid']}")
 print(f"Branches: {report.attrib['branches-covered']}/{report.attrib['branches-valid']}")

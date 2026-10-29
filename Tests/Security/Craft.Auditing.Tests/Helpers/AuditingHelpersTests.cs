@@ -1,9 +1,41 @@
-﻿using Craft.Domain;
+﻿using Craft.Domain.Base;
 
 namespace Craft.Auditing.Tests.Helpers;
 
 public class AuditingHelpersTests
 {
+    #region Private Classes
+
+    // Abstract entity with [Audit] and inherits from BaseEntity
+    [Audit]
+    private abstract class AbstractAuditedEntity : BaseEntity { }
+
+    // Dummy auditable entity
+    [Audit]
+    private class AuditedEntity : BaseEntity { }
+
+    // Dummy entity with no attribute
+    private class NoAttributeEntity : BaseEntity { }
+
+    // Dummy non-auditable entity
+    [DoNotAudit]
+    private class NonAuditedEntity : BaseEntity { }
+
+    // Entity with [Audit] but does NOT inherit from BaseEntity
+    [Audit]
+    private class NotBaseEntityWithAudit { }
+
+    // Entity with [DoNotAudit] but does NOT inherit from BaseEntity
+    [DoNotAudit]
+    private class NotBaseEntityWithDoNotAudit { }
+
+    // Entity with no attribute and not inheriting from BaseEntity
+    private class NotBaseEntityWithoutAttribute { }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
     [Fact]
     public void GetAuditableBaseEntityTypes_Returns_Only_Audited_Entities_DerivedFromBaseEntity()
     {
@@ -15,19 +47,6 @@ public class AuditingHelpersTests
         Assert.DoesNotContain(nameof(NonAuditedEntity), result);
         Assert.DoesNotContain(nameof(NoAttributeEntity), result);
         Assert.DoesNotContain(nameof(NotBaseEntityWithAudit), result);
-    }
-
-    [Fact]
-    public void GetNonAuditableBaseEntityTypes_Returns_Only_NonAudited_Entities_DerivedFromBaseEntity()
-    {
-        // Arrange & Act
-        IList<string> result = AuditingHelpers.GetNonAuditableBaseEntityTypes();
-
-        // Assert
-        Assert.Contains(nameof(NonAuditedEntity), result);
-        Assert.DoesNotContain(nameof(AuditedEntity), result);
-        Assert.DoesNotContain(nameof(NoAttributeEntity), result);
-        Assert.DoesNotContain(nameof(NotBaseEntityWithDoNotAudit), result);
     }
 
     [Fact]
@@ -44,6 +63,19 @@ public class AuditingHelpersTests
     }
 
     [Fact]
+    public void GetNonAuditableBaseEntityTypes_Returns_Only_NonAudited_Entities_DerivedFromBaseEntity()
+    {
+        // Arrange & Act
+        IList<string> result = AuditingHelpers.GetNonAuditableBaseEntityTypes();
+
+        // Assert
+        Assert.Contains(nameof(NonAuditedEntity), result);
+        Assert.DoesNotContain(nameof(AuditedEntity), result);
+        Assert.DoesNotContain(nameof(NoAttributeEntity), result);
+        Assert.DoesNotContain(nameof(NotBaseEntityWithDoNotAudit), result);
+    }
+
+    [Fact]
     public void GetNonAuditableNonBaseEntityTypes_Returns_Only_NonAudited_Entities_NotDerivedFromBaseEntity()
     {
         // Arrange & Act
@@ -57,16 +89,6 @@ public class AuditingHelpersTests
     }
 
     [Fact]
-    public void GetTypesWithAttribute_Can_Include_Abstract_Classes()
-    {
-        // Arrange & Act
-        IList<string> result = AuditingHelpers.GetTypesWithAttribute<BaseEntity, AuditAttribute>(includeAbstract: true);
-
-        // Assert
-        Assert.Contains(nameof(AbstractAuditedEntity), result);
-    }
-
-    [Fact]
     public void GetTypesWithAttribute_Can_Exclude_Abstract_Classes()
     {
         // Arrange & Act
@@ -74,6 +96,16 @@ public class AuditingHelpersTests
 
         // Assert
         Assert.DoesNotContain(nameof(AbstractAuditedEntity), result);
+    }
+
+    [Fact]
+    public void GetTypesWithAttribute_Can_Include_Abstract_Classes()
+    {
+        // Arrange & Act
+        IList<string> result = AuditingHelpers.GetTypesWithAttribute<BaseEntity, AuditAttribute>(includeAbstract: true);
+
+        // Assert
+        Assert.Contains(nameof(AbstractAuditedEntity), result);
     }
 
     [Fact]
@@ -99,29 +131,5 @@ public class AuditingHelpersTests
         Assert.DoesNotContain(nameof(NotBaseEntityWithAudit), result);
     }
 
-    // Dummy auditable entity
-    [Audit]
-    private class AuditedEntity : BaseEntity { }
-
-    // Dummy non-auditable entity
-    [DoNotAudit]
-    private class NonAuditedEntity : BaseEntity { }
-
-    // Dummy entity with no attribute
-    private class NoAttributeEntity : BaseEntity { }
-
-    // Entity with [Audit] but does NOT inherit from BaseEntity
-    [Audit]
-    private class NotBaseEntityWithAudit { }
-
-    // Entity with [DoNotAudit] but does NOT inherit from BaseEntity
-    [DoNotAudit]
-    private class NotBaseEntityWithDoNotAudit { }
-
-    // Entity with no attribute and not inheriting from BaseEntity
-    private class NotBaseEntityWithoutAttribute { }
-
-    // Abstract entity with [Audit] and inherits from BaseEntity
-    [Audit]
-    private abstract class AbstractAuditedEntity : BaseEntity { }
+    #endregion Public Methods
 }

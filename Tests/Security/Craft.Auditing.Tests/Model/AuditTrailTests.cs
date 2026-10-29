@@ -1,17 +1,301 @@
-﻿using Craft.Domain;
+﻿using System.Text.Json;
+using Craft.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using System.Text.Json;
 
 namespace Craft.Auditing.Tests.Model;
 
 public class AuditTrailTests
 {
+    #region Private Methods
+
+    private static EntityEntry CreateAnotherEntityEntry(EntityState state, bool modifiedProperties = false)
+    {
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        using (var context = new TestDbContext(options))
+        {
+            var entity = new AnotherEntity { Id = 1, Name = "Test" };
+            context.Entry(entity).State = state;
+
+            if (state == EntityState.Modified && modifiedProperties)
+                context.Entry(entity).Property(e => e.Name).IsModified = true;
+
+            return context.Entry(entity);
+        }
+    }
+
+    private static EntityEntry CreateEntityEntry(EntityState state, bool modifiedProperties = false, bool isSoftDelete = false)
+    {
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        using (var context = new TestDbContext(options))
+        {
+            var entity = new TestEntity { Id = 1, Name = "Test", IsDeleted = isSoftDelete };
+            context.Entry(entity).State = state;
+
+            if (state == EntityState.Modified && modifiedProperties)
+                context.Entry(entity).Property(e => e.Name).IsModified = true;
+
+            return context.Entry(entity);
+        }
+    }
+
+    private static EntityEntry CreateEntityEntryWithDoNotAudit(EntityState state)
+    {
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+
+        using (var context = new TestDbContext(options))
+        {
+            var entity = new EntityWithDoNotAudit { Id = 1, Name = "Test", Password = "secret" };
+            context.Entry(entity).State = state;
+
+            if (state == EntityState.Modified)
+            {
+                context.Entry(entity).Property(e => e.Name).IsModified = true;
+                context.Entry(entity).Property(e => e.Password).IsModified = true;
+            }
+
+            return context.Entry(entity);
+        }
+    }
+
+    #endregion Private Methods
+
+    #region Private Classes
+
+    private class AnotherEntity
+    {
+        #region Public Properties
+
+        public int Id { get; set; }
+        public string? Name { get; set; }
+
+        #endregion Public Properties
+    }
+
+    private class EntityWithDoNotAudit
+    {
+        #region Public Properties
+
+        public int Id { get; set; }
+        public string? Name { get; set; }
+
+        [DoNotAudit]
+        public string? Password { get; set; }
+
+        #endregion Public Properties
+    }
+
+    private class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options)
+    {
+        #region Protected Methods
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TestEntity>();
+            modelBuilder.Entity<AnotherEntity>();
+            modelBuilder.Entity<EntityWithDoNotAudit>();
+        }
+
+        #endregion Protected Methods
+    }
+
+    private class TestEntity : ISoftDelete
+    {
+        #region Public Properties
+
+        public int Id { get; set; }
+        public bool IsDeleted { get; set; }
+        public string? Name { get; set; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Private Classes
+
+    #region Public Constructors
+
     public AuditTrailTests()
     {
         AuditTrail.ConfigureSerializerOptions(null);
         AuditTrail.DefaultRetentionDays = null;
         AuditTrail.IncludeNavigationProperties = true;
+    }
+
+    #endregion Public Constructors
+
+    #region Public Methods
+
+    [Fact]
+    public void Archive_MarksAuditTrailAsArchived()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default);
+        Assert.False(auditLog.IsArchived);
+
+        // Act
+        auditLog.Archive();
+
+        // Assert
+        Assert.True(auditLog.IsArchived);
+    }
+
+    [Fact]
+    public void AuditTrail_WithDoNotAuditProperty_ExcludesFromAudit()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntryWithDoNotAudit(EntityState.Added);
+
+        // Act
+        var auditLog = new AuditTrail(entityEntry, default);
+
+        // Assert
+        Assert.NotNull(auditLog.NewValues);
+        var newValuesDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(auditLog.NewValues);
+        Assert.NotNull(newValuesDict);
+        Assert.DoesNotContain("Password", newValuesDict.Keys);
+        Assert.Contains("Name", newValuesDict.Keys);
+    }
+
+    [Fact]
+    public void AuditTrail_WithEmptyCollections_SerializesAsNull()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Unchanged);
+
+        // Act
+        var auditLog = new AuditTrail(entityEntry, default);
+
+        // Assert
+        Assert.Null(auditLog.OldValues);
+    }
+
+    [Fact]
+    public void ConfigureSerializerOptions_AcceptsCustomOptions()
+    {
+        // Arrange
+        var customOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true
+        };
+
+        // Act
+        AuditTrail.ConfigureSerializerOptions(customOptions);
+
+        // Assert
+        Assert.Same(customOptions, AuditTrail.SerializerOptions);
+
+        // Cleanup
+        AuditTrail.ConfigureSerializerOptions(null);
+    }
+
+    [Fact]
+    public void ConfigureSerializerOptions_WithNull_ResetsToDefault()
+    {
+        // Arrange
+        var customOptions = new JsonSerializerOptions { WriteIndented = true };
+        AuditTrail.ConfigureSerializerOptions(customOptions);
+
+        // Act
+        AuditTrail.ConfigureSerializerOptions(null);
+
+        // Assert
+        Assert.NotSame(customOptions, AuditTrail.SerializerOptions);
+        Assert.False(AuditTrail.SerializerOptions.WriteIndented);
+    }
+
+    [Fact]
+    public void Constructor_WithEntityEntry_PopulatesProperties()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        KeyType userId = 789L;
+
+        // Act
+        var auditLog = new AuditTrail(entityEntry, userId);
+
+        // Assert
+        Assert.Equal(userId, auditLog.UserId);
+        Assert.NotNull(auditLog.TableName);
+        Assert.True(auditLog.DateTimeUTC <= DateTime.UtcNow);
+        Assert.True(auditLog.DateTimeUTC > DateTime.UtcNow.AddSeconds(-5));
+    }
+
+    [Fact]
+    public void Constructor_WithNullEntity_ThrowsArgumentNullException()
+    {
+        // Arrange, Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new AuditTrail(null!, 1));
+    }
+
+    [Fact]
+    public void Create_StaticFactory_CreatesAuditTrailCorrectly()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        KeyType userId = 123L;
+
+        // Act
+        var auditLog = AuditTrail.Create(entityEntry, userId);
+
+        // Assert
+        Assert.NotNull(auditLog);
+        Assert.Equal(EntityChangeType.Created, auditLog.ChangeType);
+        Assert.Equal(userId, auditLog.UserId);
+        Assert.NotNull(auditLog.TableName);
+    }
+
+    [Fact]
+    public void Create_WithNullEntity_ThrowsArgumentNullException()
+    {
+        // Arrange, Act & Assert
+        Assert.Throws<ArgumentNullException>(() => AuditTrail.Create(null!, 1));
+    }
+
+    [Fact]
+    public async Task CreateAsync_StaticFactory_CreatesAuditTrailCorrectly()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        KeyType userId = 456L;
+
+        // Act
+        var auditLog = await AuditTrail.CreateAsync(entityEntry, userId);
+
+        // Assert
+        Assert.NotNull(auditLog);
+        Assert.Equal(EntityChangeType.Created, auditLog.ChangeType);
+        Assert.Equal(userId, auditLog.UserId);
+        Assert.NotNull(auditLog.TableName);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithCancellation_CompletesSuccessfully()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var cts = new CancellationTokenSource();
+
+        // Act
+        var auditLog = await AuditTrail.CreateAsync(entityEntry, 1, cts.Token);
+
+        // Assert
+        Assert.NotNull(auditLog);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithNullEntity_ThrowsArgumentNullException()
+    {
+        // Arrange, Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => AuditTrail.CreateAsync(null!, 1));
     }
 
     [Fact]
@@ -97,193 +381,6 @@ public class AuditTrailTests
     }
 
     [Fact]
-    public void Create_StaticFactory_CreatesAuditTrailCorrectly()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        KeyType userId = 123L;
-
-        // Act
-        var auditLog = AuditTrail.Create(entityEntry, userId);
-
-        // Assert
-        Assert.NotNull(auditLog);
-        Assert.Equal(EntityChangeType.Created, auditLog.ChangeType);
-        Assert.Equal(userId, auditLog.UserId);
-        Assert.NotNull(auditLog.TableName);
-    }
-
-    [Fact]
-    public void Create_WithNullEntity_ThrowsArgumentNullException()
-    {
-        // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() => AuditTrail.Create(null!, 1));
-    }
-
-    [Fact]
-    public async Task CreateAsync_StaticFactory_CreatesAuditTrailCorrectly()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        KeyType userId = 456L;
-
-        // Act
-        var auditLog = await AuditTrail.CreateAsync(entityEntry, userId);
-
-        // Assert
-        Assert.NotNull(auditLog);
-        Assert.Equal(EntityChangeType.Created, auditLog.ChangeType);
-        Assert.Equal(userId, auditLog.UserId);
-        Assert.NotNull(auditLog.TableName);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithNullEntity_ThrowsArgumentNullException()
-    {
-        // Arrange, Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => AuditTrail.CreateAsync(null!, 1));
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithCancellation_CompletesSuccessfully()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var cts = new CancellationTokenSource();
-
-        // Act
-        var auditLog = await AuditTrail.CreateAsync(entityEntry, 1, cts.Token);
-
-        // Assert
-        Assert.NotNull(auditLog);
-    }
-
-    [Fact]
-    public void Archive_MarksAuditTrailAsArchived()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-        Assert.False(auditLog.IsArchived);
-
-        // Act
-        auditLog.Archive();
-
-        // Assert
-        Assert.True(auditLog.IsArchived);
-    }
-
-    [Fact]
-    public void Unarchive_RestoresAuditTrailFromArchived()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-        auditLog.Archive();
-        Assert.True(auditLog.IsArchived);
-
-        // Act
-        auditLog.Unarchive();
-
-        // Assert
-        Assert.False(auditLog.IsArchived);
-    }
-
-    [Fact]
-    public void ShouldBeArchived_WithArchiveDateInPast_ReturnsTrue()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default)
-        {
-            ArchiveAfter = DateTime.UtcNow.AddDays(-1)
-        };
-
-        // Act & Assert
-        Assert.True(auditLog.ShouldBeArchived());
-    }
-
-    [Fact]
-    public void ShouldBeArchived_WithArchiveDateInFuture_ReturnsFalse()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default)
-        {
-            ArchiveAfter = DateTime.UtcNow.AddDays(1)
-        };
-
-        // Act & Assert
-        Assert.False(auditLog.ShouldBeArchived());
-    }
-
-    [Fact]
-    public void ShouldBeArchived_WithNoArchiveDate_ReturnsFalse()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-
-        // Act & Assert
-        Assert.False(auditLog.ShouldBeArchived());
-    }
-
-    [Fact]
-    public void ShouldBeArchived_AlreadyArchived_ReturnsFalse()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default)
-        {
-            ArchiveAfter = DateTime.UtcNow.AddDays(-1),
-            IsArchived = true
-        };
-
-        // Act & Assert
-        Assert.False(auditLog.ShouldBeArchived());
-    }
-
-    [Fact]
-    public void SetRetentionPolicy_SetsArchiveAfterCorrectly()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-        var retentionDays = 90;
-
-        // Act
-        auditLog.SetRetentionPolicy(retentionDays);
-
-        // Assert
-        Assert.NotNull(auditLog.ArchiveAfter);
-        Assert.True(auditLog.ArchiveAfter.Value > auditLog.DateTimeUTC);
-        var expectedDate = auditLog.DateTimeUTC.AddDays(retentionDays);
-        Assert.Equal(expectedDate, auditLog.ArchiveAfter.Value);
-    }
-
-    [Fact]
-    public void SetRetentionPolicy_WithZeroDays_ThrowsArgumentException()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => auditLog.SetRetentionPolicy(0));
-    }
-
-    [Fact]
-    public void SetRetentionPolicy_WithNegativeDays_ThrowsArgumentException()
-    {
-        // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Added);
-        var auditLog = new AuditTrail(entityEntry, default);
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => auditLog.SetRetentionPolicy(-5));
-    }
-
-    [Fact]
     public void DefaultRetentionDays_AppliesAutomaticallyOnCreation()
     {
         // Arrange
@@ -329,17 +426,17 @@ public class AuditTrailTests
     }
 
     [Fact]
-    public void DefaultRetentionDays_WithZeroValue_ThrowsArgumentException()
-    {
-        // Arrange, Act & Assert
-        Assert.Throws<ArgumentException>(() => AuditTrail.DefaultRetentionDays = 0);
-    }
-
-    [Fact]
     public void DefaultRetentionDays_WithNegativeValue_ThrowsArgumentException()
     {
         // Arrange, Act & Assert
         Assert.Throws<ArgumentException>(() => AuditTrail.DefaultRetentionDays = -10);
+    }
+
+    [Fact]
+    public void DefaultRetentionDays_WithZeroValue_ThrowsArgumentException()
+    {
+        // Arrange, Act & Assert
+        Assert.Throws<ArgumentException>(() => AuditTrail.DefaultRetentionDays = 0);
     }
 
     [Fact]
@@ -366,37 +463,22 @@ public class AuditTrailTests
     }
 
     [Fact]
-    public void ConfigureSerializerOptions_AcceptsCustomOptions()
+    public void MaxConstant_Values_AreCorrect()
     {
-        // Arrange
-        var customOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-
-        // Act
-        AuditTrail.ConfigureSerializerOptions(customOptions);
-
-        // Assert
-        Assert.Same(customOptions, AuditTrail.SerializerOptions);
-
-        // Cleanup
-        AuditTrail.ConfigureSerializerOptions(null);
+        // Arrange & Act & Assert
+        Assert.Equal(2000, AuditTrail.MaxChangedColumnsLength);
+        Assert.Equal(1000, AuditTrail.MaxKeyValuesLength);
+        Assert.Equal(255, AuditTrail.MaxTableNameLength);
     }
 
     [Fact]
-    public void ConfigureSerializerOptions_WithNull_ResetsToDefault()
+    public void ParameterlessConstructor_ForEFCore_CreatesInstance()
     {
-        // Arrange
-        var customOptions = new JsonSerializerOptions { WriteIndented = true };
-        AuditTrail.ConfigureSerializerOptions(customOptions);
-
-        // Act
-        AuditTrail.ConfigureSerializerOptions(null);
+        // Arrange & Act
+        var auditLog = new AuditTrail();
 
         // Assert
-        Assert.NotSame(customOptions, AuditTrail.SerializerOptions);
-        Assert.False(AuditTrail.SerializerOptions.WriteIndented);
+        Assert.NotNull(auditLog);
     }
 
     [Fact]
@@ -414,164 +496,114 @@ public class AuditTrailTests
     }
 
     [Fact]
-    public void Constructor_WithEntityEntry_PopulatesProperties()
+    public void SetRetentionPolicy_SetsArchiveAfterCorrectly()
     {
         // Arrange
         var entityEntry = CreateEntityEntry(EntityState.Added);
-        KeyType userId = 789L;
+        var auditLog = new AuditTrail(entityEntry, default);
+        var retentionDays = 90;
 
         // Act
-        var auditLog = new AuditTrail(entityEntry, userId);
+        auditLog.SetRetentionPolicy(retentionDays);
 
         // Assert
-        Assert.Equal(userId, auditLog.UserId);
-        Assert.NotNull(auditLog.TableName);
-        Assert.True(auditLog.DateTimeUTC <= DateTime.UtcNow);
-        Assert.True(auditLog.DateTimeUTC > DateTime.UtcNow.AddSeconds(-5));
+        Assert.NotNull(auditLog.ArchiveAfter);
+        Assert.True(auditLog.ArchiveAfter.Value > auditLog.DateTimeUTC);
+        var expectedDate = auditLog.DateTimeUTC.AddDays(retentionDays);
+        Assert.Equal(expectedDate, auditLog.ArchiveAfter.Value);
     }
 
     [Fact]
-    public void Constructor_WithNullEntity_ThrowsArgumentNullException()
-    {
-        // Arrange, Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new AuditTrail(null!, 1));
-    }
-
-    [Fact]
-    public void ParameterlessConstructor_ForEFCore_CreatesInstance()
-    {
-        // Arrange & Act
-        var auditLog = new AuditTrail();
-
-        // Assert
-        Assert.NotNull(auditLog);
-    }
-
-    [Fact]
-    public void AuditTrail_WithDoNotAuditProperty_ExcludesFromAudit()
+    public void SetRetentionPolicy_WithNegativeDays_ThrowsArgumentException()
     {
         // Arrange
-        var entityEntry = CreateEntityEntryWithDoNotAudit(EntityState.Added);
-
-        // Act
+        var entityEntry = CreateEntityEntry(EntityState.Added);
         var auditLog = new AuditTrail(entityEntry, default);
 
-        // Assert
-        Assert.NotNull(auditLog.NewValues);
-        var newValuesDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(auditLog.NewValues);
-        Assert.NotNull(newValuesDict);
-        Assert.DoesNotContain("Password", newValuesDict.Keys);
-        Assert.Contains("Name", newValuesDict.Keys);
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => auditLog.SetRetentionPolicy(-5));
     }
 
     [Fact]
-    public void AuditTrail_WithEmptyCollections_SerializesAsNull()
+    public void SetRetentionPolicy_WithZeroDays_ThrowsArgumentException()
     {
         // Arrange
-        var entityEntry = CreateEntityEntry(EntityState.Unchanged);
-
-        // Act
+        var entityEntry = CreateEntityEntry(EntityState.Added);
         var auditLog = new AuditTrail(entityEntry, default);
 
-        // Assert
-        Assert.Null(auditLog.OldValues);
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => auditLog.SetRetentionPolicy(0));
     }
 
     [Fact]
-    public void MaxConstant_Values_AreCorrect()
+    public void ShouldBeArchived_AlreadyArchived_ReturnsFalse()
     {
-        // Arrange & Act & Assert
-        Assert.Equal(2000, AuditTrail.MaxChangedColumnsLength);
-        Assert.Equal(1000, AuditTrail.MaxKeyValuesLength);
-        Assert.Equal(255, AuditTrail.MaxTableNameLength);
-    }
-
-    private class AnotherEntity
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-    }
-
-    private class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options)
-    {
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default)
         {
-            modelBuilder.Entity<TestEntity>();
-            modelBuilder.Entity<AnotherEntity>();
-            modelBuilder.Entity<EntityWithDoNotAudit>();
-        }
+            ArchiveAfter = DateTime.UtcNow.AddDays(-1),
+            IsArchived = true
+        };
+
+        // Act & Assert
+        Assert.False(auditLog.ShouldBeArchived());
     }
 
-    private class TestEntity : ISoftDelete
+    [Fact]
+    public void ShouldBeArchived_WithArchiveDateInFuture_ReturnsFalse()
     {
-        public int Id { get; set; }
-        public bool IsDeleted { get; set; }
-        public string? Name { get; set; }
-    }
-
-    private class EntityWithDoNotAudit
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-
-        [DoNotAudit]
-        public string? Password { get; set; }
-    }
-
-    private static EntityEntry CreateAnotherEntityEntry(EntityState state, bool modifiedProperties = false)
-    {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using (var context = new TestDbContext(options))
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default)
         {
-            var entity = new AnotherEntity { Id = 1, Name = "Test" };
-            context.Entry(entity).State = state;
+            ArchiveAfter = DateTime.UtcNow.AddDays(1)
+        };
 
-            if (state == EntityState.Modified && modifiedProperties)
-                context.Entry(entity).Property(e => e.Name).IsModified = true;
-
-            return context.Entry(entity);
-        }
+        // Act & Assert
+        Assert.False(auditLog.ShouldBeArchived());
     }
 
-    private static EntityEntry CreateEntityEntry(EntityState state, bool modifiedProperties = false, bool isSoftDelete = false)
+    [Fact]
+    public void ShouldBeArchived_WithArchiveDateInPast_ReturnsTrue()
     {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        using (var context = new TestDbContext(options))
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default)
         {
-            var entity = new TestEntity { Id = 1, Name = "Test", IsDeleted = isSoftDelete };
-            context.Entry(entity).State = state;
+            ArchiveAfter = DateTime.UtcNow.AddDays(-1)
+        };
 
-            if (state == EntityState.Modified && modifiedProperties)
-                context.Entry(entity).Property(e => e.Name).IsModified = true;
-
-            return context.Entry(entity);
-        }
+        // Act & Assert
+        Assert.True(auditLog.ShouldBeArchived());
     }
 
-    private static EntityEntry CreateEntityEntryWithDoNotAudit(EntityState state)
+    [Fact]
+    public void ShouldBeArchived_WithNoArchiveDate_ReturnsFalse()
     {
-        var options = new DbContextOptionsBuilder<TestDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default);
 
-        using (var context = new TestDbContext(options))
-        {
-            var entity = new EntityWithDoNotAudit { Id = 1, Name = "Test", Password = "secret" };
-            context.Entry(entity).State = state;
-
-            if (state == EntityState.Modified)
-            {
-                context.Entry(entity).Property(e => e.Name).IsModified = true;
-                context.Entry(entity).Property(e => e.Password).IsModified = true;
-            }
-
-            return context.Entry(entity);
-        }
+        // Act & Assert
+        Assert.False(auditLog.ShouldBeArchived());
     }
+
+    [Fact]
+    public void Unarchive_RestoresAuditTrailFromArchived()
+    {
+        // Arrange
+        var entityEntry = CreateEntityEntry(EntityState.Added);
+        var auditLog = new AuditTrail(entityEntry, default);
+        auditLog.Archive();
+        Assert.True(auditLog.IsArchived);
+
+        // Act
+        auditLog.Unarchive();
+
+        // Assert
+        Assert.False(auditLog.IsArchived);
+    }
+
+    #endregion Public Methods
 }

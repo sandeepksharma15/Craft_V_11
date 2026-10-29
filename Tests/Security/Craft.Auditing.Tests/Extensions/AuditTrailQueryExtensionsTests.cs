@@ -1,10 +1,12 @@
-using Craft.Domain;
+using Craft.Domain.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Auditing.Tests.Extensions;
 
 public class AuditTrailQueryExtensionsTests
 {
+    #region Private Methods
+
     private static TestDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
@@ -12,6 +14,122 @@ public class AuditTrailQueryExtensionsTests
             .Options;
 
         return new TestDbContext(options);
+    }
+
+    #endregion Private Methods
+
+    #region Private Classes
+
+    private class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options), IAuditTrailDbContext
+    {
+        #region Protected Methods
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ConfigureAuditTrail();
+            modelBuilder.Entity<TestEntity>();
+        }
+
+        #endregion Protected Methods
+
+        #region Public Properties
+
+        public DbSet<AuditTrail> AuditTrails { get; set; } = null!;
+
+        #endregion Public Properties
+    }
+
+    private class TestEntity : BaseEntity
+    {
+        #region Public Properties
+
+        public string? Name { get; set; }
+
+        #endregion Public Properties
+    }
+
+    #endregion Private Classes
+
+    #region Public Methods
+
+    [Fact]
+    public void Archived_ReturnsOnlyArchivedEntries()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var audit1 = new AuditTrail { IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit2 = new AuditTrail { IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit3 = new AuditTrail { IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        context.AuditTrails.AddRange(audit1, audit2, audit3);
+        context.SaveChanges();
+
+        // Act
+        var result = context.AuditTrails.Archived().ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void ByUser_WithValidUserId_ReturnsMatchingAudits()
+    {
+        // Arrange
+        using var context = CreateContext();
+        var audit1 = new AuditTrail { UserId = 1, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit2 = new AuditTrail { UserId = 1, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit3 = new AuditTrail { UserId = 2, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        context.AuditTrails.AddRange(audit1, audit2, audit3);
+        context.SaveChanges();
+
+        // Act
+        var result = context.AuditTrails.ByUser(1).ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void ChainedQueries_WorkCorrectly()
+    {
+        // Arrange
+        using var context = CreateContext();
+        KeyType userId = 1L;
+        var audit1 = new AuditTrail
+        {
+            TableName = "Products",
+            UserId = userId,
+            DateTimeUTC = DateTime.UtcNow.AddDays(-2),
+            IsArchived = false
+        };
+        var audit2 = new AuditTrail
+        {
+            TableName = "Products",
+            UserId = userId,
+            DateTimeUTC = DateTime.UtcNow.AddDays(-10),
+            IsArchived = false
+        };
+        var audit3 = new AuditTrail
+        {
+            TableName = "Orders",
+            UserId = userId,
+            DateTimeUTC = DateTime.UtcNow.AddDays(-2),
+            IsArchived = false
+        };
+        context.AuditTrails.AddRange(audit1, audit2, audit3);
+        context.SaveChanges();
+
+        // Act
+        var result = context.AuditTrails
+            .ForTable("Products")
+            .ByUser(userId)
+            .NotArchived()
+            .Recent(7)
+            .OrderByMostRecent()
+            .ToList();
+
+        // Assert
+        var item = Assert.Single(result);
+        Assert.Equal(audit1.Id, item.Id);
     }
 
     [Fact]
@@ -34,6 +152,16 @@ public class AuditTrailQueryExtensionsTests
     }
 
     [Fact]
+    public void ForTable_WithNullTableName_ThrowsArgumentNullException()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => context.AuditTrails.ForTable(null!).ToList());
+    }
+
+    [Fact]
     public void ForTable_WithValidTableName_ReturnsMatchingAudits()
     {
         // Arrange
@@ -52,13 +180,15 @@ public class AuditTrailQueryExtensionsTests
     }
 
     [Fact]
-    public void ForTable_WithNullTableName_ThrowsArgumentNullException()
+    public void InDateRange_WithInvalidRange_ThrowsArgumentException()
     {
         // Arrange
         using var context = CreateContext();
+        var from = DateTime.UtcNow;
+        var to = DateTime.UtcNow.AddDays(-7);
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => context.AuditTrails.ForTable(null!).ToList());
+        Assert.Throws<ArgumentException>(() => context.AuditTrails.InDateRange(from, to).ToList());
     }
 
     [Fact]
@@ -76,92 +206,6 @@ public class AuditTrailQueryExtensionsTests
 
         // Act
         var result = context.AuditTrails.InDateRange(from, to).ToList();
-
-        // Assert
-        Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void InDateRange_WithInvalidRange_ThrowsArgumentException()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var from = DateTime.UtcNow;
-        var to = DateTime.UtcNow.AddDays(-7);
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => context.AuditTrails.InDateRange(from, to).ToList());
-    }
-
-    [Fact]
-    public void ByUser_WithValidUserId_ReturnsMatchingAudits()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var audit1 = new AuditTrail { UserId = 1, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit2 = new AuditTrail { UserId = 1, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit3 = new AuditTrail { UserId = 2, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        context.AuditTrails.AddRange(audit1, audit2, audit3);
-        context.SaveChanges();
-
-        // Act
-        var result = context.AuditTrails.ByUser(1).ToList();
-
-        // Assert
-        Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void PendingArchival_ReturnsOnlyEligibleEntries()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var audit1 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(-1), IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit2 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(1), IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit3 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(-1), IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit4 = new AuditTrail { ArchiveAfter = null, IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        context.AuditTrails.AddRange(audit1, audit2, audit3, audit4);
-        context.SaveChanges();
-
-        // Act
-        var result = context.AuditTrails.PendingArchival().ToList();
-
-        // Assert
-        var item = Assert.Single(result);
-        Assert.Equal(audit1.Id, item.Id);
-    }
-
-    [Fact]
-    public void OfChangeType_WithValidType_ReturnsMatchingAudits()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var audit1 = new AuditTrail { ChangeType = EntityChangeType.Created, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit2 = new AuditTrail { ChangeType = EntityChangeType.Updated, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit3 = new AuditTrail { ChangeType = EntityChangeType.Created, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        context.AuditTrails.AddRange(audit1, audit2, audit3);
-        context.SaveChanges();
-
-        // Act
-        var result = context.AuditTrails.OfChangeType(EntityChangeType.Created).ToList();
-
-        // Assert
-        Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void Archived_ReturnsOnlyArchivedEntries()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var audit1 = new AuditTrail { IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit2 = new AuditTrail { IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        var audit3 = new AuditTrail { IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
-        context.AuditTrails.AddRange(audit1, audit2, audit3);
-        context.SaveChanges();
-
-        // Act
-        var result = context.AuditTrails.Archived().ToList();
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -186,48 +230,21 @@ public class AuditTrailQueryExtensionsTests
     }
 
     [Fact]
-    public void Recent_WithDefaultDays_ReturnsRecentEntries()
+    public void OfChangeType_WithValidType_ReturnsMatchingAudits()
     {
         // Arrange
         using var context = CreateContext();
-        var audit1 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-3), TableName = "Test" };
-        var audit2 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-10), TableName = "Test" };
-        var audit3 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-1), TableName = "Test" };
+        var audit1 = new AuditTrail { ChangeType = EntityChangeType.Created, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit2 = new AuditTrail { ChangeType = EntityChangeType.Updated, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit3 = new AuditTrail { ChangeType = EntityChangeType.Created, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
         context.AuditTrails.AddRange(audit1, audit2, audit3);
         context.SaveChanges();
 
         // Act
-        var result = context.AuditTrails.Recent().ToList();
+        var result = context.AuditTrails.OfChangeType(EntityChangeType.Created).ToList();
 
         // Assert
         Assert.Equal(2, result.Count);
-    }
-
-    [Fact]
-    public void Recent_WithCustomDays_ReturnsRecentEntries()
-    {
-        // Arrange
-        using var context = CreateContext();
-        var audit1 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-2), TableName = "Test" };
-        var audit2 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-5), TableName = "Test" };
-        context.AuditTrails.AddRange(audit1, audit2);
-        context.SaveChanges();
-
-        // Act
-        var result = context.AuditTrails.Recent(3).ToList();
-
-        // Assert
-        Assert.Single(result);
-    }
-
-    [Fact]
-    public void Recent_WithInvalidDays_ThrowsArgumentException()
-    {
-        // Arrange
-        using var context = CreateContext();
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => context.AuditTrails.Recent(0).ToList());
     }
 
     [Fact]
@@ -271,62 +288,69 @@ public class AuditTrailQueryExtensionsTests
     }
 
     [Fact]
-    public void ChainedQueries_WorkCorrectly()
+    public void PendingArchival_ReturnsOnlyEligibleEntries()
     {
         // Arrange
         using var context = CreateContext();
-        KeyType userId = 1L;
-        var audit1 = new AuditTrail 
-        { 
-            TableName = "Products", 
-            UserId = userId, 
-            DateTimeUTC = DateTime.UtcNow.AddDays(-2),
-            IsArchived = false
-        };
-        var audit2 = new AuditTrail 
-        { 
-            TableName = "Products", 
-            UserId = userId, 
-            DateTimeUTC = DateTime.UtcNow.AddDays(-10),
-            IsArchived = false
-        };
-        var audit3 = new AuditTrail 
-        { 
-            TableName = "Orders", 
-            UserId = userId, 
-            DateTimeUTC = DateTime.UtcNow.AddDays(-2),
-            IsArchived = false
-        };
-        context.AuditTrails.AddRange(audit1, audit2, audit3);
+        var audit1 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(-1), IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit2 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(1), IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit3 = new AuditTrail { ArchiveAfter = DateTime.UtcNow.AddDays(-1), IsArchived = true, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        var audit4 = new AuditTrail { ArchiveAfter = null, IsArchived = false, TableName = "Test", DateTimeUTC = DateTime.UtcNow };
+        context.AuditTrails.AddRange(audit1, audit2, audit3, audit4);
         context.SaveChanges();
 
         // Act
-        var result = context.AuditTrails
-            .ForTable("Products")
-            .ByUser(userId)
-            .NotArchived()
-            .Recent(7)
-            .OrderByMostRecent()
-            .ToList();
+        var result = context.AuditTrails.PendingArchival().ToList();
 
         // Assert
         var item = Assert.Single(result);
         Assert.Equal(audit1.Id, item.Id);
     }
 
-    private class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options), IAuditTrailDbContext
+    [Fact]
+    public void Recent_WithCustomDays_ReturnsRecentEntries()
     {
-        public DbSet<AuditTrail> AuditTrails { get; set; } = null!;
+        // Arrange
+        using var context = CreateContext();
+        var audit1 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-2), TableName = "Test" };
+        var audit2 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-5), TableName = "Test" };
+        context.AuditTrails.AddRange(audit1, audit2);
+        context.SaveChanges();
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.ConfigureAuditTrail();
-            modelBuilder.Entity<TestEntity>();
-        }
+        // Act
+        var result = context.AuditTrails.Recent(3).ToList();
+
+        // Assert
+        Assert.Single(result);
     }
 
-    private class TestEntity : BaseEntity
+    [Fact]
+    public void Recent_WithDefaultDays_ReturnsRecentEntries()
     {
-        public string? Name { get; set; }
+        // Arrange
+        using var context = CreateContext();
+        var audit1 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-3), TableName = "Test" };
+        var audit2 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-10), TableName = "Test" };
+        var audit3 = new AuditTrail { DateTimeUTC = DateTime.UtcNow.AddDays(-1), TableName = "Test" };
+        context.AuditTrails.AddRange(audit1, audit2, audit3);
+        context.SaveChanges();
+
+        // Act
+        var result = context.AuditTrails.Recent().ToList();
+
+        // Assert
+        Assert.Equal(2, result.Count);
     }
+
+    [Fact]
+    public void Recent_WithInvalidDays_ThrowsArgumentException()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => context.AuditTrails.Recent(0).ToList());
+    }
+
+    #endregion Public Methods
 }

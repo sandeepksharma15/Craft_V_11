@@ -4,6 +4,8 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Craft.Domain;
+using Craft.Domain.Abstractions;
+using Craft.Domain.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 

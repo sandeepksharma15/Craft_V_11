@@ -16,6 +16,7 @@
     <Project Path="Source/Core/Craft.Utilities/Craft.Utilities.csproj" />
   </Folder>
   <Folder Name="/Source/Security/">
+    <Project Path="Source/Security/Craft.Auditing/Craft.Auditing.csproj" />
     <Project Path="Source/Security/Craft.CryptKey/Craft.CryptKey.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
@@ -26,6 +27,7 @@
     <Project Path="Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Security/">
+    <Project Path="Tests/Security/Craft.Auditing.Tests/Craft.Auditing.Tests.csproj" />
     <Project Path="Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Support/">

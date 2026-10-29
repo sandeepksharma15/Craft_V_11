@@ -1,30 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFramework>net11.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Authors>Sandeep SHARMA</Authors>		
-		<RootNamespace>Craft.Auditing</RootNamespace>
+		<Authors>Sandeep SHARMA</Authors>
+		<RootNamespace>Craft.Domain</RootNamespace>
+		<NeutralLanguage>en</NeutralLanguage>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.12" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\1. Core\Craft.Domain\Craft.Domain.csproj" />
-	  <ProjectReference Include="..\..\1. Core\Craft.Extensions\Craft.Extensions.csproj" />
+	  <ProjectReference Include="..\..\Core\Craft.Domain\Craft.Domain.csproj" />
+	  <ProjectReference Include="..\..\Core\Craft.Extensions\Craft.Extensions.csproj" />
 	</ItemGroup>
-
-	<!-- Generate minimal staticwebassets.build.json to satisfy VS Fast Up-to-Date Check
-		 when this class library is referenced transitively by web projects -->
-	<!--<Target Name="EnsureStaticWebAssetsManifest" AfterTargets="Build"
-			Condition="!Exists('$(IntermediateOutputPath)staticwebassets.build.json')">
-		<WriteLinesToFile
-			File="$(IntermediateOutputPath)staticwebassets.build.json"
-			Lines='{"Version":1,"Hash":"","Source":"$(AssemblyName)","BasePath":"_content/$(AssemblyName)","Mode":"Default","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}'
-			Overwrite="true" />
-	</Target>-->
 
 </Project>

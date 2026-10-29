@@ -1,4 +1,5 @@
 ﻿using Craft.Domain;
+using Craft.Domain.Base;
 using System.Reflection;
 
 namespace Craft.Auditing;

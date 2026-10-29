@@ -1,4 +1,5 @@
 ﻿using Craft.Domain;
+using Craft.Domain.Abstractions;
 
 namespace Craft.Auditing;
 

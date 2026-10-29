@@ -38,6 +38,24 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify auditing coverage
+        run: |
+          dotnet test --project Tests/Security/Craft.Auditing.Tests/Craft.Auditing.Tests.csproj \
+            --configuration Release --no-build \
+            --coverlet --results-directory artifacts/auditing-coverage \
+            --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.Auditing]*"
+          python3 .github/scripts/verify-auditing-coverage.py artifacts/auditing-coverage
+
+      - name: Upload auditing coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: auditing-coverage-${{ matrix.os }}
+          path: artifacts/auditing-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify CryptKey coverage
         run: |
           dotnet test --project Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj \

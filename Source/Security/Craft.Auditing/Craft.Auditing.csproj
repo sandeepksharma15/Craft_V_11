@@ -1,20 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-	<PropertyGroup>
-		<TargetFramework>net11.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<Authors>Sandeep SHARMA</Authors>
-		<RootNamespace>Craft.Domain</RootNamespace>
-		<NeutralLanguage>en</NeutralLanguage>
-	</PropertyGroup>
-
-	<ItemGroup>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\Core\Craft.Domain\Craft.Domain.csproj" />
-	  <ProjectReference Include="..\..\Core\Craft.Extensions\Craft.Extensions.csproj" />
-	</ItemGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <Authors>Sandeep SHARMA</Authors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0-rc.3.26522.148" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="11.0.0-rc.3.26522.148" />
+    <ProjectReference Include="..\..\Core\Craft.Domain\Craft.Domain.csproj" />
+  </ItemGroup>
 </Project>

@@ -58,3 +58,5 @@
 - DomainConstants regexes use \A/\z whole-input anchors and support NonBacktracking. Preserve documented ASCII/code and unsigned numeric policies; phone permits Unicode digits but only literal spaces. Email/URL/phone are basic format checks, not complete semantic validators; DataAnnotations still needs Required for empty values.
 
 - Craft.CryptKey uses an explicitly configured singleton IHashKeys and a typed Hashids payload for int/long/Guid; no implicit encoder/salt or service-locator extensions. Configuration is validated/snapshotted; strict decoding throws FormatException and Try decoding rejects invalid input. Tokens are obfuscation, not authorization or authenticated encryption.
+
+- Craft.Auditing is opt-in and observational. AuditedDbContext coordinates business and audit writes in one relational transaction/savepoint; failed saves/outer rollbacks require a fresh context. Repository code owns ISoftDelete changes. Use IAuditContext, scoped option snapshots, exact composite-key lookup, and explicit scheduled ArchiveDueAsync batches; no static configuration or automatic graph scanning.

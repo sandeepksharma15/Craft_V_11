@@ -1,4 +1,6 @@
-namespace Craft.CryptKey;
+using Craft.CryptKey.Abstractions;
+
+namespace Craft.CryptKey.Extensions;
 
 public static class KeyTypeExtensions
 {
@@ -13,7 +15,8 @@ public static class KeyTypeExtensions
 
     extension(string? hashKey)
     {
-        public KeyType ToKeyType(IHashKeys hashKeys) => hashKey.ToKeyType<KeyType>(hashKeys);
+        public KeyType ToKeyType(IHashKeys hashKeys)
+            => hashKey.ToKeyType<KeyType>(hashKeys);
 
         public TKey ToKeyType<TKey>(IHashKeys hashKeys) where TKey : struct
         {

@@ -1,10 +1,12 @@
 using HashidsNet;
 using Microsoft.Extensions.Options;
 
-namespace Craft.CryptKey;
+namespace Craft.CryptKey.Configuration;
 
 internal sealed class HashKeyOptionsValidator : IValidateOptions<HashKeyOptions>
 {
+    #region Public Methods
+
     public ValidateOptionsResult Validate(string? name, HashKeyOptions options)
     {
         if (string.IsNullOrWhiteSpace(options.Salt))
@@ -31,4 +33,6 @@ internal sealed class HashKeyOptionsValidator : IValidateOptions<HashKeyOptions>
         }
         return ValidateOptionsResult.Success;
     }
+
+    #endregion Public Methods
 }

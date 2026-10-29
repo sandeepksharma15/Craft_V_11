@@ -1,12 +1,16 @@
 using HashidsNet;
 
-namespace Craft.CryptKey;
+namespace Craft.CryptKey.Configuration;
 
 public sealed class HashKeyOptions
 {
-    public string Salt { get; set; } = string.Empty;
+    #region Public Properties
+
     public string Alphabet { get; set; } = Hashids.DEFAULT_ALPHABET;
-    public string Separators { get; set; } = Hashids.DEFAULT_SEPS;
-    public int MinHashLength { get; set; } = 10;
     public int MaxHashLength { get; set; } = 256;
+    public int MinHashLength { get; set; } = 10;
+    public string Salt { get; set; } = string.Empty;
+    public string Separators { get; set; } = Hashids.DEFAULT_SEPS;
+
+    #endregion Public Properties
 }

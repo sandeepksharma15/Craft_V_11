@@ -1,19 +1,28 @@
 using System.Buffers.Binary;
 
-namespace Craft.CryptKey;
+namespace Craft.CryptKey.Encoding;
 
 internal static class KeyPayload
 {
-    // These discriminators define the persisted v1 wire format, not application configuration.
-    private const long Int32Tag = 1;
-    private const long Int64Tag = 2;
+    #region Private Fields
+
     private const long GuidTag = 3;
 
-    internal static void EnsureSupported<TKey>() where TKey : struct
-    {
-        if (typeof(TKey) != typeof(int) && typeof(TKey) != typeof(long) && typeof(TKey) != typeof(Guid))
-            throw new NotSupportedException($"Key type '{typeof(TKey)}' is not supported. Use int, long or Guid.");
-    }
+    // These discriminators define the persisted v1 wire format, not application configuration.
+    private const long Int32Tag = 1;
+
+    private const long Int64Tag = 2;
+
+    #endregion Private Fields
+
+    #region Private Methods
+
+    private static long[] EncodeInteger(long value, long tag)
+        => value < 0 ? [tag, ~value, 1] : [tag, value, 0];
+
+    #endregion Private Methods
+
+    #region Internal Methods
 
     internal static long[] Encode<TKey>(TKey key) where TKey : struct
     {
@@ -31,8 +40,11 @@ internal static class KeyPayload
             BinaryPrimitives.ReadUInt32BigEndian(bytes[12..])];
     }
 
-    private static long[] EncodeInteger(long value, long tag)
-        => value < 0 ? [tag, ~value, 1] : [tag, value, 0];
+    internal static void EnsureSupported<TKey>() where TKey : struct
+    {
+        if (typeof(TKey) != typeof(int) && typeof(TKey) != typeof(long) && typeof(TKey) != typeof(Guid))
+            throw new NotSupportedException($"Key type '{typeof(TKey)}' is not supported. Use int, long or Guid.");
+    }
 
     internal static bool TryDecode<TKey>(ReadOnlySpan<long> values, out TKey key) where TKey : struct
     {
@@ -61,4 +73,6 @@ internal static class KeyPayload
         key = (TKey)(object)new Guid(bytes, bigEndian: true);
         return true;
     }
+
+    #endregion Internal Methods
 }

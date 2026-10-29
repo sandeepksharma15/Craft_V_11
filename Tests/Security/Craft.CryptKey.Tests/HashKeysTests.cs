@@ -1,37 +1,21 @@
 using System.Globalization;
-using Craft.CryptKey;
+using Craft.CryptKey.Abstractions;
+using Craft.CryptKey.Configuration;
+using Craft.CryptKey.Encoding;
 using HashidsNet;
-using Microsoft.Extensions.Options;
 
 namespace Craft.CryptKey.Tests;
 
 public class HashKeysTests
 {
-    internal static HashKeyOptions Configuration() => new() { Salt = "test-application" };
+    #region Private Methods
+
     private static HashKeys Create() => new(Configuration());
+
     private static string Raw(params long[] values)
     {
         var options = Configuration();
         return new Hashids(options.Salt, options.MinHashLength, options.Alphabet, options.Separators).EncodeLong(values);
-    }
-
-    [Fact]
-    public void IntegerKeys_RoundTripAcrossTheirFullRanges()
-    {
-        var keys = Create();
-        foreach (var key in new[] { int.MinValue, int.MinValue + 1, -1, 0, 1, int.MaxValue })
-            RoundTrip(keys, key);
-        foreach (var key in new[] { long.MinValue, long.MinValue + 1, -1, 0, 1, (long)int.MaxValue + 1, long.MaxValue })
-            RoundTrip(keys, key);
-    }
-
-    [Fact]
-    public void GuidKeys_RoundTripIncludingEmptyAndEveryBitSet()
-    {
-        var keys = Create();
-        foreach (var key in new[] { Guid.Empty, Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"), Guid.NewGuid() })
-            RoundTrip(keys, key);
     }
 
     private static void RoundTrip<TKey>(IHashKeys keys, TKey key) where TKey : struct
@@ -45,16 +29,15 @@ public class HashKeysTests
         Assert.Equal(token, Create().Encode(key));
     }
 
-    [Fact]
-    public void DifferentKeysAndTypes_HaveDistinctTokens()
-    {
-        var keys = Create();
-        var tokens = Enumerable.Range(-500, 1001).SelectMany(i => new[] { keys.Encode(i), keys.Encode((long)i) }).ToArray();
-        Assert.Equal(tokens.Length, tokens.Distinct().Count());
-        Assert.False(keys.TryDecode<int>(keys.Encode(42L), out _));
-        Assert.False(keys.TryDecode<long>(keys.Encode(42), out _));
-        Assert.False(keys.TryDecode<Guid>(keys.Encode(42L), out _));
-    }
+    #endregion Private Methods
+
+    #region Internal Methods
+
+    internal static HashKeyOptions Configuration() => new() { Salt = "test-application" };
+
+    #endregion Internal Methods
+
+    #region Public Methods
 
     [Fact]
     public void Configuration_IsSnapshottedAtConstruction()
@@ -82,6 +65,36 @@ public class HashKeysTests
         Assert.False(other.TryDecode<long>(token, out _));
     }
 
+    [Fact]
+    public void DifferentKeysAndTypes_HaveDistinctTokens()
+    {
+        var keys = Create();
+        var tokens = Enumerable.Range(-500, 1001).SelectMany(i => new[] { keys.Encode(i), keys.Encode((long)i) }).ToArray();
+        Assert.Equal(tokens.Length, tokens.Distinct().Count());
+        Assert.False(keys.TryDecode<int>(keys.Encode(42L), out _));
+        Assert.False(keys.TryDecode<long>(keys.Encode(42), out _));
+        Assert.False(keys.TryDecode<Guid>(keys.Encode(42L), out _));
+    }
+
+    [Fact]
+    public void GuidKeys_RoundTripIncludingEmptyAndEveryBitSet()
+    {
+        var keys = Create();
+        foreach (var key in new[] { Guid.Empty, Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+            Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"), Guid.NewGuid() })
+            RoundTrip(keys, key);
+    }
+
+    [Fact]
+    public void IntegerKeys_RoundTripAcrossTheirFullRanges()
+    {
+        var keys = Create();
+        foreach (var key in new[] { int.MinValue, int.MinValue + 1, -1, 0, 1, int.MaxValue })
+            RoundTrip(keys, key);
+        foreach (var key in new[] { long.MinValue, long.MinValue + 1, -1, 0, 1, (long)int.MaxValue + 1, long.MaxValue })
+            RoundTrip(keys, key);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -98,20 +111,24 @@ public class HashKeysTests
     }
 
     [Fact]
-    public void TokenLength_IsBoundedOnBothPaths()
+    public void MalformedInput_DoesNotEscapeTryDecode()
     {
         var keys = Create();
-        Assert.False(keys.TryDecode<long>(new string('a', Configuration().MaxHashLength + 1), out _));
-        var options = Configuration();
-        options.MinHashLength = 0;
-        options.MaxHashLength = 1;
-        Assert.Throws<InvalidOperationException>(() => new HashKeys(options).Encode(long.MaxValue));
-        options.MinHashLength = 64;
-        options.MaxHashLength = 64;
-        keys = new HashKeys(options);
-        var token = keys.Encode(1L);
-        Assert.Equal(64, token.Length);
-        Assert.Equal(1L, keys.Decode<long>(token));
+        var random = new Random(937);
+        var alphabet = Configuration().Alphabet;
+
+        foreach (var character in alphabet)
+            keys.TryDecode<long>(character.ToString(), out _);
+
+        for (var i = 0; i < 2000; i++)
+        {
+            var token = new string([.. Enumerable
+                .Range(0, random.Next(1, 257))
+                .Select(_ => alphabet[random.Next(alphabet.Length)])]);
+
+            if (keys.TryDecode<long>(token, out var value))
+                Assert.Equal(token, keys.Encode(value));
+        }
     }
 
     [Fact]
@@ -134,31 +151,6 @@ public class HashKeysTests
     }
 
     [Fact]
-    public void UnsupportedTypes_ThrowInsteadOfSilentlyConverting()
-    {
-        var keys = Create();
-        Assert.Throws<NotSupportedException>(() => keys.Encode(1m));
-        Assert.Throws<NotSupportedException>(() => keys.TryDecode<decimal>(null, out _));
-        Assert.Throws<NotSupportedException>(() => keys.Decode<ulong>(keys.Encode(1L)));
-    }
-
-    [Fact]
-    public void MalformedInput_DoesNotEscapeTryDecode()
-    {
-        var keys = Create();
-        var random = new Random(937);
-        var alphabet = Configuration().Alphabet;
-        foreach (var character in alphabet)
-            keys.TryDecode<long>(character.ToString(), out _);
-        for (var i = 0; i < 2000; i++)
-        {
-            var token = new string(Enumerable.Range(0, random.Next(1, 257)).Select(_ => alphabet[random.Next(alphabet.Length)]).ToArray());
-            if (keys.TryDecode<long>(token, out var value))
-                Assert.Equal(token, keys.Encode(value));
-        }
-    }
-
-    [Fact]
     public async Task Singleton_IsDeterministicAcrossConcurrentCultures()
     {
         var keys = Create();
@@ -172,4 +164,32 @@ public class HashKeysTests
         });
         await Task.WhenAll(tasks);
     }
+
+    [Fact]
+    public void TokenLength_IsBoundedOnBothPaths()
+    {
+        var keys = Create();
+        Assert.False(keys.TryDecode<long>(new string('a', Configuration().MaxHashLength + 1), out _));
+        var options = Configuration();
+        options.MinHashLength = 0;
+        options.MaxHashLength = 1;
+        Assert.Throws<InvalidOperationException>(() => new HashKeys(options).Encode(long.MaxValue));
+        options.MinHashLength = 64;
+        options.MaxHashLength = 64;
+        keys = new HashKeys(options);
+        var token = keys.Encode(1L);
+        Assert.Equal(64, token.Length);
+        Assert.Equal(1L, keys.Decode<long>(token));
+    }
+
+    [Fact]
+    public void UnsupportedTypes_ThrowInsteadOfSilentlyConverting()
+    {
+        var keys = Create();
+        Assert.Throws<NotSupportedException>(() => keys.Encode(1m));
+        Assert.Throws<NotSupportedException>(() => keys.TryDecode<decimal>(null, out _));
+        Assert.Throws<NotSupportedException>(() => keys.Decode<ulong>(keys.Encode(1L)));
+    }
+
+    #endregion Public Methods
 }

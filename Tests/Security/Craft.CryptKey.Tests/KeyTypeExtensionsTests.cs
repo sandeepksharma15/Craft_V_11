@@ -1,10 +1,18 @@
-using Craft.CryptKey;
+using Craft.CryptKey.Abstractions;
+using Craft.CryptKey.Encoding;
+using Craft.CryptKey.Extensions;
 
 namespace Craft.CryptKey.Tests;
 
 public class KeyTypeExtensionsTests
 {
+    #region Private Fields
+
     private readonly IHashKeys _keys = new HashKeys(HashKeysTests.Configuration());
+
+    #endregion Private Fields
+
+    #region Public Methods
 
     [Fact]
     public void DefaultKeyType_RoundTrips()
@@ -32,6 +40,15 @@ public class KeyTypeExtensionsTests
     }
 
     [Fact]
+    public void NullAndMalformedTokens_FollowTheServiceContract()
+    {
+        string? token = null;
+        Assert.False(token.TryToKeyType(_keys, out _));
+        Assert.Throws<FormatException>(() => token.ToKeyType(_keys));
+        Assert.Throws<FormatException>(() => "!".ToKeyType<int>(_keys));
+    }
+
+    [Fact]
     public void NullService_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => 1.ToHashKey(null!));
@@ -41,12 +58,5 @@ public class KeyTypeExtensionsTests
         Assert.Throws<ArgumentNullException>(() => "token".TryToKeyType<int>(null!, out _));
     }
 
-    [Fact]
-    public void NullAndMalformedTokens_FollowTheServiceContract()
-    {
-        string? token = null;
-        Assert.False(token.TryToKeyType(_keys, out _));
-        Assert.Throws<FormatException>(() => token.ToKeyType(_keys));
-        Assert.Throws<FormatException>(() => "!".ToKeyType<int>(_keys));
-    }
+    #endregion Public Methods
 }

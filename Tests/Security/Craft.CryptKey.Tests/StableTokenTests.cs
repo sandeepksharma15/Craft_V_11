@@ -1,9 +1,23 @@
-using Craft.CryptKey;
+using Craft.CryptKey.Encoding;
 
 namespace Craft.CryptKey.Tests;
 
 public class StableTokenTests
 {
+    #region Public Methods
+
+    [Theory]
+    [InlineData("00000000-0000-0000-0000-000000000000", "pbUltYtmtj")]
+    [InlineData("00112233-4455-6677-8899-aabbccddeeff", "yYUnjykI3k2OZESgjD42EUv7V5wX")]
+    [InlineData("ffffffff-ffff-ffff-ffff-ffffffffffff", "nnUZ134DaU0PEmZRUL26o01fvoGMLX")]
+    public void GuidTokens_KeepTheirPersistedRepresentation(string value, string token)
+    {
+        var keys = new HashKeys(HashKeysTests.Configuration());
+        var key = Guid.Parse(value);
+        Assert.Equal(token, keys.Encode(key));
+        Assert.Equal(key, keys.Decode<Guid>(token));
+    }
+
     [Theory]
     [InlineData(-2147483648, "JdcNODDAZT8")]
     [InlineData(-1, "yzEkc6tNKQ")]
@@ -32,16 +46,5 @@ public class StableTokenTests
         Assert.Equal(key, keys.Decode<long>(token));
     }
 
-    [Theory]
-    [InlineData("00000000-0000-0000-0000-000000000000", "pbUltYtmtj")]
-    [InlineData("00112233-4455-6677-8899-aabbccddeeff", "yYUnjykI3k2OZESgjD42EUv7V5wX")]
-    [InlineData("ffffffff-ffff-ffff-ffff-ffffffffffff", "nnUZ134DaU0PEmZRUL26o01fvoGMLX")]
-    public void GuidTokens_KeepTheirPersistedRepresentation(string value, string token)
-    {
-        var keys = new HashKeys(HashKeysTests.Configuration());
-        var key = Guid.Parse(value);
-        Assert.Equal(token, keys.Encode(key));
-        Assert.Equal(key, keys.Decode<Guid>(token));
-    }
-
+    #endregion Public Methods
 }

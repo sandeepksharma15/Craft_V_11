@@ -59,4 +59,6 @@
 
 - Craft.CryptKey uses an explicitly configured singleton IHashKeys and a typed Hashids payload for int/long/Guid; no implicit encoder/salt or service-locator extensions. Configuration is validated/snapshotted; strict decoding throws FormatException and Try decoding rejects invalid input. Tokens are obfuscation, not authorization or authenticated encryption.
 
-- Craft.Auditing is opt-in and observational. AuditedDbContext coordinates business and audit writes in one relational transaction/savepoint; failed saves/outer rollbacks require a fresh context. Repository code owns ISoftDelete changes. Use IAuditContext, scoped option snapshots, exact composite-key lookup, and explicit scheduled ArchiveDueAsync batches; no static configuration or automatic graph scanning.
+- Craft.Auditing is opt-in and observational. AuditedDbContext coordinates business and audit writes in one relational transaction/savepoint; failed saves/outer rollbacks require a fresh context. The planned Craft.Data context pipeline owns ISoftDelete changes before audit capture (superseding repository ownership). Use IAuditContext, scoped option snapshots, exact composite-key lookup, and explicit scheduled ArchiveDueAsync batches; no static configuration or automatic graph scanning.
+
+- V10 architecture inventory and proposed V11 boundaries are recorded in docs/Craft-V10-Architecture-Review.md. Treat proposals as recommendations until accepted; do not automatically port V10 dependencies or provider stubs.

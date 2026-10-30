@@ -1,5 +1,7 @@
 # Craft_V_11
 
+[Architecture review and proposed V11 direction](docs/Craft-V10-Architecture-Review.md)
+
 ## Build before pushing
 
 Install the repository's Git hooks once in each clone:

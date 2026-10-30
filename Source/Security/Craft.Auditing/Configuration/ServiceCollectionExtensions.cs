@@ -12,7 +12,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddScoped<AuditTrailFactory>();
         return services.AddOptions<AuditOptions>()
-            .Validate(o => o.RetentionPeriod is null || o.RetentionPeriod > TimeSpan.Zero, "RetentionPeriod must be positive.")
+            .Validate(o => o.RetentionPeriod is not { } retention || retention > TimeSpan.Zero, "RetentionPeriod must be positive.")
             .Validate(o => !string.IsNullOrWhiteSpace(o.RedactionText), "RedactionText is required.")
             .ValidateOnStart();
     }

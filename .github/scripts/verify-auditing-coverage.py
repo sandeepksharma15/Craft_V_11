@@ -7,10 +7,10 @@ if len(reports) != 1:
     raise SystemExit(f"Expected one Auditing coverage report, found {len(reports)}")
 report = ET.parse(reports[0]).getroot()
 classes = report.findall(".//class")
-expected = {"Craft.Auditing.AuditTrail", "Craft.Auditing.AuditTrailFactory", "Craft.Auditing.PendingAudit",
-            "Craft.Auditing.AuditedDbContext", "Craft.Auditing.AuditKey", "Craft.Auditing.AuditArchiver",
-            "Craft.Auditing.AuditQueryExtensions", "Craft.Auditing.AuditChanges", "Craft.Auditing.AuditDifference",
-            "Craft.Auditing.AuditModelExtensions", "Craft.Auditing.ServiceCollectionExtensions", "Craft.Auditing.AuditOptions"}
+expected = {"Craft.Auditing.Model.AuditTrail", "Craft.Auditing.Capture.AuditTrailFactory", "Craft.Auditing.Capture.PendingAudit",
+            "Craft.Auditing.Persistence.AuditedDbContext", "Craft.Auditing.Capture.AuditKey", "Craft.Auditing.AuditArchiver",
+            "Craft.Auditing.Queries.AuditQueryExtensions", "Craft.Auditing.Queries.AuditChanges", "Craft.Auditing.Model.AuditDifference",
+            "Craft.Auditing.AuditModelExtensions", "Craft.Auditing.Configuration.ServiceCollectionExtensions", "Craft.Auditing.Configuration.AuditOptions"}
 reported = {item.attrib["name"] for item in classes}
 if not expected <= reported:
     raise SystemExit(f"Missing coverage: {expected - reported}")

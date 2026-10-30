@@ -1,3 +1,4 @@
+using Craft.Auditing.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 

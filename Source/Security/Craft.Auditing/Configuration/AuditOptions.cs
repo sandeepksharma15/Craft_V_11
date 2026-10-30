@@ -1,7 +1,11 @@
-namespace Craft.Auditing;
+namespace Craft.Auditing.Configuration;
 
 public sealed class AuditOptions
 {
-    public TimeSpan? RetentionPeriod { get; set; }
+    #region Public Properties
+
     public string RedactionText { get; set; } = "[REDACTED]";
+    public TimeSpan? RetentionPeriod { get; set; }
+
+    #endregion Public Properties
 }

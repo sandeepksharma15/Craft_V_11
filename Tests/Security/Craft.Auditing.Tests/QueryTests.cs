@@ -1,4 +1,8 @@
 using System.Text.Json;
+using Craft.Auditing.Capture;
+using Craft.Auditing.Model;
+using Craft.Auditing.Queries;
+using Craft.Auditing.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Auditing.Tests;

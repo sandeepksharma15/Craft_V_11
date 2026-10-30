@@ -1,3 +1,8 @@
+using Craft.Auditing.Abstractions;
+using Craft.Auditing.Capture;
+using Craft.Auditing.Configuration;
+using Craft.Auditing.Model;
+using Craft.Auditing.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using Microsoft.Extensions.DependencyInjection;

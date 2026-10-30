@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Craft.Auditing;
+namespace Craft.Auditing.Model;
 
 public sealed record AuditDifference(string PropertyName, JsonElement? OldValue, JsonElement? NewValue)
 {

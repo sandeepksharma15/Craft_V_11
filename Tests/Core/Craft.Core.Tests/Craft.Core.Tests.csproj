@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net11.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<Authors>Sandeep SHARMA</Authors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="coverlet.MTP" Version="10.1.0" PrivateAssets="all" />
+		<PackageReference Include="Moq" Version="4.21.0" />
+		<PackageReference Include="xunit.v3" Version="4.0.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+		<None Include="..\..\testconfig.json" Link="$(AssemblyName).testconfig.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\Source\Core\Craft.Core\Craft.Core.csproj" />
+	</ItemGroup>
+
+</Project>

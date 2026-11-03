@@ -1,5 +1,7 @@
 # Craft_V_11
 
+[Deferred Data, Web and Security integrations](TODO.md)
+
 [Architecture review and proposed V11 direction](docs/Craft-V10-Architecture-Review.md)
 
 ## Build before pushing
@@ -34,7 +36,7 @@ To use another key type without rebuilding Craft, use its generic contracts and 
 
 ## Run tests and coverage
 
-All four test projects use xUnit v3 with native Microsoft Testing Platform (MTP). The repository requires .NET 11; `global.json` selects MTP for `dotnet test`. `Craft.Testing` is a shared fixture library, not a test application.
+All runnable test projects use xUnit v3 with native Microsoft Testing Platform (MTP). The repository requires .NET 11; `global.json` selects MTP for `dotnet test`. `Craft.Testing` is a shared fixture library, not a test application.
 
 ```sh
 dotnet test --solution Craft_V_11.slnx --configuration Release

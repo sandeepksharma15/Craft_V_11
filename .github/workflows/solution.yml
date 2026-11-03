@@ -38,6 +38,24 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify core coverage
+        run: |
+          dotnet test --project Tests/Core/Craft.Core.Tests/Craft.Core.Tests.csproj \
+            --configuration Release --no-build \
+            --coverlet --results-directory artifacts/core-coverage \
+            --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.Core]*"
+          python3 .github/scripts/verify-core-coverage.py artifacts/core-coverage
+
+      - name: Upload core coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: core-coverage-${{ matrix.os }}
+          path: artifacts/core-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify auditing coverage
         run: |
           dotnet test --project Tests/Security/Craft.Auditing.Tests/Craft.Auditing.Tests.csproj \

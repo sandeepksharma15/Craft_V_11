@@ -110,13 +110,14 @@ public class ResultTests
     public async Task AsyncComposition_DoesNotConvertExceptionsOrCancellationIntoFailures()
     {
         var result = Result<int>.Success(1);
-        await Assert.ThrowsAsync<ArgumentNullException>(() => result.MapAsync<string>(null!));
-        await Assert.ThrowsAsync<ArgumentNullException>(() => result.BindAsync<string>(null!));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => result.BindAsync<string>((_, _) => Task.FromResult<Result<string>>(null!)));
+        var token = TestContext.Current.CancellationToken;
+        await Assert.ThrowsAsync<ArgumentNullException>(() => result.MapAsync<string>(null!, token));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => result.BindAsync<string>(null!, token));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => result.BindAsync<string>((_, _) => Task.FromResult<Result<string>>(null!), token));
         var canceled = new CancellationToken(true);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => result.MapAsync((v, _) => Task.FromResult(v), canceled));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => result.BindAsync((v, _) => Task.FromResult(Result<int>.Success(v)), canceled));
-        await Assert.ThrowsAsync<ApplicationException>(() => result.MapAsync<int>((_, _) => Task.FromException<int>(new ApplicationException())));
-        await Assert.ThrowsAsync<ApplicationException>(() => result.BindAsync<int>((_, _) => Task.FromException<Result<int>>(new ApplicationException())));
+        await Assert.ThrowsAsync<ApplicationException>(() => result.MapAsync<int>((_, _) => Task.FromException<int>(new ApplicationException()), token));
+        await Assert.ThrowsAsync<ApplicationException>(() => result.BindAsync<int>((_, _) => Task.FromException<Result<int>>(new ApplicationException()), token));
     }
 }

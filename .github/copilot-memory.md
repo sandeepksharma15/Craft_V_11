@@ -62,3 +62,5 @@
 - Craft.Auditing is opt-in and observational. AuditedDbContext coordinates business and audit writes in one relational transaction/savepoint; failed saves/outer rollbacks require a fresh context. The planned Craft.Data context pipeline owns ISoftDelete changes before audit capture (superseding repository ownership). Use IAuditContext, scoped option snapshots, exact composite-key lookup, and explicit scheduled ArchiveDueAsync batches; no static configuration or automatic graph scanning.
 
 - V10 architecture inventory and proposed V11 boundaries are recorded in docs/Craft-V10-Architecture-Review.md. Treat proposals as recommendations until accepted; do not automatically port V10 dependencies or provider stubs.
+
+- Craft.Core has no package/framework/project dependencies beyond .NET. Result/Result<T> carry immutable structured errors without HTTP status; nullable success remains success. Page<T>/PageInfo use standard JSON and checked long pagination. Current identity contracts are read-only with TryGetId; deferred Data/Web/Security work is in root TODO.md. Removed EF/HTTP/envelope/DI-marker APIs must not be reintroduced into Core.

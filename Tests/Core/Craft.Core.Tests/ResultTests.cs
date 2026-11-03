@@ -21,6 +21,9 @@ public class ResultTests
         Assert.Equal("success", nullable.Match(_ => "success", _ => "failure"));
         Assert.Equal(0, Result<int>.Success(0).Value);
         Assert.Empty(nullable.Errors);
+        Assert.Equal(1, Result<int>.Success(1).GetValueOrDefault());
+        Assert.Equal(0, Result<int>.Failure(Errors).GetValueOrDefault());
+        Assert.Null(Result<string>.Failure(Errors).GetValueOrDefault());
     }
 
     [Fact]

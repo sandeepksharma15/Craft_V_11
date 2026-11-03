@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Craft.Core;
 
 public sealed class Result<T> : IResult
@@ -37,7 +39,10 @@ public sealed class Result<T> : IResult
         return IsSuccess ? onSuccess(_value) : onFailure(Errors);
     }
 
-    public T GetValueOrDefault(T fallback = default!) => IsSuccess ? _value : fallback;
+    [return: MaybeNull]
+    public T GetValueOrDefault() => IsSuccess ? _value : default;
+
+    public T GetValueOrDefault(T fallback) => IsSuccess ? _value : fallback;
 
     public async Task<Result<TNext>> MapAsync<TNext>(Func<T, CancellationToken, Task<TNext>> map, CancellationToken cancellationToken = default)
     {

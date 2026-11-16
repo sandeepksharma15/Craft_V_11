@@ -7,7 +7,7 @@ namespace Craft.Security;
 /// Represents the current user information retrieved from the specified provider.
 /// </summary>
 /// <typeparam name="TKey">The type used to represent the user's ID.</typeparam>
-public class CurrentUser<TKey> : ICurrentUser<TKey>
+public class CurrentUser<TKey> : ICurrentUser<TKey> where TKey : notnull
 {
     public CurrentUser(ICurrentUserProvider currentUserProvider)
     {
@@ -19,6 +19,8 @@ public class CurrentUser<TKey> : ICurrentUser<TKey>
     protected ClaimsPrincipal? _user;
 
     public TKey Id { get; set; }
+
+    bool ICurrentUser<TKey>.IsAuthenticated => IsAuthenticated();
 
     public ClaimsPrincipal? GetUser() => _user;
 
@@ -50,6 +52,49 @@ public class CurrentUser<TKey> : ICurrentUser<TKey>
     public string? GetRole() => IsAuthenticated() ? _user?.GetRole() : string.Empty;
 
     public string? GetTenant() => IsAuthenticated() ? _user?.GetTenant() : string.Empty;
+
+    bool ICurrentUser<TKey>.TryGetId(out TKey id)
+    {
+        if (!IsAuthenticated())
+        {
+            id = default!;
+            return false;
+        }
+
+        var value = _user?.GetUserId();
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            id = default!;
+            return false;
+        }
+
+        if (typeof(TKey) == typeof(string))
+        {
+            id = (TKey)(object)value;
+            return true;
+        }
+
+        if (typeof(TKey) == typeof(Guid) && Guid.TryParse(value, out var guidValue))
+        {
+            id = (TKey)(object)guidValue;
+            return true;
+        }
+
+        if (typeof(TKey) == typeof(int) && int.TryParse(value, out var intValue))
+        {
+            id = (TKey)(object)intValue;
+            return true;
+        }
+
+        if (typeof(TKey) == typeof(long) && long.TryParse(value, out var longValue))
+        {
+            id = (TKey)(object)longValue;
+            return true;
+        }
+
+        id = default!;
+        return false;
+    }
 
     public IEnumerable<Claim> GetUserClaims()
         => IsAuthenticated()

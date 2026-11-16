@@ -12,7 +12,7 @@ namespace Craft.Security.Tokens;
 /// <summary>
 /// Manages JWT token generation, validation, and revocation.
 /// </summary>
-public class TokenManager : ITokenManager, IScopedDependency
+public class TokenManager : ITokenManager
 {
     private readonly JwtSettings _jwtSettings;
     private readonly TimeProvider _timeProvider;

@@ -42,3 +42,15 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Add explicit external OIDC/provider integration separately. Local JWT issuance in Craft.Authentication is optional and is not an authorization-server implementation.
 - [ ] Add trusted-origin token acquisition/forwarding only where needed; never forward an incoming cookie token to arbitrary HTTP destinations.
 - [ ] Hosts must apply authorization, login throttling/lockout, MFA policy, callback allowlists, trusted proxy/IP handling and safe error responses. Account DTO attributes alone do not provide these controls.
+
+## Craft.Data rewrite (16 November 2026)
+
+- [x] Shared regular/Identity context pipeline; explicit soft delete/restore/permanent delete; independent named tenant/soft-delete filters; tenant write protection; concurrency and versions; transactional auditing adapter.
+- [ ] Move the current tenant persistence feature into Craft.MultiTenant when that project is introduced; retain its fluent registration and Core identity contract. Add trusted tenant resolution and database routing there, not in base Data.
+- [ ] Add tenant-aware Identity stores, uniqueness and membership policy to the Identity EF adapter. Global account tables must not be advertised as tenant-isolated identities.
+- [ ] Implement the existing refresh-session persistence contract atomically in the Identity EF adapter, including replay/family revocation and concurrent rotation tests. No legacy raw-token entity or refresh endpoint is reinstated.
+- [ ] Put provider-specific tuning, connection validation, materialized views and provider health checks in optional provider/hosting integrations. Do not install SQL Server, PostgreSQL, MySQL or Aspire packages in base Craft.Data.
+- [ ] Keep deployment migrations, distributed migration coordination and seed orchestration in hosting/deployment tooling. Prefer EF native seeding/factories over competing Craft abstractions.
+- [ ] Put repositories/specifications and pagination execution in their planned libraries; no implicit per-operation commits. Bulk APIs must explicitly define tenant predicates, audit behavior and soft-delete semantics.
+- [ ] Add outbox/domain-event delivery separately: callbacks in the save pipeline must never publish externally before commit.
+- [ ] Add provider execution-strategy helpers only with fresh-context replay and application idempotency/ambiguous-commit contracts. Context pooling requires a separately designed resettable tenant/feature lifetime model and is currently unsupported.

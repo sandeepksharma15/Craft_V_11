@@ -18,7 +18,10 @@
     <Project Path="Source/Core/Craft.Extensions/Craft.Extensions.csproj" />
     <Project Path="Source/Core/Craft.Utilities/Craft.Utilities.csproj" />
   </Folder>
-  <Folder Name="/Source/Data/" />
+  <Folder Name="/Source/Data/">
+    <Project Path="Source/Data/Craft.Data/Craft.Data.csproj" />
+    <Project Path="Source/Data/Craft.Identity.EntityFrameworkCore/Craft.Identity.EntityFrameworkCore.csproj" />
+  </Folder>
   <Folder Name="/Source/Security/">
     <Project Path="Source/Security/Craft.Auditing/Craft.Auditing.csproj" />
     <Project Path="Source/Security/Craft.CryptKey/Craft.CryptKey.csproj" />
@@ -33,7 +36,9 @@
     <Project Path="Tests/Core/Craft.Extensions.Tests/Craft.Extensions.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Utilities.Tests/Craft.Utilities.Tests.csproj" />
   </Folder>
-  <Folder Name="/Tests/Data/" />
+  <Folder Name="/Tests/Data/">
+    <Project Path="Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj" />
+  </Folder>
   <Folder Name="/Tests/Security/">
     <Project Path="Tests/Security/Craft.Auditing.Tests/Craft.Auditing.Tests.csproj" />
     <Project Path="Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj" />

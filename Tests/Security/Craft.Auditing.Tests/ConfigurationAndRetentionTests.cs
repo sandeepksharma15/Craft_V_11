@@ -1,3 +1,4 @@
+using Craft.Data;
 using Craft.Auditing.Abstractions;
 using Craft.Auditing.Capture;
 using Craft.Auditing.Configuration;
@@ -15,6 +16,18 @@ namespace Craft.Auditing.Tests;
 public class ConfigurationAndRetentionTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    [Fact]
+    public void DataRegistration_ResolvesAuditingFeature()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IAuditContext>(new TestAuditContext());
+        services.AddCraftAuditing();
+        services.AddCraftDbContext<TestDbContext>(o => o.UseSqlite("Data Source=:memory:"), f => f.UseAuditing());
+        using var provider = services.BuildServiceProvider();
+        using var db = provider.GetRequiredService<TestDbContext>();
+        Assert.NotNull(db.Persistence.FindFeature<AuditingFeature>());
+    }
 
     [Fact]
     public void Registration_UsesScopedFactoryAndValidatesOptions()

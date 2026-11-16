@@ -8,6 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0" />
-    <ProjectReference Include="..\..\Core\Craft.Domain\Craft.Domain.csproj" />
+    <ProjectReference Include="../../Data/Craft.Data/Craft.Data.csproj" />
   </ItemGroup>
 </Project>

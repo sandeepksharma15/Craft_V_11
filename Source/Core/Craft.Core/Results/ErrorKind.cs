@@ -1,4 +1,4 @@
-namespace Craft.Core;
+namespace Craft.Core.Results;
 
 public enum ErrorKind
 {

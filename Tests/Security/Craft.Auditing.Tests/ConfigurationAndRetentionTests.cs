@@ -2,6 +2,8 @@ using Craft.Auditing.Abstractions;
 using Craft.Auditing.Capture;
 using Craft.Auditing.Configuration;
 using Craft.Auditing.Model;
+using Craft.Auditing.Persistence;
+using Craft.Auditing.Retention;
 using Craft.Auditing.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;

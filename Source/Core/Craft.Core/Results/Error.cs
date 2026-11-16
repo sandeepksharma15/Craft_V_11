@@ -1,4 +1,4 @@
-namespace Craft.Core;
+namespace Craft.Core.Results;
 
 public sealed record Error
 {
@@ -11,8 +11,10 @@ public sealed record Error
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
+
         if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
         if (target is not null) ArgumentException.ThrowIfNullOrWhiteSpace(target);
+
         Code = code;
         Message = message;
         Kind = kind;

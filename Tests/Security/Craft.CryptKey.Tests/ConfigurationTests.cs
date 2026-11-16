@@ -12,15 +12,15 @@ public class ConfigurationTests
 {
     #region Public Properties
 
-    public static TheoryData<string> InvalidOptionScenarios => new()
-    {
+    public static TheoryData<string> InvalidOptionScenarios =>
+    [
         "NullSalt", "EmptySalt", "WhitespaceSalt", "PaddedSalt",
         "NegativeMinHashLength", "ZeroMaxHashLength", "ShortMaxHashLength",
         "NullAlphabet", "EmptyAlphabet", "AlphabetContainsSlash",
         "AlphabetContainsDuplicateCharacter", "NullSeparators", "EmptySeparators",
         "SeparatorsContainUnknownCharacter", "SeparatorsContainDuplicateCharacter",
         "SeparatorsOverlapAlphabet", "SeparatorsEqualAlphabet"
-    };
+    ];
 
     #endregion Public Properties
 
@@ -121,55 +121,72 @@ public class ConfigurationTests
             case "NullSalt":
                 options.Salt = null!;
                 break;
+
             case "EmptySalt":
                 options.Salt = "";
                 break;
+
             case "WhitespaceSalt":
                 options.Salt = " ";
                 break;
+
             case "PaddedSalt":
                 options.Salt = " padded ";
                 break;
+
             case "NegativeMinHashLength":
                 options.MinHashLength = -1;
                 break;
+
             case "ZeroMaxHashLength":
                 options.MaxHashLength = 0;
                 break;
+
             case "ShortMaxHashLength":
                 options.MaxHashLength = 1;
                 break;
+
             case "NullAlphabet":
                 options.Alphabet = null!;
                 break;
+
             case "EmptyAlphabet":
                 options.Alphabet = "";
                 break;
+
             case "AlphabetContainsSlash":
                 options.Alphabet += "/";
                 break;
+
             case "AlphabetContainsDuplicateCharacter":
                 options.Alphabet += options.Alphabet[0];
                 break;
+
             case "NullSeparators":
                 options.Separators = null!;
                 break;
+
             case "EmptySeparators":
                 options.Separators = "";
                 break;
+
             case "SeparatorsContainUnknownCharacter":
                 options.Separators = "!";
                 break;
+
             case "SeparatorsContainDuplicateCharacter":
                 options.Separators = "cc";
                 break;
+
             case "SeparatorsOverlapAlphabet":
                 options.Alphabet = "abcdef";
                 options.Separators = "a";
                 break;
+
             case "SeparatorsEqualAlphabet":
                 options.Separators = options.Alphabet;
                 break;
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "Unknown invalid option scenario.");
         }

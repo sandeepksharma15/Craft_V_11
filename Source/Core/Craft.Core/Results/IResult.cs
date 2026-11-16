@@ -1,8 +1,12 @@
-namespace Craft.Core;
+namespace Craft.Core.Results;
 
 public interface IResult
 {
-    bool IsSuccess { get; }
-    bool IsFailure { get; }
+    #region Public Properties
+
     IReadOnlyList<Error> Errors { get; }
+    bool IsFailure { get; }
+    bool IsSuccess { get; }
+
+    #endregion Public Properties
 }

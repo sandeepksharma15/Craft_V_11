@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Craft.Core.Pagination;
 
 namespace Craft.Core.Tests;
 

@@ -4,24 +4,34 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace Craft.Auditing.Tests;
+namespace Craft.Auditing.Tests.Fixtures;
 
 public sealed class NoSavepointFactory(RelationalTransactionFactoryDependencies dependencies) : RelationalTransactionFactory(dependencies)
 {
+    #region Public Methods
+
     public override RelationalTransaction Create(IRelationalConnection connection, DbTransaction transaction,
         Guid transactionId, IDiagnosticsLogger<DbLoggerCategory.Database.Transaction> logger, bool transactionOwned)
         => new NoSavepointTransaction(connection, transaction, transactionId, logger, transactionOwned, Dependencies.SqlGenerationHelper);
+
+    #endregion Public Methods
 }
 
 public sealed class NoSavepointTransaction(IRelationalConnection connection, DbTransaction transaction,
     Guid transactionId, IDiagnosticsLogger<DbLoggerCategory.Database.Transaction> logger, bool transactionOwned,
     ISqlGenerationHelper sql) : RelationalTransaction(connection, transaction, transactionId, logger, transactionOwned, sql)
 {
+    #region Public Properties
+
     public override bool SupportsSavepoints => false;
+
+    #endregion Public Properties
 }
 
 public sealed class CancelAuditWrite(CancellationTokenSource cancellation) : SaveChangesInterceptor
 {
+    #region Public Methods
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
         InterceptionResult<int> result, CancellationToken cancellationToken = default)
     {
@@ -30,4 +40,6 @@ public sealed class CancelAuditWrite(CancellationTokenSource cancellation) : Sav
         cancellationToken.ThrowIfCancellationRequested();
         return ValueTask.FromResult(result);
     }
+
+    #endregion Public Methods
 }

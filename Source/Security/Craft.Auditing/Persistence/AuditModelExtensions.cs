@@ -2,7 +2,7 @@ using Craft.Auditing.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Craft.Auditing;
+namespace Craft.Auditing.Persistence;
 
 public static class AuditModelExtensions
 {
@@ -12,10 +12,15 @@ public static class AuditModelExtensions
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);
             ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+
             var entity = modelBuilder.Entity<AuditTrail>();
+
             entity.ToTable(tableName, schema);
             entity.HasKey(a => a.Id);
-            var utc = new ValueConverter<DateTime, DateTime>(value => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
+            var utc = new ValueConverter<DateTime, DateTime>(value
+                => value, value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+
             entity.Property(a => a.OccurredAtUtc).HasConversion(utc);
             entity.Property(a => a.ArchiveAfterUtc).HasConversion(utc);
             entity.Property(a => a.Id).ValueGeneratedNever();
@@ -29,6 +34,7 @@ public static class AuditModelExtensions
             entity.HasIndex(a => new { a.EntityName, a.TenantId, a.EntityKey });
             entity.HasIndex(a => new { a.OccurredAtUtc, a.Id });
             entity.HasIndex(a => new { a.IsArchived, a.ArchiveAfterUtc });
+
             return modelBuilder;
         }
     }

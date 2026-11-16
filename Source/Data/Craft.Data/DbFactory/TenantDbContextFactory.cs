@@ -1,0 +1,318 @@
+using Craft.Core;
+using Craft.MultiTenant;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Craft.Data;
+
+/// <summary>
+/// Factory that creates a <see cref="DbContext"/> instance honoring the current tenant's database strategy.
+/// Supports Shared, PerTenant and Hybrid strategies and falls back to shared defaults when multi-tenancy is disabled.
+/// </summary>
+/// <typeparam name="T">Concrete DbContext type.</typeparam>
+/// <remarks>
+/// <para>
+/// <strong>IMPORTANT - Disposal Requirements:</strong>
+/// </para>
+/// <para>
+/// The returned DbContext MUST be disposed by the caller to prevent connection leaks and memory issues.
+/// The factory does NOT track or dispose created instances.
+/// </para>
+/// <para>
+/// <strong>Recommended Disposal Patterns:</strong>
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <description>
+/// <strong>Using Statement (Preferred):</strong>
+/// <code>
+/// await using var context = _factory.CreateDbContext();
+/// // Use context
+/// </code>
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// <strong>Dependency Injection Scope:</strong>
+/// Register DbContext with scoped lifetime and let DI handle disposal.
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// <strong>Try-Finally:</strong>
+/// <code>
+/// var context = _factory.CreateDbContext();
+/// try
+/// {
+///     // Use context
+/// }
+/// finally
+/// {
+///     await context.DisposeAsync();
+/// }
+/// </code>
+/// </description>
+/// </item>
+/// </list>
+/// <para>
+/// <strong>Connection Pooling:</strong>
+/// Proper disposal is critical for connection pool efficiency. Undisposed contexts hold database connections,
+/// exhausting the pool and causing timeouts under load.
+/// </para>
+/// </remarks>
+public class TenantDbContextFactory<T> : IDbContextFactory<T> where T : DbContext, IDbContext
+{
+    private readonly ICurrentTenant _currentTenant;                // Lightweight current tenant accessor
+    private readonly ITenantContextAccessor _tenantContextAccessor; // Full tenant context accessor
+    private readonly IEnumerable<IDatabaseProvider> _providers;    // Registered database providers
+    private readonly IServiceProvider _sp;                         // Root service provider for context construction
+    private readonly DatabaseOptions _dbOptions;                   // Default / shared database options
+    private readonly MultiTenantOptions _multiTenantOptions;       // Multi-tenant feature options
+    private readonly ILogger<TenantDbContextFactory<T>> _logger;   // Logger for diagnostics
+
+    public TenantDbContextFactory(ICurrentTenant currentTenant, ITenantContextAccessor tenantContextAccessor,
+        IEnumerable<IDatabaseProvider> providers, IServiceProvider sp, IOptions<DatabaseOptions> dbOptions,
+        IOptions<MultiTenantOptions> multiTenantOptions, ILogger<TenantDbContextFactory<T>> logger)
+    {
+        _currentTenant = currentTenant;
+        _tenantContextAccessor = tenantContextAccessor;
+        _providers = providers;
+        _sp = sp;
+        _dbOptions = dbOptions.Value;
+        _multiTenantOptions = multiTenantOptions.Value;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Creates a DbContext configured for the current tenant (or shared defaults if multi-tenancy disabled).
+    /// </summary>
+    /// <returns>A configured DbContext instance. MUST be disposed by caller using 'await using' or 'using' statement.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when tenant configuration is invalid or provider cannot be resolved.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the configured database provider is not registered.</exception>
+    /// <remarks>
+    /// This method does NOT dispose the context. Caller is responsible for proper disposal to prevent connection leaks.
+    /// </remarks>
+    public T CreateDbContext()
+    {
+        var tenantId = _currentTenant?.GetId() ?? default;
+        var tenantIdentifier = _currentTenant?.Identifier ?? "Default";
+
+        // Get full tenant details when needed for connection resolution
+        var fullTenant = _tenantContextAccessor.TenantContext?.Tenant as ITenant;
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug(
+                "Creating DbContext for tenant: {TenantIdentifier} (ID: {TenantId}), DbType: {DbType}",
+                tenantIdentifier,
+                tenantId,
+                fullTenant?.DbType ?? TenantDbType.Shared);
+        }
+
+        var target = DetermineTarget(fullTenant);
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+        {
+            _logger.LogTrace(
+                "Resolved connection target - Provider: {Provider}, ConnectionString: {MaskedConnectionString}",
+                target.ProviderKey,
+                MaskConnectionString(target.ConnectionString));
+        }
+
+        // Build DbContextOptions for the selected provider/connection
+        var options = BuildOptions(target.ConnectionString, target.ProviderKey);
+
+        // IMPORTANT: pass the configured options instance so provider configuration is honored
+        var context = ActivatorUtilities.CreateInstance<T>(_sp, options);
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug(
+                "DbContext created successfully for tenant: {TenantIdentifier}",
+                tenantIdentifier);
+        }
+
+        return context;
+    }
+
+    #region Target Resolution
+
+    private (string ConnectionString, string ProviderKey) DetermineTarget(ITenant? fullTenant)
+    {
+        // Multi-tenancy disabled OR no tenant context -> always use shared defaults.
+        if (_multiTenantOptions.IsEnabled == false || fullTenant == null)
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+                _logger.LogDebug("Multi-tenancy disabled or no tenant context. Using shared database configuration.");
+
+            // Validate shared configuration
+            if (string.IsNullOrWhiteSpace(_dbOptions.ConnectionString))
+            {
+                _logger.LogError("Shared database connection string is not configured");
+                throw new InvalidOperationException("Database connection string is not configured in DatabaseOptions");
+            }
+
+            if (string.IsNullOrWhiteSpace(_dbOptions.DbProvider))
+            {
+                _logger.LogError("Shared database provider is not configured");
+                throw new InvalidOperationException("Database provider is not configured in DatabaseOptions");
+            }
+
+            return (_dbOptions.ConnectionString, _dbOptions.DbProvider);
+        }
+
+        return fullTenant.DbType switch
+        {
+            TenantDbType.Shared => ResolveShared(),
+            TenantDbType.PerTenant => ResolvePerTenant(fullTenant),
+            TenantDbType.Hybrid => ResolveHybrid(fullTenant),
+            _ => throw new InvalidOperationException($"Unsupported DbType: {fullTenant.DbType}")
+        };
+    }
+
+    private (string ConnectionString, string ProviderKey) ResolveShared()
+    {
+        if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogDebug("Tenant uses shared database strategy.");
+
+        return (_dbOptions.ConnectionString, _dbOptions.DbProvider);
+    }
+
+    private (string ConnectionString, string ProviderKey) ResolvePerTenant(ITenant fullTenant)
+    {
+        if (string.IsNullOrWhiteSpace(fullTenant.ConnectionString))
+        {
+            _logger.LogError(
+                "Tenant {TenantIdentifier} (ID: {TenantId}) is configured as PerTenant but has no connection string defined. " +
+                "Consider using Hybrid strategy or providing a connection string.",
+                fullTenant.Identifier,
+                fullTenant.GetId());
+
+            throw new InvalidOperationException(
+                $"Tenant '{fullTenant.Identifier}' is PerTenant but has no connection string defined. " +
+                "Provide a connection string or change to Shared/Hybrid strategy.");
+        }
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogDebug(
+                "Tenant {TenantIdentifier} uses dedicated database (PerTenant strategy).",
+                fullTenant.Identifier);
+
+        var provider = NormalizeProvider(fullTenant.DbProvider);
+
+        // Validate provider is registered
+        if (!_providers.Any(p => p.CanHandle(provider)))
+        {
+            _logger.LogWarning(
+                "Tenant {TenantIdentifier} specifies provider '{Provider}' which is not registered. " +
+                "Falling back to shared provider '{SharedProvider}'",
+                fullTenant.Identifier,
+                provider,
+                _dbOptions.DbProvider);
+
+            provider = _dbOptions.DbProvider;
+        }
+
+        return (fullTenant.ConnectionString, provider);
+    }
+
+    private (string ConnectionString, string ProviderKey) ResolveHybrid(ITenant fullTenant)
+    {
+        // Own DB when a connection string is provided, else shared defaults
+        if (!string.IsNullOrEmpty(fullTenant.ConnectionString))
+        {
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug(
+                    "Tenant {TenantIdentifier} uses dedicated database (Hybrid strategy).",
+                    fullTenant.Identifier);
+            }
+
+            return (fullTenant.ConnectionString, NormalizeProvider(fullTenant.DbProvider));
+        }
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug(
+                "Tenant {TenantIdentifier} uses shared database (Hybrid strategy fallback).",
+                fullTenant.Identifier);
+        }
+
+        return (_dbOptions.ConnectionString, _dbOptions.DbProvider);
+    }
+
+    private string NormalizeProvider(string? tenantProvider)
+    {
+        var provider = string.IsNullOrWhiteSpace(tenantProvider)
+            ? _dbOptions.DbProvider
+            : tenantProvider;
+
+        if (_logger.IsEnabled(LogLevel.Trace))
+            _logger.LogTrace("Normalized provider: {Provider}", provider);
+
+        return provider;
+    }
+
+    #endregion
+
+    #region Provider Configuration
+
+    private DbContextOptions<T> BuildOptions(string connectionString, string providerKey)
+    {
+        var provider = _providers.FirstOrDefault(p => p.CanHandle(providerKey));
+
+        if (provider == null)
+        {
+            if (_logger.IsEnabled(LogLevel.Error))
+                _logger.LogError(
+                    "No database provider found for key: {ProviderKey}. Available providers: {AvailableProviders}",
+                    providerKey,
+                    string.Join(", ", _providers.Select(p => p.GetType().Name)));
+
+            throw new NotSupportedException($"Provider '{providerKey}' not supported");
+        }
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+            _logger.LogDebug(
+                "Using database provider: {ProviderType} for key: {ProviderKey}",
+                provider.GetType().Name,
+                providerKey);
+
+        var builder = new DbContextOptionsBuilder<T>();
+        provider.Configure(builder, connectionString, _dbOptions);
+
+        // Optional additional standard flags from options
+        if (_dbOptions.EnableDetailedErrors)
+        {
+            builder.EnableDetailedErrors();
+            if (_logger.IsEnabled(LogLevel.Trace))
+                _logger.LogTrace("Detailed errors enabled");
+        }
+
+        if (_dbOptions.EnableSensitiveDataLogging)
+        {
+            builder.EnableSensitiveDataLogging();
+            if (_logger.IsEnabled(LogLevel.Trace))
+                _logger.LogTrace("Sensitive data logging enabled");
+        }
+
+        return builder.Options;
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private static string MaskConnectionString(string connectionString)
+    {
+        // Simple masking for logging - show only first 50 chars
+        return connectionString.Length > 50
+            ? $"{connectionString[..50]}..."
+            : connectionString;
+    }
+
+    #endregion
+}
+

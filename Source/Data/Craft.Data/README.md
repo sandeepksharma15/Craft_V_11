@@ -43,4 +43,4 @@ All saves require a relational provider and `acceptAllChangesOnSuccess=true`. An
 
 For migrations, supply the same feature configuration in the host or an `IDesignTimeDbContextFactory`. A tenant accessor must supply a non-default design-time identity; it is parameterized, never embedded in the model. Use `dotnet ef migrations add Initial --project <migrations-project> --startup-project <host>` and deploy migrations explicitly. No automatic production migration/seeding is performed.
 
-Tests use SQLite plus SQL Server and PostgreSQL in Linux CI. Provider integration connections must target disposable `craft_test_*` databases.
+Tests use SQLite and SQL Server in Linux CI. PostgreSQL verification is blocked: the available Npgsql EF 11 provider is 11.0.0-rc.3 and pins prerelease EF, incompatible with this stable EF 11 dependency. Do not claim PostgreSQL production support until its compatible provider and relational tests pass. Provider integration connections must target disposable `craft_test_*` databases.

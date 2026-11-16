@@ -45,7 +45,7 @@ public sealed class CraftPersistence
         foreach (var feature in _features) feature.ConfigureModel(_context, modelBuilder);
     }
 
-    private Action[] Prepare(bool acceptAllChangesOnSuccess)
+    private void EnsureCanSave(bool acceptAllChangesOnSuccess)
     {
         if (_failed) throw new InvalidOperationException("This context has a failed save. Dispose it and create a fresh context.");
         if (_saving) throw new InvalidOperationException("Nested saves are not supported.");
@@ -53,6 +53,12 @@ public sealed class CraftPersistence
         if (!_context.Database.IsRelational()) throw new NotSupportedException("Craft persistence requires a relational database.");
         if (_context.Database.CurrentTransaction is { SupportsSavepoints: false })
             throw new NotSupportedException("Existing transactions must support savepoints; disable SQL Server MARS.");
+        if (_context.Database.CreateExecutionStrategy().RetriesOnFailure && ExecutionStrategy.Current is null)
+            throw new NotSupportedException("Use the provider execution strategy around the complete unit, with a fresh context per attempt.");
+    }
+
+    private Action[] Prepare()
+    {
         _context.ChangeTracker.DetectChanges();
         foreach (var feature in _features) feature.ValidateChanges(_context);
         // Stages are independent of registration order: deletion before stamps, capture after all mutations.
@@ -64,15 +70,17 @@ public sealed class CraftPersistence
     public int SaveChanges(bool acceptAllChangesOnSuccess, Func<int> save)
     {
         ArgumentNullException.ThrowIfNull(save);
-        var completions = Prepare(acceptAllChangesOnSuccess);
+        EnsureCanSave(acceptAllChangesOnSuccess);
         _saving = true;
         IDbContextTransaction? transaction = null;
         var owned = _context.Database.CurrentTransaction is null;
         var savepoint = "Craft_" + Guid.NewGuid().ToString("N");
+        var savepointCreated = false;
         try
         {
+            var completions = Prepare();
             transaction = _context.Database.CurrentTransaction ?? _context.Database.BeginTransaction();
-            if (!owned) transaction.CreateSavepoint(savepoint);
+            if (!owned) { transaction.CreateSavepoint(savepoint); savepointCreated = true; }
             var count = save();
             foreach (var complete in completions) complete();
             if (completions.Length != 0) save();
@@ -89,7 +97,7 @@ public sealed class CraftPersistence
                 if (transaction is not null)
                 {
                     if (owned) transaction.Rollback();
-                    else transaction.RollbackToSavepoint(savepoint);
+                    else if (savepointCreated) transaction.RollbackToSavepoint(savepoint);
                 }
             }
             finally { _context.ChangeTracker.Clear(); }
@@ -107,15 +115,17 @@ public sealed class CraftPersistence
     {
         ArgumentNullException.ThrowIfNull(save);
         cancellationToken.ThrowIfCancellationRequested();
-        var completions = Prepare(acceptAllChangesOnSuccess);
+        EnsureCanSave(acceptAllChangesOnSuccess);
         _saving = true;
         IDbContextTransaction? transaction = null;
         var owned = _context.Database.CurrentTransaction is null;
         var savepoint = "Craft_" + Guid.NewGuid().ToString("N");
+        var savepointCreated = false;
         try
         {
+            var completions = Prepare();
             transaction = _context.Database.CurrentTransaction ?? await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-            if (!owned) await transaction.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+            if (!owned) { await transaction.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false); savepointCreated = true; }
             var count = await save(cancellationToken).ConfigureAwait(false);
             foreach (var complete in completions) complete();
             if (completions.Length != 0) await save(cancellationToken).ConfigureAwait(false);
@@ -132,7 +142,7 @@ public sealed class CraftPersistence
                 if (transaction is not null)
                 {
                     if (owned) await transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
-                    else await transaction.RollbackToSavepointAsync(savepoint, CancellationToken.None).ConfigureAwait(false);
+                    else if (savepointCreated) await transaction.RollbackToSavepointAsync(savepoint, CancellationToken.None).ConfigureAwait(false);
                 }
             }
             finally { _context.ChangeTracker.Clear(); }

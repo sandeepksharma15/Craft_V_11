@@ -7,7 +7,7 @@ public class ProviderTests
     public static IEnumerable<object[]> Providers()
     {
         yield return ["Sqlite", "Data Source=:memory:"];
-        foreach (var provider in new[] { "SqlServer", "PostgreSql" })
+        foreach (var provider in new[] { "SqlServer" })
             if (Environment.GetEnvironmentVariable("CRAFT_TEST_" + provider.ToUpperInvariant()) is { Length: > 0 } connection)
                 yield return [provider, connection];
     }
@@ -19,13 +19,11 @@ public class ProviderTests
         var token = TestContext.Current.CancellationToken;
         if (provider != "Sqlite")
         {
-            var database = provider == "SqlServer" ? new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connection).InitialCatalog
-                : new Npgsql.NpgsqlConnectionStringBuilder(connection).Database;
+            var database = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connection).InitialCatalog;
             Assert.StartsWith("craft_test_", database);
         }
         var options = new DbContextOptionsBuilder<DataContext>();
         if (provider == "SqlServer") options.UseSqlServer(connection);
-        else if (provider == "PostgreSql") options.UseNpgsql(connection);
         else options.UseSqlite(connection);
         options.UseCraftData(DataFixture.Features("tenant"));
         await using var db = new DataContext(options.Options);

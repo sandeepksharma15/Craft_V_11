@@ -297,14 +297,12 @@ jobs:
         run: |
           password="Craft_$(openssl rand -hex 18)!"
           echo "::add-mask::$password"
-          docker run -d --name craft-postgres -e POSTGRES_PASSWORD="$password" -p 5432:5432 postgres:17
           docker run -d --name craft-sqlserver -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$password" -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
           for i in $(seq 1 60); do
-            if docker exec craft-postgres pg_isready -U postgres && docker exec craft-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$password" -C -Q 'SELECT 1'; then break; fi
+            if docker exec craft-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$password" -C -Q 'SELECT 1'; then break; fi
             if [ "$i" = 60 ]; then exit 1; fi
             sleep 2
           done
-          echo "CRAFT_TEST_POSTGRESQL=Host=localhost;Database=craft_test_data;Username=postgres;Password=$password" >> "$GITHUB_ENV"
           echo "CRAFT_TEST_SQLSERVER=Server=localhost;Database=craft_test_data;User ID=sa;Password=$password;TrustServerCertificate=true" >> "$GITHUB_ENV"
-      - name: Test SQL Server and PostgreSQL persistence
+      - name: Test SQL Server persistence
         run: dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release

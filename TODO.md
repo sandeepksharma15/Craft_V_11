@@ -4,10 +4,10 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 
 ## Craft.Data
 
-- [ ] Introduce the EF DbContext/persistence contracts here only where they add value; do not restore IDbContext or EF references in Core.
-- [ ] Coordinate tenant validation, soft delete and stamps before audit capture; save business changes and finalized audit rows in one database transaction. Integrate the current auditing implementation through an optional adapter and remove competing context save coordinators.
-- [ ] Define restore/permanent-delete APIs, cascades/orphans, filter composition and bulk-operation policies. Restoring deleted rows must not bypass tenant isolation.
-- [ ] Define transaction/retry and concurrency contracts; repositories must not independently commit every operation.
+- [x] Introduce the EF DbContext/persistence contracts here only where they add value; do not restore IDbContext or EF references in Core.
+- [x] Coordinate tenant validation, soft delete and stamps before audit capture; save business changes and finalized audit rows in one database transaction. Integrate the current auditing implementation through an optional adapter and remove competing context save coordinators.
+- [x] Define restore/permanent-delete APIs, cascades/orphans, filter composition and bulk-operation policies. Restoring deleted rows must not bypass tenant isolation.
+- [x] Define transaction/retry and concurrency contracts; repositories must not independently commit every operation.
 - [ ] Translate PageInfo's long offset explicitly for provider APIs (e.g. int-limited Skip); reject unsupported ranges rather than truncate. Enforce application query limits and decide count/items consistency. Add cursor pagination only when needed.
 - [ ] Validate relational behavior against supported real providers, including generated keys, rollback, cancellation, filtering and tenant isolation.
 

@@ -8,7 +8,7 @@ public class ModelTests
 {
     private static ModelContext Create(Action<ModelBuilder> configure, params PersistenceFeature[] features)
     {
-        var options = new DbContextOptionsBuilder<ModelContext>().UseSqlite("Data Source=:memory:").UseServiceProviderCaching(false);
+        var options = new DbContextOptionsBuilder<ModelContext>().UseSqlite("Data Source=:memory:").EnableServiceProviderCaching(false);
         options.UseCraftData(features);
         return new ModelContext(options.Options, configure);
     }
@@ -29,9 +29,9 @@ public class ModelTests
     [Fact]
     public void OwnedContracts_AreRejected()
     {
-        using var soft = Create(m => m.Entity<Owner>().OwnsOne(o => o.Soft), new SoftDeleteFeature());
+        using var soft = Create(m => { m.Entity<Owner>().Ignore(o => o.Tenant); m.Entity<Owner>().OwnsOne(o => o.Soft); }, new SoftDeleteFeature());
         Assert.Throws<InvalidOperationException>(() => soft.Model);
-        using var tenant = Create(m => m.Entity<Owner>().OwnsOne(o => o.Tenant), new TenantFeature<string>(new Tenant("a")));
+        using var tenant = Create(m => { m.Entity<Owner>().Ignore(o => o.Soft); m.Entity<Owner>().OwnsOne(o => o.Tenant); }, new TenantFeature<string>(new Tenant("a")));
         Assert.Throws<InvalidOperationException>(() => tenant.Model);
     }
 

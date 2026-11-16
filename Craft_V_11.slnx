@@ -4,6 +4,7 @@
     <File Path=".github/copilot-instructions.md" />
     <File Path=".github/copilot-memory.md" />
     <File Path="Directory.Build.props" />
+    <File Path="docs/Craft-V10-Architecture-Review.md" />
     <File Path="global.json" />
     <File Path="Notes.txt" />
     <File Path="README.md" />

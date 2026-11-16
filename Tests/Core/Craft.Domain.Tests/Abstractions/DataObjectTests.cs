@@ -26,16 +26,6 @@ public class DataObjectTests
         #endregion Public Properties
     }
 
-    private sealed class ProductModel : BaseModel
-    {
-        #region Public Properties
-
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-
-        #endregion Public Properties
-    }
-
     private sealed class ProductVm : BaseVm
     {
         #region Public Properties
@@ -60,17 +50,6 @@ public class DataObjectTests
         // Assert
         Assert.IsType<IDataObject>(dto, exactMatch: false);
         Assert.IsType<IDataObject<KeyType>>(dto, exactMatch: false);
-    }
-
-    [Fact]
-    public void BaseModel_ShouldImplementIDataTransferObject()
-    {
-        // Arrange & Act
-        var model = new ProductModel();
-
-        // Assert
-        Assert.IsType<IDataObject>(model, exactMatch: false);
-        Assert.IsType<IDataObject<KeyType>>(model, exactMatch: false);
     }
 
     [Fact]
@@ -150,12 +129,10 @@ public class DataObjectTests
         var stamp = "test-stamp";
         var dto = new ProductDto { ConcurrencyStamp = stamp };
         var vm = new ProductVm { ConcurrencyStamp = stamp };
-        var model = new ProductModel { ConcurrencyStamp = stamp };
 
         // Assert
         Assert.Equal(stamp, dto.ConcurrencyStamp);
         Assert.Equal(stamp, vm.ConcurrencyStamp);
-        Assert.Equal(stamp, model.ConcurrencyStamp);
     }
 
     [Fact]
@@ -164,12 +141,10 @@ public class DataObjectTests
         // Arrange
         var dto = new ProductDto { Id = 42 };
         var vm = new ProductVm { Id = 43 };
-        var model = new ProductModel { Id = 44 };
 
         // Assert
         Assert.Equal((KeyType)42, dto.Id);
         Assert.Equal((KeyType)43, vm.Id);
-        Assert.Equal((KeyType)44, model.Id);
     }
 
     [Fact]
@@ -178,12 +153,10 @@ public class DataObjectTests
         // Arrange
         var dto = new ProductDto { IsDeleted = true };
         var vm = new ProductVm { IsDeleted = true };
-        var model = new ProductModel { IsDeleted = true };
 
         // Assert
         Assert.True(dto.IsDeleted);
         Assert.True(vm.IsDeleted);
-        Assert.True(model.IsDeleted);
     }
 
     #endregion Required Properties Tests
@@ -200,7 +173,6 @@ public class DataObjectTests
             new ProductVm { Id = 2 },
             "not a dto",
             42,
-            new ProductModel { Id = 3 }
         };
 
         // Act
@@ -217,12 +189,11 @@ public class DataObjectTests
         var dtos = new List<IDataObject>
         {
             new ProductDto { Id = 1, Name = "DTO" },
-            new ProductVm { Id = 2, Name = "VM" },
-            new ProductModel { Id = 3, Name = "Model" }
+            new ProductVm { Id = 2, Name = "VM" }
         };
 
         // Act & Assert
-        Assert.Equal(3, dtos.Count);
+        Assert.Equal(2, dtos.Count);
         Assert.All(dtos, dto =>
         {
             Assert.NotEqual(default, dto.Id);
@@ -273,18 +244,6 @@ public class DataObjectTests
         Assert.Equal(default, dto.Id);
         Assert.Null(dto.ConcurrencyStamp);
         Assert.False(dto.IsDeleted);
-    }
-
-    [Fact]
-    public void BaseModel_ShouldHaveDefaultValues()
-    {
-        // Arrange & Act
-        var model = new ProductModel();
-
-        // Assert
-        Assert.Equal(default, model.Id);
-        Assert.Null(model.ConcurrencyStamp);
-        Assert.False(model.IsDeleted);
     }
 
     [Fact]

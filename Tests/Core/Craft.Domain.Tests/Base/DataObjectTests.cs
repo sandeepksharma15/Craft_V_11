@@ -9,7 +9,6 @@ public class DataObjectTests
     [Theory]
     [InlineData(typeof(BaseDtoTests.TestDto))]
     [InlineData(typeof(BaseVmTests.TestVm))]
-    [InlineData(typeof(BaseModelTests.TestDto))]
     public void MutableModel_IdenticalValues_KeepReferenceIdentity(Type modelType)
     {
         IDataObject first = (IDataObject)Activator.CreateInstance(modelType)!;
@@ -28,7 +27,6 @@ public class DataObjectTests
     [Theory]
     [InlineData(typeof(BaseDtoTests.TestDto))]
     [InlineData(typeof(BaseVmTests.TestVm))]
-    [InlineData(typeof(BaseModelTests.TestDto))]
     public void MutableModel_JsonRoundTrip_PreservesState(Type modelType)
     {
         IDataObject original = (IDataObject)Activator.CreateInstance(modelType)!;

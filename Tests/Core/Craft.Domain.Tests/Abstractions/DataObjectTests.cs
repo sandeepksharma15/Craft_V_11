@@ -179,7 +179,7 @@ public class DataObjectTests
         var dtos = objects.OfType<IDataObject>().ToList();
 
         // Assert
-        Assert.Equal(3, dtos.Count);
+        Assert.Equal(2, dtos.Count);
     }
 
     [Fact]

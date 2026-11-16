@@ -27,7 +27,7 @@ public class ProviderTests
         else options.UseSqlite(connection);
         options.UseCraftData(DataFixture.Features("tenant"));
         await using var db = new DataContext(options.Options);
-        await db.Database.OpenConnectionAsync(token);
+        if (provider == "Sqlite") await db.Database.OpenConnectionAsync(token);
         await db.Database.EnsureDeletedAsync(token);
         await db.Database.EnsureCreatedAsync(token);
         try

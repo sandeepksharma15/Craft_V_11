@@ -37,6 +37,9 @@ public class ConfigurationTests
         Assert.Equal("a", feature.TenantId);
         var options = new DbContextOptionsBuilder<DataContext>().UseSqlite("Data Source=:memory:");
         options.UseCraftData(new SoftDeleteFeature());
+        var diagnostic = string.Join(" ", options.Options.Extensions.Select(e => e.Info.LogFragment));
+        Assert.Contains("CraftData", diagnostic);
+        Assert.DoesNotContain("Data Source", diagnostic);
         using var db = new DataContext(options.Options);
         Assert.Throws<InvalidOperationException>(() => db.Model);
     }
@@ -46,6 +49,9 @@ public class ConfigurationTests
     {
         var options = new DbContextOptionsBuilder<CascadeContext>().UseSqlite("Data Source=:memory:");
         options.UseCraftData(new SoftDeleteFeature());
+        var diagnostic = string.Join(" ", options.Options.Extensions.Select(e => e.Info.LogFragment));
+        Assert.Contains("CraftData", diagnostic);
+        Assert.DoesNotContain("Data Source", diagnostic);
         using var db = new CascadeContext(options.Options);
         Assert.Throws<InvalidOperationException>(() => db.Model);
     }

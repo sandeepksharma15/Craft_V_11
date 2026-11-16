@@ -17,6 +17,9 @@ public abstract class CraftIdentityDbContext<TUser, TRole, TKey> : IdentityDbCon
 
     protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        if (new[] { typeof(TUser), typeof(TRole) }.Any(t => t.GetInterfaces().Any(i =>
+            i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IHasTenant<>))))
+            throw new NotSupportedException("Tenant-scoped Identity accounts require dedicated stores and uniqueness policies; this adapter supports global accounts.");
         base.OnModelCreating(modelBuilder);
         if (Persistence.FindFeature<SoftDeleteFeature>() is not null)
             foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys())

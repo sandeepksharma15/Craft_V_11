@@ -25,6 +25,34 @@ public sealed class Note : ISoftDelete
 public class IdentityTests
 {
     [Fact]
+    public async Task GenericIdentityContext_SupportsStandardIdentityWithoutOptionalFeatures()
+    {
+        var options = new DbContextOptionsBuilder<GlobalIdentityContext>().UseSqlite("Data Source=:memory:");
+        using var db = new GlobalIdentityContext(options.Options);
+        await db.Database.OpenConnectionAsync(TestContext.Current.CancellationToken);
+        await db.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+        db.Add(new IdentityUser("standard"));
+        Assert.Equal(1, db.SaveChanges());
+        db.Add(new IdentityUser("another"));
+        Assert.Equal(1, await db.SaveChangesAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void TenantScopedIdentity_IsRejectedUntilDedicatedStoresExist()
+    {
+        using var userContext = new TenantUserContext(new DbContextOptionsBuilder<TenantUserContext>().UseSqlite("Data Source=:memory:").Options);
+        Assert.Throws<NotSupportedException>(() => userContext.Model);
+        using var roleContext = new TenantRoleContext(new DbContextOptionsBuilder<TenantRoleContext>().UseSqlite("Data Source=:memory:").Options);
+        Assert.Throws<NotSupportedException>(() => roleContext.Model);
+    }
+
+    private sealed class GlobalIdentityContext(DbContextOptions<GlobalIdentityContext> options) : CraftIdentityDbContext<IdentityUser, IdentityRole, string>(options);
+    private sealed class TenantUserContext(DbContextOptions<TenantUserContext> options) : CraftIdentityDbContext<TenantUser, CraftRole, KeyType>(options);
+    private sealed class TenantRoleContext(DbContextOptions<TenantRoleContext> options) : CraftIdentityDbContext<CraftUser, TenantRole, KeyType>(options);
+    private sealed class TenantUser : CraftUser, IHasTenant<string> { public string TenantId { get; set; } = "tenant"; }
+    private sealed class TenantRole : CraftRole, IHasTenant<string> { public string TenantId { get; set; } = "tenant"; }
+
+    [Fact]
     public async Task Registration_UsesIdentityStoresAndTheSharedPersistencePipeline()
     {
         var token = TestContext.Current.CancellationToken;

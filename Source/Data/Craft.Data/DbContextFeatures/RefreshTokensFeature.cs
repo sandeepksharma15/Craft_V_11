@@ -1,4 +1,4 @@
-using Craft.Security;
+using Craft.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Data.DbContextFeatures;

@@ -32,3 +32,13 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Prefer explicit feature registration. Introduce assembly scanning only for a demonstrated need, with lifetime-conflict and trimming behavior defined; removed DI marker interfaces are not registrations.
 - [ ] Add an end-to-end sample showing nullable result success, structured validation, safe HTTP failures, pagination, and atomic soft-delete/audit behavior.
 - [x] Enforce Core's dependency boundary and complete line/branch coverage in CI; keep future integrations optional.
+
+## Authentication / Identity split (16 November 2026)
+
+- [ ] Implement a shared durable ITokenRevocationStore; retain revocations through expiration plus skew and fail closed on store outages. In-memory registration is development-only and loses revocations on restart.
+- [ ] Implement IRefreshSessionStore in an optional Data.Identity adapter: store only unique token hashes, atomically rotate/consume, reject expired/revoked sessions, revoke families on reuse and preserve absolute family expiry. Add concurrent replay/rollback tests before exposing a refresh endpoint.
+- [ ] Move account EF mappings/context contracts into Data.Identity. Review LoginHistory shape and soft-delete relationships; base Craft.Data must not require JWT or Blazor services.
+- [ ] Add Blazor integration later using validated framework authentication state and protected cookies/OIDC as appropriate. Never authenticate ReadJwtToken output, pass tokens in URLs, block on AuthenticationStateProvider, or expose GET sign-in/sign-out. Define antiforgery, safe local redirects, circuit revalidation and sign-out semantics.
+- [ ] Add explicit external OIDC/provider integration separately. Local JWT issuance in Craft.Authentication is optional and is not an authorization-server implementation.
+- [ ] Add trusted-origin token acquisition/forwarding only where needed; never forward an incoming cookie token to arbitrary HTTP destinations.
+- [ ] Hosts must apply authorization, login throttling/lockout, MFA policy, callback allowlists, trusted proxy/IP handling and safe error responses. Account DTO attributes alone do not provide these controls.

@@ -1,6 +1,6 @@
 using Craft.Data.DbContextFeatures;
 using Craft.MultiTenant;
-using Craft.Security;
+using Craft.Identity;
 
 namespace Craft.Data;
 

@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net11.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>preview</LangVersion><Authors>Sandeep SHARMA</Authors></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../Core/Craft.Core/Craft.Core.csproj" /><FrameworkReference Include="Microsoft.AspNetCore.App" /><PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0" /><PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" /></ItemGroup>
+</Project>

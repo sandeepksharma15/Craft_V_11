@@ -64,3 +64,5 @@
 - V10 architecture inventory and proposed V11 boundaries are recorded in docs/Craft-V10-Architecture-Review.md. Treat proposals as recommendations until accepted; do not automatically port V10 dependencies or provider stubs.
 
 - Craft.Core has no package/framework/project dependencies beyond .NET. Result/Result<T> carry immutable structured errors without HTTP status; nullable success remains success. Page<T>/PageInfo use standard JSON and checked long pagination. Current identity contracts are read-only with TryGetId; deferred Data/Web/Security work is in root TODO.md. Removed EF/HTTP/envelope/DI-marker APIs must not be reintroduced into Core.
+
+- Craft.Security is replaced by Craft.Authentication (optional local JWT issuance/validation/revocation and HTTP current user) and Craft.Identity (account models/refresh-session contracts). No raw cookie JWT authentication or implicit production in-memory revocation. Blazor and transactional Data.Identity integration are deferred in TODO.md; refresh secrets are never persisted, only hashes.

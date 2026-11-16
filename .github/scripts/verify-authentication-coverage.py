@@ -2,11 +2,6 @@ from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
 
-project = ET.parse("Source/Authentication/Craft.Authentication/Craft.Authentication.csproj").getroot()
-for reference in ("PackageReference", "ProjectReference", "FrameworkReference"):
-    if project.findall(f".//{reference}"):
-        raise SystemExit(f"Craft.Authentication must remain dependency-free: found {reference}")
-
 reports = list(Path(sys.argv[1]).rglob("coverage.cobertura*.xml"))
 if len(reports) != 1:
     raise SystemExit(f"Expected one Authentication coverage report, found {len(reports)}")

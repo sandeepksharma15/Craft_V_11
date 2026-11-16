@@ -99,7 +99,7 @@ public sealed class JwtTokenService
     internal TokenValidationParameters CreateValidationParameters() => new()
     {
         ValidateIssuer = true, ValidIssuer = _issuer,
-        ValidateAudience = true, ValidAudience = _audience,
+        ValidateAudience = true, ValidAudience = _audience, IgnoreTrailingSlashWhenValidatingAudience = false,
         RequireSignedTokens = true, ValidateIssuerSigningKey = true, IssuerSigningKeys = _keys,
         ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
         RequireExpirationTime = true, ValidateLifetime = true, ClockSkew = _skew,

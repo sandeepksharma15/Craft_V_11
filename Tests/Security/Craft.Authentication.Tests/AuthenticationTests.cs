@@ -49,7 +49,7 @@ public class AuthenticationTests
     {
         var clock = new Clock(); var options = Settings(); var service = Create(options, clock); var now = clock.Now.UtcDateTime;
         string?[] invalid = [null, "", "bad", "a.b.c", new string('x', options.MaximumTokenSize + 1),
-            Raw(options, now, now.AddMinutes(1), issuer: "wrong"), Raw(options, now, now.AddMinutes(1), audience: "wrong"),
+            Raw(options, now, now.AddMinutes(1), issuer: "wrong"), Raw(options, now, now.AddMinutes(1), audience: "wrong"), Raw(options, now, now.AddMinutes(1), audience: "api/"),
             Raw(options, now, now.AddMinutes(1), signed: false), Raw(options, null, null),
             Raw(options, now.AddMinutes(2), now.AddMinutes(3)), Raw(options, now.AddHours(-1), now.AddMinutes(-1)),
             Raw(options, now, now.AddMinutes(1), claims: [new("sub", "42")]),
@@ -63,6 +63,32 @@ public class AuthenticationTests
         await Assert.ThrowsAsync<SecurityTokenException>(() => service.RevokeAsync(missingId, Token));
         await Assert.ThrowsAsync<SecurityTokenException>(() => service.RevokeAsync(Raw(options, now, now.AddMinutes(1), claims: [new("jti", "1")]), Token));
         Assert.NotNull(await service.ValidateAsync(Raw(options, null, now.AddMinutes(1)), Token));
+    }
+
+    [Fact]
+    public async Task Validation_EnforcesAlgorithmAndExactExpiryAndFailsClosed()
+    {
+        var clock = new Clock();
+        var options = Settings();
+        options.SigningKeys["key-1"] = Convert.ToBase64String(new byte[64]);
+        var service = Create(options, clock);
+        var now = clock.Now.UtcDateTime;
+        Assert.Null(await service.ValidateAsync(Raw(options, now, now.AddMinutes(1), algorithm: SecurityAlgorithms.HmacSha512), Token));
+        var token = service.IssueAccessToken("42");
+        clock.Now += options.Lifetime + options.ClockSkew - TimeSpan.FromSeconds(1);
+        Assert.NotNull(await service.ValidateAsync(token, Token));
+        clock.Now += TimeSpan.FromSeconds(1);
+        Assert.Null(await service.ValidateAsync(token, Token));
+        var unavailable = Create(options, clock, new UnavailableStore());
+        token = unavailable.IssueAccessToken("42");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => unavailable.ValidateAsync(token, Token));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => unavailable.RevokeAsync(token, Token));
+    }
+
+    private sealed class UnavailableStore : ITokenRevocationStore
+    {
+        public Task<bool> IsRevokedAsync(string key, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Unavailable");
+        public Task RevokeAsync(string key, DateTimeOffset retainUntil, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Unavailable");
     }
 
     [Fact]

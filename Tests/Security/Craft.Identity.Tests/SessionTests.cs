@@ -21,6 +21,16 @@ public class SessionTests
     }
 
     [Fact]
+    public void LoginHistory_InitializesTheRecordedLogin()
+    {
+        var now = DateTime.UtcNow;
+        var history = new LoginHistory("127.0.0.1", now, default);
+        Assert.Equal("127.0.0.1", history.LastIpAddress);
+        Assert.Equal(now, history.LastLoginOn);
+        Assert.Equal(default, history.UserId);
+    }
+
+    [Fact]
     public void AccountRequests_ValidateEmailAndRequiredFields()
     {
         var create = new CreateUserRequest { ClientURI = "https://example.test", Email = "a@example.test", FirstName = "A", LastName = "B", Password = "secret" };

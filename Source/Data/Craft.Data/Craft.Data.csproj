@@ -31,7 +31,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\4. Security\Craft.MultiTenant\Craft.MultiTenant.csproj" />
-	  <ProjectReference Include="..\..\4. Security\Craft.Security\Craft.Security.csproj" />
+	  <ProjectReference Include="..\..\Security\Craft.Identity\Craft.Identity.csproj" />
 	</ItemGroup>
 
 </Project>

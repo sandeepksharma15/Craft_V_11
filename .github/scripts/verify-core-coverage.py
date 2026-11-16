@@ -12,7 +12,7 @@ if len(reports) != 1:
     raise SystemExit(f"Expected one Core coverage report, found {len(reports)}")
 report = ET.parse(reports[0]).getroot()
 classes = report.findall(".//class")
-expected = {"Craft.Core.Result", "Craft.Core.Result`1", "Craft.Core.Error", "Craft.Core.PageInfo", "Craft.Core.Page`1"}
+expected = {"Craft.Core.Results.Result", "Craft.Core.Results.Result`1", "Craft.Core.Results.Error", "Craft.Core.Pagination.PageInfo", "Craft.Core.Pagination.Page`1"}
 reported = {item.attrib["name"] for item in classes}
 if not expected <= reported:
     raise SystemExit(f"Missing coverage: {expected - reported}")

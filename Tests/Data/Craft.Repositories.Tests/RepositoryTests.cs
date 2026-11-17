@@ -16,9 +16,9 @@ public class RepositoryTests
     {
         using var f = new Fixture();
         var interceptor = new InsertBetweenQueries();
-        var options = new DbContextOptionsBuilder<ShopContext>().UseSqlite(f.Connection)
-            .UseCraftData(Fixture.Features()).AddInterceptors(interceptor).Options;
-        using var db = new ShopContext(options);
+        var options = new DbContextOptionsBuilder<ShopContext>().UseSqlite(f.Connection);
+        options.UseCraftData(Fixture.Features()).AddInterceptors(interceptor);
+        using var db = new ShopContext(options.Options);
         var repository = new Repository<Note, ShopContext>(db, Fixture.Limits);
         var page = await repository.GetPagedListAsync(1, 10, cancellationToken: Token);
         Assert.True(interceptor.Inserted);

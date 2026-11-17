@@ -1,3 +1,4 @@
+using Craft.Data;
 using Craft.Auditing.Abstractions;
 using Craft.Auditing.Attributes;
 using Craft.Auditing.Capture;
@@ -135,13 +136,18 @@ public sealed class TestClock : TimeProvider
     #endregion Public Methods
 }
 
-public sealed class TestDbContext(DbContextOptions<TestDbContext> options, AuditTrailFactory factory) : AuditedDbContext(options, factory)
+public sealed class TestDbContext(DbContextOptions<TestDbContext> options, AuditTrailFactory factory) : CraftDbContext(Configure(options, factory))
 {
+    public DbSet<AuditTrail> AuditTrails => Set<AuditTrail>();
+
+    private static DbContextOptions Configure(DbContextOptions options, AuditTrailFactory factory)
+        => new DbContextOptionsBuilder(options).UseCraftData(new AuditingFeature(factory)).Options;
+
     #region Protected Methods
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
+        base.ConfigureModel(modelBuilder);
         modelBuilder.Entity<TestEntity>().Property<string>("Shadow");
         modelBuilder.Entity<TestEntity>().Property(e => e.Name).IsConcurrencyToken();
         modelBuilder.Entity<GuidEntity>();

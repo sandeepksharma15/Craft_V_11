@@ -1,37 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<Authors>Sandeep SHARMA</Authors>		<RootNamespace>Craft.Data</RootNamespace>
-		<AssemblyVersion>1.0.32.9</AssemblyVersion>
-		<FileVersion>1.0.0.9</FileVersion>
-	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="Services\**" />
-	  <EmbeddedResource Remove="Services\**" />
-	  <None Remove="Services\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Compile Include="Services\DatabaseConnectionValidator.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
-	  <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
-	  <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.5.4" />
-	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
-	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.12" />
-	  <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\4. Security\Craft.MultiTenant\Craft.MultiTenant.csproj" />
-	  <ProjectReference Include="..\..\Security\Craft.Identity\Craft.Identity.csproj" />
-	</ItemGroup>
-
+  <PropertyGroup><TargetFramework>net11.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>preview</LangVersion><Authors>Sandeep SHARMA</Authors></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0" />
+    <ProjectReference Include="../../Core/Craft.Core/Craft.Core.csproj" />
+    <ProjectReference Include="../../Core/Craft.Domain/Craft.Domain.csproj" />
+  </ItemGroup>
 </Project>

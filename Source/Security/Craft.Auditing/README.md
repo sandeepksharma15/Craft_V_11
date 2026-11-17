@@ -12,16 +12,12 @@ services.AddCraftAuditing().Configure(options =>
 {
     options.RetentionPeriod = TimeSpan.FromDays(90); // null disables retention
 });
-services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
+services.AddCraftDbContext<AppDbContext>(options => options.UseSqlServer(connectionString),
+    features => features.UseSoftDelete().UseAuditing());
 
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options, AuditTrailFactory audits)
-    : AuditedDbContext(options, audits)
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : CraftDbContext(options)
 {
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder); // required audit mapping
-        modelBuilder.Entity<Customer>();
-    }
+    public DbSet<Customer> Customers => Set<Customer>();
 }
 
 [Audit]
@@ -34,7 +30,7 @@ public class Customer
 }
 ```
 
-Consumers use normal `SaveChanges()` / `SaveChangesAsync(token)`. Returned counts cover business writes, excluding audit rows. For a different audit table/schema, call `modelBuilder.ConfigureAuditing("History", "audit")` after the base mapping. Create an EF migration before deployment.
+Consumers use normal `SaveChanges()` / `SaveChangesAsync(token)`. Returned counts cover business writes, excluding audit rows. Create an EF migration before deployment.
 
 ## Capture rules
 
@@ -42,7 +38,7 @@ Consumers use normal `SaveChanges()` / `SaveChangesAsync(token)`. Returned count
 - Primary keys are always recorded for identity, including shadow/composite/generated keys. Value payload exclusions do not remove identity keys. Navigation graphs are never serialized; foreign-key scalar changes are captured normally. Owned entities require their own opt-in.
 - `[AuditRedact]` replaces values with configurable `RedactionText`. `ChangedProperties` still records the change; masked old/new values cannot reveal whether the original values were equal.
 - Null values remain null. Updates contain only changed, included properties. Use `GetDifferences()` for JSON-aware per-entry comparisons; these deltas are not full historical snapshots. Corrupt JSON raises `JsonException` rather than silently returning empty data.
-- Repository-managed `ISoftDelete.IsDeleted` transitions are classified as `SoftDeleted` / `Restored`. `Remove` remains a physical delete. Already-deleted entities with other changes produce normal updates.
+- `ISoftDelete.IsDeleted` transitions are classified as `SoftDeleted` / `Restored`. `Remove` soft-deletes when Craft.Data soft deletion is enabled; otherwise it physically deletes. Already-deleted entities with other changes produce normal updates.
 - Actor, tenant, correlation, UTC timestamps and optional archive eligibility are recorded. Inject `TimeProvider` for clock control; options are snapshotted per factory scope.
 
 ## Queries and retention
@@ -70,3 +66,5 @@ Archival marks one bounded batch with a set-based update. It does not move or de
 - This protects consistency, not against privileged database tampering. Enforce authorization, tenant filters, audit-reader permissions and database retention policy in the application. Audit payloads can contain sensitive data: explicitly exclude or redact it.
 
 This replaces the old entity factories, mutable static configuration, reflection scans, JSON substring queries and background archival service. Audit records no longer inherit mutable business-entity/soft-delete semantics. Existing consumers and schemas require migration; old payloads are not silently reinterpreted.
+
+Auditing depends on Craft.Data and plugs into its single save coordinator. `AuditedDbContext` has been removed. Reference `Craft.Data`, `Craft.Auditing.Configuration` and `Craft.Auditing.Persistence` namespaces. Configure features once per context type.

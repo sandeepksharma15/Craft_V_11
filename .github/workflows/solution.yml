@@ -38,6 +38,22 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify data coverage
+        run: |
+          dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release --no-build \
+            --coverlet --results-directory artifacts/data-coverage --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.Data]*" --coverlet-include "[Craft.Identity.EntityFrameworkCore]*"
+          python3 .github/scripts/verify-data-coverage.py artifacts/data-coverage
+
+      - name: Upload data coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: data-coverage-${{ matrix.os }}
+          path: artifacts/data-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify identity coverage
         run: |
           dotnet test --project Tests/Security/Craft.Identity.Tests/Craft.Identity.Tests.csproj \
@@ -267,3 +283,26 @@ jobs:
           dotnet-quality: preview
       - name: Test CryptKey with GUID default keys
         run: dotnet test --project Tests/Security/Craft.CryptKey.Tests/Craft.CryptKey.Tests.csproj --configuration Release -p:CraftDefaultKeyType=System.Guid
+
+  data-providers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '11.0'
+          dotnet-quality: preview
+      - name: Start disposable relational databases
+        shell: bash
+        run: |
+          password="Craft_$(openssl rand -hex 18)!"
+          echo "::add-mask::$password"
+          docker run -d --name craft-sqlserver -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$password" -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+          for i in $(seq 1 60); do
+            if docker exec craft-sqlserver /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$password" -C -Q 'SELECT 1'; then break; fi
+            if [ "$i" = 60 ]; then exit 1; fi
+            sleep 2
+          done
+          echo "CRAFT_TEST_SQLSERVER=Server=localhost;Database=craft_test_data;User ID=sa;Password=$password;TrustServerCertificate=true" >> "$GITHUB_ENV"
+      - name: Test SQL Server persistence
+        run: dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release

@@ -56,12 +56,13 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
     }
 
     [HttpGet]
-    public virtual async Task<ActionResult<Page<TResponse>>> GetPageAsync([FromQuery] long page = 1, [FromQuery] int pageSize = 20,
+    public virtual async Task<ActionResult<Page<TResponse>>> GetPageAsync([FromQuery] long page = 1, [FromQuery] int? pageSize = null,
         [FromQuery] bool includeDetails = false, CancellationToken cancellationToken = default)
     {
-        if (page < 1 || pageSize < 1 || pageSize > _maximumPageSize || page - 1 > int.MaxValue / pageSize)
+        var size = pageSize ?? Math.Min(20, _maximumPageSize);
+        if (page < 1 || size < 1 || size > _maximumPageSize || page - 1 > int.MaxValue / size)
             return Problem(statusCode: 400, title: "The requested page is outside the configured limits.");
-        var result = await ReadRepository.GetPagedListAsync(page, pageSize, includeDetails, cancellationToken);
+        var result = await ReadRepository.GetPagedListAsync(page, size, includeDetails, cancellationToken);
         return Ok(new Page<TResponse>(result.Items.Select(MapResponse).ToArray(), result.Pagination));
     }
 

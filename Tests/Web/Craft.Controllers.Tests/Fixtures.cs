@@ -96,7 +96,7 @@ public sealed class Api : IAsyncDisposable
     {
         Host = host; _connection = connection; Client = host.GetTestClient(); Client.DefaultRequestHeaders.Add("Test-User", "test");
     }
-    public static async Task<Api> Start()
+    public static async Task<Api> Start(int maximumPageSize = 50)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -109,7 +109,7 @@ public sealed class Api : IAsyncDisposable
             services.AddAuthorization();
             services.AddCraftDbContext<Store>(o => o.UseSqlite(connection), f => f.UseSoftDelete().UseConcurrency().UseMultiTenancy<string>()
                 .AddFeature(_ => new AuditingFeature(new AuditTrailFactory(new Actor(), Options.Create(new AuditOptions()), TimeProvider.System))));
-            services.AddCraftRepositories<Store>(r => r.AddCustom<Item, int, FaultRepository>().Add<Plain, string>(), o => { o.MaximumPageSize = 50; o.MaximumBatchSize = 3; });
+            services.AddCraftRepositories<Store>(r => r.AddCustom<Item, int, FaultRepository>().Add<Plain, string>(), o => { o.MaximumPageSize = maximumPageSize; o.MaximumBatchSize = 3; });
             services.AddCraftControllers().AddApplicationPart(typeof(ItemsController).Assembly);
         }).Configure(app =>
         {

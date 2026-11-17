@@ -44,6 +44,18 @@ public class HttpTests
         Assert.Contains(await db.Audits.ToListAsync(Token), a => a.Operation == AuditOperation.Restored);
     }
 
+    [Fact]
+    public async Task DefaultPageSize_RespectsSmallerConfiguredLimits()
+    {
+        await using var api = await Api.Start(maximumPageSize: 2);
+        await api.Create("one");
+        using var response = await api.Send(HttpMethod.Get, "items");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var page = await response.Content.ReadFromJsonAsync<Craft.Core.Pagination.Page<Output>>(Token);
+        Assert.Equal(2, page!.Pagination.PageSize);
+        Assert.Single(page.Items);
+    }
+
     [Theory]
     [InlineData(null, 428)] [InlineData("bad", 400)] [InlineData("*", 400)]
     [InlineData("\"old\"", 412)] [InlineData("W/\"old\"", 412)] [InlineData("\"a\", \"b\"", 400)]

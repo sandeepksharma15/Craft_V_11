@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Craft.Domain.Abstractions;
 using Microsoft.AspNetCore.WebUtilities;
@@ -10,7 +11,12 @@ public static class ConcurrencyTags
     public static string? Get(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        if (entity is not IHasConcurrency concurrency) return null;
+        if (entity is not IHasConcurrency concurrency)
+        {
+            if (entity is not IHasVersion versioned) return null;
+            if (versioned.Version < 1) throw new InvalidOperationException("Versioned endpoints require configured, persisted positive versions.");
+            return "\"v:" + versioned.Version.ToString(CultureInfo.InvariantCulture) + "\"";
+        }
         if (string.IsNullOrWhiteSpace(concurrency.ConcurrencyStamp))
             throw new InvalidOperationException("Concurrency-enabled endpoints require configured, persisted concurrency stamps.");
         return "\"" + WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(concurrency.ConcurrencyStamp)) + "\"";

@@ -35,6 +35,19 @@ public class ContractTests
         Assert.Equal(500, context.Response.StatusCode);
     }
 
+    [Fact]
+    public void VersionOnlyEntities_UseOriginalVersionPreconditions()
+    {
+        var entity = new VersionRow { Version = 42 };
+        Assert.Equal("\"v:42\"", ConcurrencyTags.Get(entity));
+        Assert.Null(ConcurrencyTags.Validate(entity, "\"v:42\""));
+        Assert.Equal(428, ConcurrencyTags.Validate(entity, null));
+        Assert.Equal(412, ConcurrencyTags.Validate(entity, "\"v:41\""));
+        entity.Version = 0;
+        Assert.Throws<InvalidOperationException>(() => ConcurrencyTags.Get(entity));
+    }
+
+    private sealed class VersionRow : IHasVersion { public long Version { get; set; } }
     private sealed class Row : IEntity, ISoftDelete { public KeyType Id { get; set; } public bool IsDeleted { get; set; } }
     private sealed class Stub : RepositoryStub<Row>;
     [NonController]

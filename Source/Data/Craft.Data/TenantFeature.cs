@@ -2,6 +2,8 @@ using System.Linq.Expressions;
 using Craft.Core.Abstractions;
 using Craft.Domain.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Craft.Data;
@@ -52,11 +54,20 @@ public sealed class TenantFeature<TKey> : PersistenceFeature, ITenantPersistence
             var tenant = Expression.Property(feature, nameof(TenantId));
             modelBuilder.Entity(entity.ClrType).HasQueryFilter(FilterName, Expression.Lambda(
                 Expression.Equal(Expression.Property(parameter, nameof(IHasTenant<TKey>.TenantId)), tenant), parameter));
-            modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<TKey>.TenantId)).IsConcurrencyToken().IsRequired();
+            var tenantProperty = modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<TKey>.TenantId)).IsConcurrencyToken().IsRequired();
+            if (tenantProperty.Metadata.IsKey())
+                tenantProperty.ValueGeneratedOnAdd().HasValueGenerator((_, _) => new TenantKeyGenerator());
             if (typeof(TKey) == typeof(string) && entity.FindProperty(nameof(IHasTenant<TKey>.TenantId))!.GetMaxLength() is null)
                 modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<TKey>.TenantId)).HasMaxLength(256);
             modelBuilder.Entity(entity.ClrType).HasIndex(nameof(IHasTenant<TKey>.TenantId));
         }
+    }
+
+    private sealed class TenantKeyGenerator : ValueGenerator<TKey>
+    {
+        public override bool GeneratesTemporaryValues => false;
+        public override TKey Next(EntityEntry entry)
+            => ((ICraftDbContext)entry.Context).Persistence.FindFeature<TenantFeature<TKey>>()!.TenantId;
     }
 
     public override void ValidateChanges(DbContext context)

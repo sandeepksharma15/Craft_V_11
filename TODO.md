@@ -7,7 +7,7 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [x] Introduce the EF DbContext/persistence contracts here only where they add value; do not restore IDbContext or EF references in Core.
 - [x] Coordinate tenant validation, soft delete and stamps before audit capture; save business changes and finalized audit rows in one database transaction. Integrate the current auditing implementation through an optional adapter and remove competing context save coordinators.
 - [x] Define restore/permanent-delete APIs, cascades/orphans, filter composition and bulk-operation policies. Restoring deleted rows must not bypass tenant isolation.
-- [x] Define transaction/retry and concurrency contracts; repositories must not independently commit every operation.
+- [x] Define transaction/retry and concurrency contracts; repositories share the context transaction and expose optional deferred saves.
 - [ ] Translate PageInfo's long offset explicitly for provider APIs (e.g. int-limited Skip); reject unsupported ranges rather than truncate. Enforce application query limits and decide count/items consistency. Add cursor pagination only when needed.
 - [ ] Validate relational behavior against supported real providers, including generated keys, rollback, cancellation, filtering and tenant isolation.
 
@@ -51,8 +51,18 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Implement the existing refresh-session persistence contract atomically in the Identity EF adapter, including replay/family revocation and concurrent rotation tests. No legacy raw-token entity or refresh endpoint is reinstated.
 - [ ] Put provider-specific tuning, connection validation, materialized views and provider health checks in optional provider/hosting integrations. Do not install SQL Server, PostgreSQL, MySQL or Aspire packages in base Craft.Data.
 - [ ] Keep deployment migrations, distributed migration coordination and seed orchestration in hosting/deployment tooling. Prefer EF native seeding/factories over competing Craft abstractions.
-- [ ] Put repositories/specifications and pagination execution in their planned libraries; no implicit per-operation commits. Bulk APIs must explicitly define tenant predicates, audit behavior and soft-delete semantics.
+- [ ] Migrate specifications into their planned library; repositories now support default autoSave=true and optional deferred saves. Bulk APIs must explicitly define tenant predicates, audit behavior and soft-delete semantics.
 - [ ] Add outbox/domain-event delivery separately: callbacks in the save pipeline must never publish externally before commit.
 - [ ] Add provider execution-strategy helpers only with fresh-context replay and application idempotency/ambiguous-commit contracts. Context pooling requires a separately designed resettable tenant/feature lifetime model and is currently unsupported.
 
 - [ ] PostgreSQL release gate: Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0-rc.3 pins EF 11.0.0-rc.3.26522.148. Once a stable EF 11-compatible provider is released, add it to provider tests and run the same suite against a disposable PostgreSQL database before claiming support. Do not suppress dependency-version warnings or downgrade production EF.
+
+## Craft.Repositories migration (17 November 2026)
+
+- [x] Add materialized read interfaces, explicit tracked editing, default autoSave=true with optional deferred commits, configured default includes, bounded collections/batches and checked Page<T> execution.
+- [x] Keep soft deletion, tenant enforcement, versions, concurrency and auditing in the context pipeline. Repository saves commit the entire shared context; no independent per-repository transactions or automatic detachment.
+- [x] Keep fail-fast repository stubs in Craft.Testing.Repositories; relational tests remain authoritative.
+- [ ] Migrate Craft.QuerySpec separately with explicit projections/includes/filtering, cancellation, deterministic sorting and enforced limits. Do not restore unrestricted client-controlled filter bypasses or automatic graph traversal.
+- [ ] Add cursor pagination and composite/keyless query services only with explicit contracts; current generic repositories require a single mapped Id key.
+- [ ] Design explicit DTO patch/disconnected editing APIs with allowed fields and original concurrency tokens before offering detached replacement updates. Do not lose original audit values or silently mark entire graphs modified.
+- [ ] Put bulk update/delete APIs in a dedicated opt-in integration with tenant/audit/soft-delete semantics. SQL bulk operations must not masquerade as tracked repository operations.

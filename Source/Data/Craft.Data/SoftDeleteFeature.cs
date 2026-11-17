@@ -23,6 +23,8 @@ public sealed class SoftDeleteFeature : PersistenceFeature
             }
             if (entity.GetReferencingForeignKeys().Any(f => f.DeleteBehavior is DeleteBehavior.Cascade or DeleteBehavior.ClientCascade or DeleteBehavior.SetNull or DeleteBehavior.ClientSetNull))
                 throw new InvalidOperationException("Relationships to soft-deletable principals require Restrict or NoAction; cascades must be explicit.");
+            foreach (var foreignKey in entity.GetReferencingForeignKeys())
+                foreignKey.DeleteBehavior = DeleteBehavior.ClientNoAction;
             var parameter = Expression.Parameter(entity.ClrType, "entity");
             var flag = Expression.Property(parameter, nameof(ISoftDelete.IsDeleted));
             modelBuilder.Entity(entity.ClrType).HasQueryFilter(FilterName, Expression.Lambda(Expression.Not(flag), parameter));

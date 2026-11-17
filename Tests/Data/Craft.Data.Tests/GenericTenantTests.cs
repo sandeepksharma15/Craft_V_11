@@ -12,6 +12,9 @@ public class GenericTenantTests
     [Fact]
     public Task GuidTenants_AreParameterizedPerContext() => Check(Guid.NewGuid());
 
+    [Fact]
+    public Task StringTenantKeys_AreAssignedBeforeTracking() => Check("tenant");
+
     private static async Task Check<TKey>(TKey tenantId) where TKey : notnull
     {
         var token = TestContext.Current.CancellationToken;
@@ -22,6 +25,7 @@ public class GenericTenantTests
         await db.Database.EnsureCreatedAsync(token);
         var row = new TenantRow<TKey>();
         db.Add(row);
+        Assert.Equal(tenantId, row.TenantId);
         await db.SaveChangesAsync(token);
         Assert.Equal(tenantId, row.TenantId);
         db.ChangeTracker.Clear();
@@ -44,6 +48,8 @@ public class GenericTenantTests
     private sealed class TenantContext<TKey>(DbContextOptions<TenantContext<TKey>> options) : CraftDbContext(options) where TKey : notnull
     {
         public DbSet<TenantRow<TKey>> Rows => Set<TenantRow<TKey>>();
+        protected override void ConfigureModel(ModelBuilder model)
+            => model.Entity<TenantRow<TKey>>().HasAlternateKey(e => new { e.TenantId, e.Id });
     }
 
     private sealed class CurrentTenant<TKey>(TKey id) : ICurrentTenant<TKey> where TKey : notnull

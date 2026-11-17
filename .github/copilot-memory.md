@@ -72,3 +72,5 @@
 - Craft.Repositories defaults to autoSave=true by user preference; false stages a shared unit. Every save commits the entire context. Read interfaces materialize/no-track; tracked editing preserves originals. includeDetails applies overridden default includes, never graph discovery. Core EF behavior stays in Craft.Data; test stubs are separate and fail for unconfigured operations.
 
 - Tenant IDs participating in EF keys use context-based client value generation before tracking, so nullable/default keys work in tenant-safe relationship graphs. Non-key tenant values still use the save pipeline; explicit cross-tenant ownership remains rejected.
+
+- Craft.Controllers: authenticated abstract DTO-based read/CRUD/soft-delete bases; original ETag required for IHasConcurrency updates/deletes/restores (428 missing, 400 malformed/wildcard/list, 412 stale/race). Batch tokens are per-item. Explicit mapping; one shared-context save; query-level visibility for collections. Host owns antiforgery, body limits and policies.

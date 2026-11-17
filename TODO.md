@@ -66,3 +66,12 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Add cursor pagination and composite/keyless query services only with explicit contracts; current generic repositories require a single mapped Id key.
 - [ ] Design explicit DTO patch/disconnected editing APIs with allowed fields and original concurrency tokens before offering detached replacement updates. Do not lose original audit values or silently mark entire graphs modified.
 - [ ] Put bulk update/delete APIs in a dedicated opt-in integration with tenant/audit/soft-delete semantics. SQL bulk operations must not masquerade as tracked repository operations.
+
+## Craft.Controllers migration (17 November 2026)
+
+- [x] Explicit create/update/response DTOs, tracked edits, opt-in restoration endpoints, bounded atomic batches, authenticated defaults, resource authorization hooks and original-token If-Match preconditions.
+- [x] Safe centralized unexpected-error handling, cancellation propagation and real HTTP/SQLite tests for routing, validation, audit rollback and concurrency.
+- [ ] Add reusable Result<T>/Domain-exception HTTP translation to a future shared ASP.NET integration (usable by MVC and minimal APIs); keep Core independent. Provider-specific constraint classification belongs in optional persistence/provider adapters, never raw-message parsing or provider packages in controllers.
+- [ ] Move V10 API versioning, rate limiting, request-body limits, antiforgery, CORS ETag exposure, authentication policies and OpenAPI setup into optional hosting/web integrations. Configure framework services directly; do not restore reflection-based registration.
+- [ ] Add projection-backed collection controllers with Craft.QuerySpec; preserve query-level authorization and bounded page semantics. Entity ETags do not version independent related collections automatically.
+- [ ] Permanent deletion, mixed-operation transactions, JSON Patch, idempotency keys and bulk APIs require explicit application contracts; do not expose them automatically from the generic controller base.

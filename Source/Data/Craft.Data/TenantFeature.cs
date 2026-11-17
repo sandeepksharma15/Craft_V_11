@@ -10,6 +10,8 @@ public interface ITenantPersistenceFeature;
 
 public sealed class TenantFeature<TKey> : PersistenceFeature, ITenantPersistenceFeature where TKey : notnull
 {
+    public override PersistenceStage Stage => PersistenceStage.Ownership;
+
     public const string FilterName = "Craft.Tenant";
     private readonly TKey? _tenantId;
     private readonly bool _hasTenant;

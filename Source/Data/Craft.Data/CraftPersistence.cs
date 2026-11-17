@@ -61,9 +61,7 @@ public sealed class CraftPersistence
     {
         _context.ChangeTracker.DetectChanges();
         foreach (var feature in _features) feature.ValidateChanges(_context);
-        // Stages are independent of registration order: deletion before stamps, capture after all mutations.
-        foreach (var feature in _features.Where(f => f is SoftDeleteFeature)) feature.PrepareChanges(_context);
-        foreach (var feature in _features.Where(f => f is not SoftDeleteFeature)) feature.PrepareChanges(_context);
+        foreach (var feature in _features.OrderBy(f => f.Stage)) feature.PrepareChanges(_context);
         return _features.Select(f => f.CaptureChanges(_context)).OfType<Action>().ToArray();
     }
 

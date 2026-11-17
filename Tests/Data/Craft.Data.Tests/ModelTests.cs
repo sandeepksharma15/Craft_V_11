@@ -29,6 +29,11 @@ public class ModelTests
     [Fact]
     public void OwnedContracts_AreRejected()
     {
+        var metadata = new ModelBuilder();
+        metadata.Entity<SoftOwner>().OwnsOne(o => o.Value);
+        using var context = new DbContext(new DbContextOptionsBuilder().UseSqlite("Data Source=:memory:").Options);
+        var error = Assert.Throws<InvalidOperationException>(() => new SoftDeleteFeature().ConfigureModel(context, metadata));
+        Assert.Contains("Owned types", error.Message);
         using var soft = Create(m => { m.Entity<Owner>().Ignore(o => o.Tenant); m.Entity<Owner>().OwnsOne(o => o.Soft); }, new SoftDeleteFeature());
         Assert.Throws<InvalidOperationException>(() => soft.Model);
         using var tenant = Create(m => { m.Entity<Owner>().Ignore(o => o.Soft); m.Entity<Owner>().OwnsOne(o => o.Tenant); }, new TenantFeature<string>(new Tenant("a")));
@@ -111,6 +116,7 @@ public class ModelTests
     private sealed class TenantOnlyChild : PlainRoot, IHasTenant<string> { public string TenantId { get; set; } = "a"; }
     private sealed class TenantDependent : IHasTenant<string> { public int Id { get; set; } public string TenantId { get; set; } = "a"; public int ParentId { get; set; } }
     private sealed class Dependent { public int Id { get; set; } public int? ParentId { get; set; } }
+    private sealed class SoftOwner { public int Id { get; set; } public SoftRoot Value { get; set; } = new(); }
     private sealed class Owner { public int Id { get; set; } public SoftRoot Soft { get; set; } = new(); public TenantRoot Tenant { get; set; } = new(); }
     private sealed class AmbiguousTenant : IHasTenant<string>, IHasTenant<int>
     {

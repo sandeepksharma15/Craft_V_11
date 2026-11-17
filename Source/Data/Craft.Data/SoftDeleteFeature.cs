@@ -6,6 +6,8 @@ namespace Craft.Data;
 
 public sealed class SoftDeleteFeature : PersistenceFeature
 {
+    public override PersistenceStage Stage => PersistenceStage.Deletion;
+
     public const string FilterName = "Craft.SoftDelete";
 
     public override void ConfigureModel(DbContext context, ModelBuilder modelBuilder)

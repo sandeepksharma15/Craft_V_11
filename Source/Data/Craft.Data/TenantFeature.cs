@@ -11,14 +11,16 @@ public interface ITenantPersistenceFeature;
 public sealed class TenantFeature<TKey> : PersistenceFeature, ITenantPersistenceFeature where TKey : notnull
 {
     public const string FilterName = "Craft.Tenant";
-    public TKey TenantId { get; }
+    private readonly TKey? _tenantId;
+    private readonly bool _hasTenant;
+    public TKey TenantId => _hasTenant ? _tenantId! : throw new InvalidOperationException("An established, non-default tenant is required before accessing tenant data.");
 
     public TenantFeature(ICurrentTenant<TKey> tenant)
     {
         ArgumentNullException.ThrowIfNull(tenant);
-        if (!tenant.IsAvailable || !tenant.TryGetId(out var id) || EqualityComparer<TKey>.Default.Equals(id, default) || id is string text && string.IsNullOrWhiteSpace(text))
-            throw new InvalidOperationException("An established, non-default tenant is required before creating the context.");
-        TenantId = id;
+        _hasTenant = tenant.IsAvailable && tenant.TryGetId(out _tenantId) &&
+            !EqualityComparer<TKey>.Default.Equals(_tenantId, default) &&
+            !(_tenantId is string text && string.IsNullOrWhiteSpace(text));
     }
 
     public override void ConfigureModel(DbContext context, ModelBuilder modelBuilder)

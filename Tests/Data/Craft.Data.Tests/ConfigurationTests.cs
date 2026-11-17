@@ -29,8 +29,8 @@ public class ConfigurationTests
     public void Tenancy_RequiresEstablishedIdentityAndSnapshotsIt()
     {
         Assert.Throws<ArgumentNullException>(() => new TenantFeature<string>(null!));
-        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new Tenant(" ")));
-        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new Tenant("a") { IsAvailable = false }));
+        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new Tenant(" ")).TenantId);
+        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new Tenant("a") { IsAvailable = false }).TenantId);
         var tenant = new Tenant("a");
         var feature = new TenantFeature<string>(tenant);
         tenant.Id = "b";
@@ -42,6 +42,19 @@ public class ConfigurationTests
         Assert.DoesNotContain("Data Source", diagnostic);
         using var db = new DataContext(options.Options);
         Assert.Throws<InvalidOperationException>(() => db.Model);
+    }
+
+    [Fact]
+    public async Task MigrationModel_DoesNotNeedAnActiveTenantButRuntimeAccessDoes()
+    {
+        var options = new DbContextOptionsBuilder<DataContext>().UseSqlite("Data Source=:memory:");
+        options.UseCraftData(new TenantFeature<string>(new Tenant("unused") { IsAvailable = false }));
+        using var db = new DataContext(options.Options);
+        Assert.Contains("TenantId", db.Database.GenerateCreateScript());
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => db.Documents.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Contains("non-default tenant", error.ToString());
+        db.Add(new Document());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => db.SaveChangesAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]

@@ -75,7 +75,7 @@ public class FailureTests
         Assert.Throws<ArgumentNullException>(() => db.Persistence.PermanentlyDelete<Document>(null!));
         Assert.Throws<ArgumentNullException>(() => db.Restore<Document>(null!));
         Assert.Throws<ArgumentNullException>(() => ((DbContext)null!).Restore(new Document()));
-        var row = new Document(); db.Add(row);
+        var row = new Document { Id = 42 }; db.Add(row);
         Assert.Throws<InvalidOperationException>(() => db.Persistence.PermanentlyDelete(row));
         Assert.Throws<InvalidOperationException>(() => db.Restore(row));
         db.Entry(row).State = EntityState.Unchanged;

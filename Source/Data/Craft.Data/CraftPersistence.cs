@@ -74,7 +74,7 @@ public sealed class CraftPersistence
         _saving = true;
         IDbContextTransaction? transaction = null;
         var owned = _context.Database.CurrentTransaction is null;
-        var savepoint = "Craft_" + Guid.NewGuid().ToString("N");
+        var savepoint = "C" + Guid.NewGuid().ToString("N")[..31];
         var savepointCreated = false;
         try
         {
@@ -119,7 +119,7 @@ public sealed class CraftPersistence
         _saving = true;
         IDbContextTransaction? transaction = null;
         var owned = _context.Database.CurrentTransaction is null;
-        var savepoint = "Craft_" + Guid.NewGuid().ToString("N");
+        var savepoint = "C" + Guid.NewGuid().ToString("N")[..31];
         var savepointCreated = false;
         try
         {

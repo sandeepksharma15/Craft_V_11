@@ -74,8 +74,8 @@ public class ModelTests
         Assert.Throws<InvalidOperationException>(() => mismatch.Model);
         using var ambiguous = Create(m => m.Entity<AmbiguousTenant>(), new TenantFeature<string>(new Tenant("a")));
         Assert.Throws<InvalidOperationException>(() => ambiguous.Model);
-        Assert.Throws<InvalidOperationException>(() => new TenantFeature<int>(new NumericTenant(0)));
-        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new MissingTenant()));
+        Assert.Throws<InvalidOperationException>(() => new TenantFeature<int>(new NumericTenant(0)).TenantId);
+        Assert.Throws<InvalidOperationException>(() => new TenantFeature<string>(new MissingTenant()).TenantId);
     }
 
     [Fact]

@@ -47,11 +47,36 @@ public class ModelTests
     [InlineData(DeleteBehavior.ClientSetNull, true)]
     [InlineData(DeleteBehavior.Restrict, false)]
     [InlineData(DeleteBehavior.NoAction, false)]
+    [InlineData(DeleteBehavior.ClientNoAction, false)]
     public void SoftDeleteRelationships_RequireExplicitDeletion(DeleteBehavior behavior, bool rejected)
     {
         using var db = Create(m => m.Entity<Dependent>().HasOne<SoftRoot>().WithMany().HasForeignKey(d => d.ParentId).OnDelete(behavior), new SoftDeleteFeature());
         if (rejected) Assert.Throws<InvalidOperationException>(() => db.Model);
         else Assert.NotNull(db.Model);
+    }
+
+    [Fact]
+    public async Task SoftDelete_PreservesTrackedRelationshipsAndPermanentDeleteHonorsDatabaseConstraints()
+    {
+        var token = TestContext.Current.CancellationToken;
+        using var db = Create(m => m.Entity<Dependent>().HasOne<SoftRoot>().WithMany()
+            .HasForeignKey(d => d.ParentId).OnDelete(DeleteBehavior.Restrict), new SoftDeleteFeature());
+        await db.Database.OpenConnectionAsync(token);
+        await db.Database.EnsureCreatedAsync(token);
+        var parent = new SoftRoot();
+        db.Add(parent);
+        await db.SaveChangesAsync(token);
+        var child = new Dependent { ParentId = parent.Id };
+        db.Add(child);
+        await db.SaveChangesAsync(token);
+        db.Remove(parent);
+        await db.SaveChangesAsync(token);
+        Assert.True(parent.IsDeleted);
+        Assert.Equal(parent.Id, child.ParentId);
+        Assert.Equal(EntityState.Unchanged, db.Entry(child).State);
+        Assert.Equal(parent.Id, (await db.Set<Dependent>().AsNoTracking().SingleAsync(token)).ParentId);
+        db.Persistence.PermanentlyDelete(parent);
+        await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync(token));
     }
 
     [Theory]

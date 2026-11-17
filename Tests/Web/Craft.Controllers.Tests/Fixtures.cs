@@ -36,7 +36,7 @@ public sealed class Item : IEntity<int>, ISoftDelete, IHasConcurrency, IHasTenan
     public string? ConcurrencyStamp { get; set; }
     public bool IsDeleted { get; set; }
 }
-public sealed record Input([property: Required, MaxLength(20)] string Name);
+public sealed record Input([Required, MaxLength(20)] string Name);
 public sealed record Output(int Id, string Name, string? ETag);
 public sealed class ItemsController(IRepository<Item, int> repository, IOptions<RepositoryOptions> options)
     : SoftDeleteEntityController<Item, Output, Input, Input, int>(repository, options)
@@ -57,13 +57,14 @@ public sealed class PlainController(IRepository<Plain, string> repository, IOpti
 }
 public sealed class FaultRepository(Store db, IOptions<RepositoryOptions> options) : Repository<Item, int, Store>(db, options)
 {
-    public override Task<Item> UpdateAsync(Item entity, bool autoSave = true, CancellationToken cancellationToken = default)
-        => entity.Name switch
-        {
-            "race" => throw new DbUpdateConcurrencyException("secret database details"),
-            "explode" => throw new InvalidOperationException("secret database details"),
-            _ => base.UpdateAsync(entity, autoSave, cancellationToken)
-        };
+    public override async Task<Item> UpdateAsync(Item entity, bool autoSave = true, CancellationToken cancellationToken = default)
+    {
+        if (entity.Name == "explode") throw new InvalidOperationException("secret database details");
+        if (entity.Name == "race")
+            await Context.Database.ExecuteSqlInterpolatedAsync($"UPDATE Items SET ConcurrencyStamp = {"competing-writer"} WHERE Id = {entity.Id}", cancellationToken);
+        return await base.UpdateAsync(entity, autoSave, cancellationToken);
+    }
+
 }
 public sealed class Store(DbContextOptions<Store> options) : CraftDbContext(options)
 {
@@ -101,6 +102,7 @@ public sealed class Api : IAsyncDisposable
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         var host = await new HostBuilder().ConfigureWebHost(web => web.UseTestServer().ConfigureServices(services =>
         {
+            services.AddLogging(b => b.AddConsole());
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentTenant<string>, Tenant>();
             services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, TestAuthentication>("test", _ => { });

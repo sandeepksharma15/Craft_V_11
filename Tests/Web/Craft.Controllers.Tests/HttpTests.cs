@@ -30,6 +30,7 @@ public class HttpTests
         using var update = await api.Send(HttpMethod.Put, $"items/items/{row.Id}", new { Name = "changed", TenantId = "evil", IsDeleted = true, Id = 999 }, row.ETag);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
         var changed = (await update.Content.ReadFromJsonAsync<Output>(Token))!; Assert.NotEqual(row.ETag, changed.ETag);
+        await Status(await api.Send(HttpMethod.Put, $"items/items/{row.Id}", new Input("stale"), row.ETag), 412);
         using var delete = await api.Send(HttpMethod.Delete, $"items/items/{row.Id}", tag: changed.ETag);
         Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode); var deletedTag = delete.Headers.ETag!.ToString();
         await Status(await api.Send(HttpMethod.Get, $"items/items/{row.Id}"), 404);
@@ -141,7 +142,8 @@ public class HttpTests
     {
         await using var api = await Api.Start(); var row = await api.Create("original");
         await Status(await api.Send(HttpMethod.Put, $"items/items/{row.Id}", new Input("race"), row.ETag), 412);
-        await Status(await api.Send(HttpMethod.Put, $"items/items/{row.Id}", new Input("explode"), row.ETag), 500);
+        using var fresh = await api.Send(HttpMethod.Get, $"items/items/{row.Id}");
+        await Status(await api.Send(HttpMethod.Put, $"items/items/{row.Id}", new Input("explode"), fresh.Headers.ETag!.ToString()), 500);
         using var plain = await api.Send(HttpMethod.Post, "plain", new Input("count"));
         Assert.Equal(HttpStatusCode.Created, plain.StatusCode); Assert.Null(plain.Headers.ETag);
         using var lookup = await api.Client.GetAsync(plain.Headers.Location, Token); Assert.Equal(HttpStatusCode.OK, lookup.StatusCode);

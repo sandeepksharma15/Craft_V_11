@@ -70,3 +70,5 @@
 - Craft.Data owns the one relational save coordinator; Craft.Auditing plugs into it with a one-way Data dependency. CraftIdentityDbContext shares that coordinator. Features are explicit, contexts scoped/unpooled, tenant identities snapshotted and query-parameterized, and failed writes require fresh contexts. ISoftDelete remains a Domain contract; behavior lives in Data.
 
 - Craft.Repositories defaults to autoSave=true by user preference; false stages a shared unit. Every save commits the entire context. Read interfaces materialize/no-track; tracked editing preserves originals. includeDetails applies overridden default includes, never graph discovery. Core EF behavior stays in Craft.Data; test stubs are separate and fail for unconfigured operations.
+
+- Tenant IDs participating in EF keys use context-based client value generation before tracking, so nullable/default keys work in tenant-safe relationship graphs. Non-key tenant values still use the save pipeline; explicit cross-tenant ownership remains rejected.

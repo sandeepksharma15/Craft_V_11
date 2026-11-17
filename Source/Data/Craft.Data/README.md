@@ -22,7 +22,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : Craft
 
 Reference `Craft.Data`, your EF provider, and only the feature packages needed. Auditing configuration comes from `Craft.Auditing.Persistence`; its service registration is in `Craft.Auditing.Configuration`. Data APIs are in `Craft.Data`. Use `UseNpgsql` instead of `UseSqlServer` for PostgreSQL. Data does not install or guess providers, connection strings, indexes for uniqueness, time-zone conversion, or migration deployment policy.
 
-For Identity, reference `Craft.Identity.EntityFrameworkCore` and inherit `CraftIdentityDbContext` (or its generic user/role/key variant). Registration and feature configuration stay the same. Register `AddIdentityCore<YourUser>().AddRoles<YourRole>().AddEntityFrameworkStores<AppDbContext>()` normally. Use `UserManager` for passwords and account operations. Identity accounts are global here; tenant-scoped Identity uniqueness/membership and refresh-session persistence are deferred in TODO.md.
+For Identity, reference `Craft.IdentityEF` and inherit `CraftIdentityDbContext` (or its generic user/role/key variant). Registration and feature configuration stay the same. Register `AddIdentityCore<YourUser>().AddRoles<YourRole>().AddEntityFrameworkStores<AppDbContext>()` normally. Use `UserManager` for passwords and account operations. Identity accounts are global here; tenant-scoped Identity uniqueness/membership and refresh-session persistence are deferred in TODO.md.
 
 ## Entity behavior
 

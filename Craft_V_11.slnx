@@ -20,7 +20,7 @@
   </Folder>
   <Folder Name="/Source/Data/">
     <Project Path="Source/Data/Craft.Data/Craft.Data.csproj" />
-    <Project Path="Source/Data/Craft.Identity.EntityFrameworkCore/Craft.Identity.EntityFrameworkCore.csproj" />
+    <Project Path="Source/Data/Craft.IdentityEF/Craft.IdentityEF.csproj" />
   </Folder>
   <Folder Name="/Source/Security/">
     <Project Path="Source/Security/Craft.Auditing/Craft.Auditing.csproj" />
@@ -49,3 +49,4 @@
     <Project Path="Tests/Support/Craft.Testing/Craft.Testing.csproj" />
   </Folder>
 </Solution>
+

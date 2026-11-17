@@ -42,7 +42,7 @@ jobs:
         run: |
           dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release --no-build \
             --coverlet --results-directory artifacts/data-coverage --coverlet-output-format cobertura \
-            --coverlet-include "[Craft.Data]*" --coverlet-include "[Craft.Identity.EntityFrameworkCore]*"
+            --coverlet-include "[Craft.Data]*" --coverlet-include "[Craft.IdentityEF]*"
           python3 .github/scripts/verify-data-coverage.py artifacts/data-coverage
 
       - name: Upload data coverage

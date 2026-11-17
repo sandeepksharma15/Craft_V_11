@@ -1,10 +1,11 @@
 using Craft.Data;
 using Craft.Domain.Abstractions;
+using Craft.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Craft.Identity.EntityFrameworkCore;
+namespace Craft.IdentityEF;
 
 public abstract class CraftIdentityDbContext<TUser, TRole, TKey> : IdentityDbContext<TUser, TRole, TKey>, ICraftDbContext
     where TUser : IdentityUser<TKey>

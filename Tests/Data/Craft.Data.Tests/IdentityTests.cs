@@ -3,7 +3,7 @@ using Craft.Auditing.Configuration;
 using Craft.Auditing.Persistence;
 using Craft.Domain.Abstractions;
 using Craft.Identity;
-using Craft.Identity.EntityFrameworkCore;
+using Craft.IdentityEF;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;

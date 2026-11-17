@@ -6,7 +6,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="11.0.0" />
     <PackageReference Include="xunit.v3" Version="4.0.3" />
     <PackageReference Include="coverlet.MTP" Version="10.1.1" PrivateAssets="all" />
-    <ProjectReference Include="../../../Source/Data/Craft.Identity.EntityFrameworkCore/Craft.Identity.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="../../../Source/Data/Craft.IdentityEF/Craft.IdentityEF.csproj" />
     <ProjectReference Include="../../../Source/Security/Craft.Auditing/Craft.Auditing.csproj" />
     <None Include="../../testconfig.json" Link="$(AssemblyName).testconfig.json" CopyToOutputDirectory="PreserveNewest" />
     <Using Include="Xunit" />

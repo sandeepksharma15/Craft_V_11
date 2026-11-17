@@ -1,3 +1,4 @@
+using Craft.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Craft.Repositories.Tests;

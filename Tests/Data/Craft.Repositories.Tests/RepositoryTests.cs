@@ -1,4 +1,7 @@
+using Craft.Data;
+using System.Data.Common;
 using Craft.Auditing.Model;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -9,6 +12,38 @@ public class RepositoryTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task Paging_RemainsValidWhenAnInsertOccursBetweenCountAndItems()
+    {
+        using var f = new Fixture();
+        var interceptor = new InsertBetweenQueries();
+        var options = new DbContextOptionsBuilder<ShopContext>().UseSqlite(f.Connection)
+            .UseCraftData(Fixture.Features()).AddInterceptors(interceptor).Options;
+        using var db = new ShopContext(options);
+        var repository = new Repository<Note, ShopContext>(db, Fixture.Limits);
+        var page = await repository.GetPagedListAsync(1, 10, cancellationToken: Token);
+        Assert.True(interceptor.Inserted);
+        Assert.Single(page.Items);
+        Assert.Equal(1, page.Pagination.TotalCount);
+    }
+
+    private sealed class InsertBetweenQueries : DbCommandInterceptor
+    {
+        public bool Inserted { get; private set; }
+        public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command,
+            CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            if (!Inserted && command.CommandText.Contains("LIMIT", StringComparison.Ordinal))
+            {
+                await using var insert = command.Connection!.CreateCommand();
+                insert.CommandText = "INSERT INTO Notes (Text) VALUES ('arrived')";
+                await insert.ExecuteNonQueryAsync(cancellationToken);
+                Inserted = true;
+            }
+            return result;
+        }
+    }
+
+    [Fact]
     public async Task DefaultSave_PersistsAndKeepsOriginalValuesForTrackedEditing()
     {
         using var f = new Fixture(); using var db = f.Open();
@@ -17,6 +52,7 @@ public class RepositoryTests
         Assert.Same(product, await repository.AddAsync(product, cancellationToken: Token));
         Assert.True(product.Id > 0); Assert.Equal(1, product.Version);
         Assert.Equal(EntityState.Unchanged, db.Entry(product).State);
+        db.ChangeTracker.AutoDetectChangesEnabled = false;
         product.Name = "changed";
         Assert.Same(product, await repository.UpdateAsync(product, cancellationToken: Token));
         Assert.Equal(2, product.Version);

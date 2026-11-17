@@ -31,14 +31,14 @@ public class ValidationTests
         var tags = new Repository<Tag, Guid, ShopContext>(db, Fixture.Limits);
         var tag = await tags.AddAsync(new Tag(), cancellationToken: Token);
         await Assert.ThrowsAsync<NotSupportedException>(() => tags.RestoreAsync(tag, cancellationToken: Token));
-        Assert.Throws<NotSupportedException>(() => tags.LoadDeletedAsync(tag.Id, cancellationToken: Token));
+        await Assert.ThrowsAsync<NotSupportedException>(() => tags.LoadDeletedAsync(tag.Id, cancellationToken: Token));
         await tags.DeleteAsync(tag, cancellationToken: Token);
         Assert.Null(await tags.GetAsync(tag.Id, cancellationToken: Token));
         using var noSoft = f.Open(softDelete: false); var unsafeRepository = new Repository<Product, int, ShopContext>(noSoft, Fixture.Limits);
         var loaded = await unsafeRepository.LoadForUpdateAsync(row.Id, cancellationToken: Token);
         await Assert.ThrowsAsync<NotSupportedException>(() => unsafeRepository.DeleteAsync(loaded!, cancellationToken: Token));
         var codes = new Repository<Code, string, ShopContext>(db, Fixture.Limits);
-        Assert.Throws<ArgumentNullException>(() => codes.GetAsync(null!, cancellationToken: Token));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => codes.GetAsync(null!, cancellationToken: Token));
         await codes.AddAsync(new Code(), cancellationToken: Token);
         Assert.NotNull(await codes.GetAsync("code", cancellationToken: Token));
     }
@@ -83,6 +83,7 @@ public class ValidationTests
     public void ConstructorsAndRegistration_ValidateArgumentsAndBindings()
     {
         using var f = new Fixture(); using var db = f.Open();
+        Assert.Throws<ArgumentNullException>(() => new RepositoryBuilder<ShopContext>(null!));
         Assert.Throws<ArgumentNullException>(() => new ReadRepository<Product, int, ShopContext>(null!, Fixture.Limits));
         Assert.Throws<ArgumentNullException>(() => new ReadRepository<Product, int, ShopContext>(db, null!));
         Assert.Throws<ArgumentNullException>(() => RepositoryRegistration.AddCraftRepositories<ShopContext>(null!, _ => { }));
@@ -100,6 +101,9 @@ public class ValidationTests
         Assert.Same(sp.GetRequiredService<IRepository<Note>>(), sp.GetRequiredService<IReadRepository<Note, KeyType>>());
         Assert.NotNull(sp.GetRequiredService<IRepository<Tag, Guid>>());
         Assert.NotNull(new ReadRepository<Note, ShopContext>(db, Fixture.Limits));
+        var readOnly = new ServiceCollection();
+        readOnly.AddScoped<IReadRepository<Product, int>, DetailsRepository>();
+        Assert.Throws<InvalidOperationException>(() => readOnly.AddCraftRepositories<ShopContext>(b => b.Add<Product, int>()));
         var configured = new ServiceCollection(); configured.AddCraftRepositories<ShopContext>(_ => { }, o => o.MaximumPageSize = 0);
         using var invalid = configured.BuildServiceProvider();
         Assert.Throws<OptionsValidationException>(() => invalid.GetRequiredService<IOptions<RepositoryOptions>>().Value);

@@ -65,7 +65,7 @@ public class HttpTests
         await Status(await api.Send(HttpMethod.Post, "items", new Input("")), 400);
         await Status(await api.Send(HttpMethod.Post, "items", new Input(new string('x', 21))), 400);
         await Status(await api.Send(HttpMethod.Post, "items", new Input("denied")), 403);
-        await Status(await api.Send(HttpMethod.Post, "items"), 400);
+        await Status(await api.Send(HttpMethod.Post, "items"), 415);
         foreach (var query in new[] { "page=0", "pageSize=0", "pageSize=51", "page=9223372036854775807", "page=invalid" })
             await Status(await api.Send(HttpMethod.Get, "items?" + query), 400);
         await api.Create("one");
@@ -128,6 +128,7 @@ public class HttpTests
     public async Task BatchBodies_RejectNullsDuplicatesEmptyOversizedAndInvalidModels()
     {
         await using var api = await Api.Start();
+        await Status(await api.Send(HttpMethod.Post, "unrelated", new string?[] { null }), 200);
         await Status(await api.Send(HttpMethod.Post, "items/batch", Array.Empty<Input>()), 400);
         await Status(await api.Send(HttpMethod.Post, "items/batch", Enumerable.Range(0, 4).Select(i => new Input(i.ToString()))), 400);
         await Status(await api.Send(HttpMethod.Post, "items/batch", new Input?[] { null }), 400);

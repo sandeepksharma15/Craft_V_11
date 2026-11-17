@@ -75,3 +75,4 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Move V10 API versioning, rate limiting, request-body limits, antiforgery, CORS ETag exposure, authentication policies and OpenAPI setup into optional hosting/web integrations. Configure framework services directly; do not restore reflection-based registration.
 - [ ] Add projection-backed collection controllers with Craft.QuerySpec; preserve query-level authorization and bounded page semantics. Entity ETags do not version independent related collections automatically.
 - [ ] Permanent deletion, mixed-operation transactions, JSON Patch, idempotency keys and bulk APIs require explicit application contracts; do not expose them automatically from the generic controller base.
+- [ ] Add grouped, bounded tracked ID loading alongside the QuerySpec migration to reduce batch-controller read round trips without bypassing tenant/application filters.

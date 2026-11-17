@@ -61,7 +61,7 @@ public sealed class FaultRepository(Store db, IOptions<RepositoryOptions> option
     {
         if (entity.Name == "explode") throw new InvalidOperationException("secret database details");
         if (entity.Name == "race")
-            await Context.Database.ExecuteSqlInterpolatedAsync($"UPDATE Items SET ConcurrencyStamp = {"competing-writer"} WHERE Id = {entity.Id}", cancellationToken);
+            await Context.Database.ExecuteSqlAsync($"UPDATE Items SET ConcurrencyStamp = {"competing-writer"} WHERE Id = {entity.Id}", cancellationToken);
         return await base.UpdateAsync(entity, autoSave, cancellationToken);
     }
 
@@ -102,7 +102,7 @@ public sealed class Api : IAsyncDisposable
         await connection.OpenAsync(TestContext.Current.CancellationToken);
         var host = await new HostBuilder().ConfigureWebHost(web => web.UseTestServer().ConfigureServices(services =>
         {
-            services.AddLogging(b => b.AddConsole());
+            services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning).AddConsole());
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentTenant<string>, Tenant>();
             services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, TestAuthentication>("test", _ => { });
@@ -133,4 +133,12 @@ public sealed class Api : IAsyncDisposable
         return (await response.Content.ReadFromJsonAsync<Output>(TestContext.Current.CancellationToken))!;
     }
     public async ValueTask DisposeAsync() { Client.Dispose(); await Host.StopAsync(TestContext.Current.CancellationToken); Host.Dispose(); await _connection.DisposeAsync(); }
+}
+
+[ApiController]
+[Route("api/unrelated")]
+public sealed class UnrelatedController : ControllerBase
+{
+    [HttpPost]
+    public IActionResult Post([FromBody] string?[] values) => Ok(values.Length);
 }

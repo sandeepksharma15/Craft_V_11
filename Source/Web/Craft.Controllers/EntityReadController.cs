@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Craft.Controllers;
 
 [ApiController]
+[TypeFilter(typeof(BatchBodyValidationFilter))]
 [Authorize]
 [Route("api/[controller]")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]

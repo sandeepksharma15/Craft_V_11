@@ -14,7 +14,7 @@ public static class ControllerRegistration
         ArgumentNullException.ThrowIfNull(services);
         services.AddProblemDetails();
         services.AddExceptionHandler<CraftControllerExceptionHandler>();
-        return services.AddControllers(options => options.Filters.Add<BatchBodyValidationFilter>());
+        return services.AddControllers();
     }
 }
 

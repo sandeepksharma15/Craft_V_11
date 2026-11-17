@@ -68,3 +68,5 @@
 - Craft.Security is replaced by Craft.Authentication (optional local JWT issuance/validation/revocation and HTTP current user) and Craft.Identity (account models/refresh-session contracts). No raw cookie JWT authentication or implicit production in-memory revocation. Blazor and transactional Data.Identity integration are deferred in TODO.md; refresh secrets are never persisted, only hashes.
 
 - Craft.Data owns the one relational save coordinator; Craft.Auditing plugs into it with a one-way Data dependency. CraftIdentityDbContext shares that coordinator. Features are explicit, contexts scoped/unpooled, tenant identities snapshotted and query-parameterized, and failed writes require fresh contexts. ISoftDelete remains a Domain contract; behavior lives in Data.
+
+- Craft.Repositories defaults to autoSave=true by user preference; false stages a shared unit. Every save commits the entire context. Read interfaces materialize/no-track; tracked editing preserves originals. includeDetails applies overridden default includes, never graph discovery. Core EF behavior stays in Craft.Data; test stubs are separate and fail for unconfigured operations.

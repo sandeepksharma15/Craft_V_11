@@ -7,7 +7,7 @@ if len(reports) != 1:
     raise SystemExit(f"Expected one data coverage report, found {len(reports)}")
 report = ET.parse(reports[0]).getroot()
 classes = report.findall(".//class")
-expected = {"Craft.Data.CraftDbContext", "Craft.Data.CraftPersistence", "Craft.Data.SoftDeleteFeature", "Craft.Data.TenantFeature`1", "Craft.Identity.EntityFrameworkCore.CraftIdentityDbContext`3"}
+expected = {"Craft.Data.CraftDbContext", "Craft.Data.CraftPersistence", "Craft.Data.SoftDeleteFeature", "Craft.Data.TenantFeature`1", "Craft.IdentityEF.CraftIdentityDbContext`3"}
 reported = {item.attrib["name"] for item in classes}
 if not expected <= reported:
     raise SystemExit(f"Missing coverage: {expected - reported}")

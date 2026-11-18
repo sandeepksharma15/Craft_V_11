@@ -7,7 +7,7 @@ if len(reports) != 1:
     raise SystemExit(f"Expected one Identity coverage report, found {len(reports)}")
 report = ET.parse(reports[0]).getroot()
 classes = report.findall(".//class")
-expected = {'Craft.Identity.RefreshTokenSecret', 'Craft.Identity.CraftUser`1', 'Craft.Identity.CraftRole`1', 'Craft.Identity.RefreshSession`1'}
+expected = {'Craft.Identity.Sessions.RefreshTokenSecret', 'Craft.Identity.Models.CraftUser`1', 'Craft.Identity.Models.CraftRole`1', 'Craft.Identity.Sessions.RefreshSession`1'}
 reported = {item.attrib["name"] for item in classes}
 if not expected <= reported:
     raise SystemExit(f"Missing coverage: {expected - reported}")

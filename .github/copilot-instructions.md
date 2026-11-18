@@ -3,6 +3,8 @@
 > **Stack:** .NET 11 · C# latest · ASP.NET Core · Blazor · EF Core
 > **Memory:** When `.github/copilot-memory.md` exists, read it before substantive work.
 
+> **Coding style:** Read [CODING_STYLE.md](../CODING_STYLE.md) for Sandeep's confirmed readability preferences. Apply it to production code, tests and examples.
+
 ## 1. Core Behavior
 
 * Follow the user's explicit requirements first, then existing project architecture and conventions, then these instructions.

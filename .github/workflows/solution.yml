@@ -38,6 +38,22 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify controller coverage
+        run: |
+          dotnet test --project Tests/Web/Craft.Controllers.Tests/Craft.Controllers.Tests.csproj --configuration Release --no-build \
+            --coverlet --results-directory artifacts/controller-coverage --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.Controllers]*"
+          python3 .github/scripts/verify-controller-coverage.py artifacts/controller-coverage
+
+      - name: Upload controller coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: controller-coverage-${{ matrix.os }}
+          path: artifacts/controller-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify repository coverage
         run: |
           dotnet test --project Tests/Data/Craft.Repositories.Tests/Craft.Repositories.Tests.csproj --configuration Release --no-build \

@@ -33,9 +33,11 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
         return entity => entity.Id!.Equals(id);
     }
 
-    protected virtual IQueryable<TEntity> ApplyDetails(IQueryable<TEntity> query) => query;
+    protected virtual IQueryable<TEntity> ApplyDetails(IQueryable<TEntity> query)
+        => query;
 
-    protected IQueryable<TEntity> WithDetails(IQueryable<TEntity> query, bool includeDetails) => includeDetails ? ApplyDetails(query) : query;
+    protected IQueryable<TEntity> WithDetails(IQueryable<TEntity> query, bool includeDetails)
+        => includeDetails ? ApplyDetails(query) : query;
 
     #endregion Protected Methods
 
@@ -61,6 +63,8 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
     #endregion Public Constructors
 
     #region Public Methods
+
+    public virtual Task<bool> AnyAsync(CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(cancellationToken);
 
     public virtual Task<bool> ExistsAsync(TKey id, CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(HasId(id), cancellationToken);
 
@@ -90,8 +94,6 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
         if (items.Count != 0) total = Math.Max(total, requested.Offset + items.Count);
         return new Page<TEntity>(items, new PageInfo(currentPage, pageSize, total));
     }
-
-    public virtual Task<bool> AnyAsync(CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(cancellationToken);
 
     #endregion Public Methods
 }

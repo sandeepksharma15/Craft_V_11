@@ -44,7 +44,8 @@ public sealed class CraftPersistence
 
     #region Internal Methods
 
-    internal bool IsPermanentDelete(object entity) => _permanentDeletes.Contains(entity);
+    internal bool IsPermanentDelete(object entity)
+        => _permanentDeletes.Contains(entity);
 
     #endregion Internal Methods
 
@@ -72,9 +73,11 @@ public sealed class CraftPersistence
     public void ConfigureModel(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
+
         if (!_features.Any(f => f is ITenantPersistenceFeature) && modelBuilder.Model.GetEntityTypes().Any(e =>
             e.ClrType.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Craft.Domain.Abstractions.IHasTenant<>))))
             throw new InvalidOperationException("Tenant entities require UseMultiTenancy; unscoped access is not implicit.");
+
         foreach (var feature in _features) feature.ConfigureModel(_context, modelBuilder);
     }
 

@@ -1,37 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class CraftRoleTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var role = new CraftRole<Guid>();
-        Assert.True(role.IsActive);
-        Assert.False(role.IsDeleted);
-        Assert.Null(role.Name);
-        Assert.Null(role.Description);
-        Assert.Null(role.NormalizedName);
-    }
-
-    [Fact]
-    public void ParameterizedConstructor_SetsProperties()
-    {
-        var name = "Admin";
-        var desc = "Administrator role";
-        var role = new CraftRole<Guid>(name, desc);
-        Assert.Equal(name, role.Name);
-        Assert.Equal(desc, role.Description);
-        Assert.Null(role.NormalizedName);
-        Assert.True(role.IsActive);
-        Assert.False(string.IsNullOrWhiteSpace(role.ConcurrencyStamp));
-    }
-
-    [Fact]
-    public void ParameterizedConstructor_SetsConcurrencyStampToGuid()
-    {
-        var role = new CraftRole<Guid>("User");
-        Assert.True(Guid.TryParse(role.ConcurrencyStamp, out _));
-    }
+    #region Public Methods
 
     [Fact]
     public void Activate_SetsIsActiveTrue()
@@ -39,14 +12,6 @@ public class CraftRoleTests
         var role = new CraftRole<Guid>("Test") { IsActive = false };
         role.Activate();
         Assert.True(role.IsActive);
-    }
-
-    [Fact]
-    public void Deactivate_SetsIsActiveFalse()
-    {
-        var role = new CraftRole<Guid>("Test") { IsActive = true };
-        role.Deactivate();
-        Assert.False(role.IsActive);
     }
 
     [Fact]
@@ -84,6 +49,25 @@ public class CraftRoleTests
     }
 
     [Fact]
+    public void Deactivate_SetsIsActiveFalse()
+    {
+        var role = new CraftRole<Guid>("Test") { IsActive = true };
+        role.Deactivate();
+        Assert.False(role.IsActive);
+    }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var role = new CraftRole<Guid>();
+        Assert.True(role.IsActive);
+        Assert.False(role.IsDeleted);
+        Assert.Null(role.Name);
+        Assert.Null(role.Description);
+        Assert.Null(role.NormalizedName);
+    }
+
+    [Fact]
     public void NonGenericCraftRole_Defaults()
     {
         var role = new CraftRole();
@@ -102,4 +86,26 @@ public class CraftRoleTests
         Assert.Null(role.NormalizedName);
         Assert.True(role.IsActive);
     }
+
+    [Fact]
+    public void ParameterizedConstructor_SetsConcurrencyStampToGuid()
+    {
+        var role = new CraftRole<Guid>("User");
+        Assert.True(Guid.TryParse(role.ConcurrencyStamp, out _));
+    }
+
+    [Fact]
+    public void ParameterizedConstructor_SetsProperties()
+    {
+        var name = "Admin";
+        var desc = "Administrator role";
+        var role = new CraftRole<Guid>(name, desc);
+        Assert.Equal(name, role.Name);
+        Assert.Equal(desc, role.Description);
+        Assert.Null(role.NormalizedName);
+        Assert.True(role.IsActive);
+        Assert.False(string.IsNullOrWhiteSpace(role.ConcurrencyStamp));
+    }
+
+    #endregion Public Methods
 }

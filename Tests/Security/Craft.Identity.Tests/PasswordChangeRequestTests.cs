@@ -1,17 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class PasswordChangeRequestTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var req = new PasswordChangeRequest<Guid>();
-        Assert.Null(req.ConfirmNewPassword);
-        Assert.Equal(default, req.Id);
-        Assert.Null(req.NewPassword);
-        Assert.Null(req.Password);
-        Assert.Null(req.Token);
-    }
+    #region Public Methods
 
     [Fact]
     public void CanSetAndGet_ConfirmNewPassword()
@@ -63,6 +56,17 @@ public class PasswordChangeRequestTests
     }
 
     [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var req = new PasswordChangeRequest<Guid>();
+        Assert.Null(req.ConfirmNewPassword);
+        Assert.Equal(default, req.Id);
+        Assert.Null(req.NewPassword);
+        Assert.Null(req.Password);
+        Assert.Null(req.Token);
+    }
+
+    [Fact]
     public void NonGenericPasswordChangeRequest_Defaults()
     {
         var req = new PasswordChangeRequest();
@@ -72,4 +76,6 @@ public class PasswordChangeRequestTests
         Assert.Null(req.Password);
         Assert.Null(req.Token);
     }
+
+    #endregion Public Methods
 }

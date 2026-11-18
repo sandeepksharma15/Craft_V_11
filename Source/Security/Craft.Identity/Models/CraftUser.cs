@@ -1,13 +1,19 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Craft.Domain;
+using Craft.Identity.Abstractions;
 using Microsoft.AspNetCore.Identity;
 
-namespace Craft.Identity;
+namespace Craft.Identity.Models;
 
 public class CraftUser<TKey> : IdentityUser<TKey>, ICraftUser<TKey>
     where TKey : IEquatable<TKey>
 {
+    #region Public Fields
+
     public const string UserId = "UserId";
+
+    #endregion Public Fields
+
+    #region Public Constructors
 
     public CraftUser() => SecurityStamp = Guid.NewGuid().ToString();
 
@@ -21,6 +27,10 @@ public class CraftUser<TKey> : IdentityUser<TKey>, ICraftUser<TKey>
         DialCode = dialCode;
         PhoneNumber = phoneNumber;
     }
+
+    #endregion Public Constructors
+
+    #region Public Properties
 
     public string? DialCode { get; set; }
 
@@ -41,10 +51,15 @@ public class CraftUser<TKey> : IdentityUser<TKey>, ICraftUser<TKey>
 
     public HonorificType Title { get; set; }
 
+    #endregion Public Properties
+
+    #region Public Methods
+
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;
+
+    #endregion Public Methods
 }
 
 public class CraftUser : CraftUser<KeyType>, ICraftUser;
-

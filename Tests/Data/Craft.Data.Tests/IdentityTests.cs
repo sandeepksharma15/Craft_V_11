@@ -2,7 +2,7 @@ using Craft.Auditing.Abstractions;
 using Craft.Auditing.Configuration;
 using Craft.Auditing.Persistence;
 using Craft.Domain.Abstractions;
-using Craft.Identity;
+using Craft.Identity.Models;
 using Craft.IdentityEF;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;

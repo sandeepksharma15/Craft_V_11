@@ -15,9 +15,13 @@ namespace Craft.Controllers;
 public abstract class EntityReadController<TEntity, TResponse, TKey> : ControllerBase
     where TEntity : class, IEntity<TKey> where TKey : notnull
 {
-    protected IReadRepository<TEntity, TKey> ReadRepository { get; }
-    protected int MaximumBatchSize { get; }
+    #region Private Fields
+
     private readonly int _maximumPageSize;
+
+    #endregion Private Fields
+
+    #region Protected Constructors
 
     protected EntityReadController(IReadRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options)
     {
@@ -30,9 +34,25 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
             throw new ArgumentException("Controller limits must be positive.", nameof(options));
     }
 
-    protected abstract TResponse MapResponse(TEntity entity);
+    #endregion Protected Constructors
+
+    #region Protected Properties
+
+    protected int MaximumBatchSize { get; }
+    protected IReadRepository<TEntity, TKey> ReadRepository { get; }
+
+    #endregion Protected Properties
+
+    #region Protected Methods
+
     protected virtual ValueTask<bool> AuthorizeEntityAsync(TEntity entity, EntityOperation operation, CancellationToken cancellationToken)
         => ValueTask.FromResult(true);
+
+    protected ActionResult? CheckPrecondition(TEntity entity, string? supplied)
+        => ConcurrencyTags.Validate(entity, supplied) is { } status
+            ? Problem(statusCode: status, title: status == 428 ? "An original entity ETag is required." : "The entity precondition was not satisfied.") : null;
+
+    protected abstract TResponse MapResponse(TEntity entity);
 
     protected void SetETag(TEntity entity)
     {
@@ -40,9 +60,26 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
         if (tag is not null) Response.Headers.ETag = tag;
     }
 
-    protected ActionResult? CheckPrecondition(TEntity entity, string? supplied)
-        => ConcurrencyTags.Validate(entity, supplied) is { } status
-            ? Problem(statusCode: status, title: status == 428 ? "An original entity ETag is required." : "The entity precondition was not satisfied.") : null;
+    #endregion Protected Methods
+
+    #region Public Methods
+
+    [HttpGet("any")]
+    public virtual async Task<ActionResult<bool>> AnyAsync(CancellationToken cancellationToken = default)
+        => Ok(await ReadRepository.AnyAsync(cancellationToken));
+
+    [HttpGet("count")]
+    public virtual async Task<ActionResult<long>> CountAsync(CancellationToken cancellationToken = default)
+        => Ok(await ReadRepository.GetCountAsync(cancellationToken));
+
+    [HttpGet("items/{id}/exists")]
+    public virtual async Task<ActionResult<bool>> ExistsAsync([FromRoute] TKey id, CancellationToken cancellationToken = default)
+    {
+        var entity = await ReadRepository.GetAsync(id, cancellationToken: cancellationToken);
+        if (entity is null) return Ok(false);
+        if (!await AuthorizeEntityAsync(entity, EntityOperation.Read, cancellationToken)) return Forbid();
+        return Ok(true);
+    }
 
     [ActionName(nameof(GetAsync))]
     [HttpGet("items/{id}")]
@@ -63,25 +100,10 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
         if (page < 1 || size < 1 || size > _maximumPageSize || page - 1 > int.MaxValue / size)
             return Problem(statusCode: 400, title: "The requested page is outside the configured limits.");
         var result = await ReadRepository.GetPagedListAsync(page, size, includeDetails, cancellationToken);
-        return Ok(new Page<TResponse>(result.Items.Select(MapResponse).ToArray(), result.Pagination));
+        return Ok(new Page<TResponse>([.. result.Items.Select(MapResponse)], result.Pagination));
     }
 
-    [HttpGet("count")]
-    public virtual async Task<ActionResult<long>> CountAsync(CancellationToken cancellationToken = default)
-        => Ok(await ReadRepository.GetCountAsync(cancellationToken));
-
-    [HttpGet("items/{id}/exists")]
-    public virtual async Task<ActionResult<bool>> ExistsAsync([FromRoute] TKey id, CancellationToken cancellationToken = default)
-    {
-        var entity = await ReadRepository.GetAsync(id, cancellationToken: cancellationToken);
-        if (entity is null) return Ok(false);
-        if (!await AuthorizeEntityAsync(entity, EntityOperation.Read, cancellationToken)) return Forbid();
-        return Ok(true);
-    }
-
-    [HttpGet("any")]
-    public virtual async Task<ActionResult<bool>> AnyAsync(CancellationToken cancellationToken = default)
-        => Ok(await ReadRepository.AnyAsync(cancellationToken));
+    #endregion Public Methods
 }
 
 public abstract class EntityReadController<TEntity, TResponse>(IReadRepository<TEntity> repository, IOptions<RepositoryOptions> options)

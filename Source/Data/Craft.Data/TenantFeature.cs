@@ -44,8 +44,8 @@ public sealed class TenantFeature<TKey> : PersistenceFeature, ITenantPersistence
             }
             foreach (var foreignKey in entity.GetForeignKeys().Where(f => typeof(IHasTenant<TKey>).IsAssignableFrom(f.PrincipalEntityType.ClrType)))
             {
-                var index = foreignKey.Properties.ToList().FindIndex(p => p.Name == nameof(IHasTenant<TKey>.TenantId));
-                if (index < 0 || foreignKey.PrincipalKey.Properties[index].Name != nameof(IHasTenant<TKey>.TenantId))
+                var index = foreignKey.Properties.ToList().FindIndex(p => p.Name == nameof(IHasTenant<>.TenantId));
+                if (index < 0 || foreignKey.PrincipalKey.Properties[index].Name != nameof(IHasTenant<>.TenantId))
                     throw new InvalidOperationException("Relationships between tenant entities must include TenantId in both foreign and principal keys.");
             }
             var parameter = Expression.Parameter(entity.ClrType, "entity");
@@ -53,19 +53,20 @@ public sealed class TenantFeature<TKey> : PersistenceFeature, ITenantPersistence
             var feature = Expression.Call(persistence, nameof(CraftPersistence.FindFeature), [typeof(TenantFeature<TKey>)]);
             var tenant = Expression.Property(feature, nameof(TenantId));
             modelBuilder.Entity(entity.ClrType).HasQueryFilter(FilterName, Expression.Lambda(
-                Expression.Equal(Expression.Property(parameter, nameof(IHasTenant<TKey>.TenantId)), tenant), parameter));
-            var tenantProperty = modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<TKey>.TenantId)).IsConcurrencyToken().IsRequired();
+                Expression.Equal(Expression.Property(parameter, nameof(IHasTenant<>.TenantId)), tenant), parameter));
+            var tenantProperty = modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<>.TenantId)).IsConcurrencyToken().IsRequired();
             if (tenantProperty.Metadata.IsKey())
                 tenantProperty.ValueGeneratedOnAdd().HasValueGenerator((_, _) => new TenantKeyGenerator());
-            if (typeof(TKey) == typeof(string) && entity.FindProperty(nameof(IHasTenant<TKey>.TenantId))!.GetMaxLength() is null)
-                modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<TKey>.TenantId)).HasMaxLength(256);
-            modelBuilder.Entity(entity.ClrType).HasIndex(nameof(IHasTenant<TKey>.TenantId));
+            if (typeof(TKey) == typeof(string) && entity.FindProperty(nameof(IHasTenant<>.TenantId))!.GetMaxLength() is null)
+                modelBuilder.Entity(entity.ClrType).Property(nameof(IHasTenant<>.TenantId)).HasMaxLength(256);
+            modelBuilder.Entity(entity.ClrType).HasIndex(nameof(IHasTenant<>.TenantId));
         }
     }
 
     private sealed class TenantKeyGenerator : ValueGenerator<TKey>
     {
         public override bool GeneratesTemporaryValues => false;
+
         public override TKey Next(EntityEntry entry)
             => ((ICraftDbContext)entry.Context).Persistence.FindFeature<TenantFeature<TKey>>()!.TenantId;
     }

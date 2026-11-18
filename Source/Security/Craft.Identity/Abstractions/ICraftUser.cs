@@ -1,9 +1,11 @@
-using Craft.Domain;
+using Craft.Identity.Models;
 
-namespace Craft.Identity;
+namespace Craft.Identity.Abstractions;
 
 public interface ICraftUser<TKey> : IEntity<TKey>, ISoftDelete, IHasConcurrency, IHasActive, IModel<TKey>
 {
+    #region Public Properties
+
     public string? DialCode { get; set; }
 
     public string? Email { get; set; }
@@ -25,6 +27,8 @@ public interface ICraftUser<TKey> : IEntity<TKey>, ISoftDelete, IHasConcurrency,
     public HonorificType Title { get; set; }
 
     public string? UserName { get; set; }
+
+    #endregion Public Properties
 }
 
 public interface ICraftUser : ICraftUser<KeyType>, IEntity, IModel;

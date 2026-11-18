@@ -4,12 +4,13 @@ namespace Craft.Data.Tests;
 
 public class ProviderTests
 {
-    public static IEnumerable<object[]> Providers()
+    public static TheoryData<string, string> Providers()
     {
-        yield return ["Sqlite", "Data Source=:memory:"];
+        TheoryData<string, string> providers = new() { { "Sqlite", "Data Source=:memory:" } };
         foreach (var provider in new[] { "SqlServer" })
             if (Environment.GetEnvironmentVariable("CRAFT_TEST_" + provider.ToUpperInvariant()) is { Length: > 0 } connection)
-                yield return [provider, connection];
+                providers.Add(provider, connection);
+        return providers;
     }
 
     [Theory]

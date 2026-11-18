@@ -1,16 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class PasswordResetRequestTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var req = new PasswordResetRequest<Guid>();
-        Assert.Null(req.Email);
-        Assert.Equal(default, req.Id);
-        Assert.Null(req.Password);
-        Assert.Null(req.Token);
-    }
+    #region Public Methods
 
     [Fact]
     public void CanSetAndGet_Email()
@@ -52,6 +46,16 @@ public class PasswordResetRequestTests
     }
 
     [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var req = new PasswordResetRequest<Guid>();
+        Assert.Null(req.Email);
+        Assert.Equal(default, req.Id);
+        Assert.Null(req.Password);
+        Assert.Null(req.Token);
+    }
+
+    [Fact]
     public void NonGenericResetPasswordRequest_Defaults()
     {
         var req = new ResetPasswordRequest();
@@ -60,4 +64,6 @@ public class PasswordResetRequestTests
         Assert.Null(req.Password);
         Assert.Null(req.Token);
     }
+
+    #endregion Public Methods
 }

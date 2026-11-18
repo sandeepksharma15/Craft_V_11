@@ -1,14 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class PasswordForgotRequestTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var req = new PasswordForgotRequest();
-        Assert.Null(req.ClientURI);
-        Assert.Null(req.Email);
-    }
+    #region Public Methods
 
     [Fact]
     public void CanSetAndGet_ClientURI()
@@ -29,4 +25,14 @@ public class PasswordForgotRequestTests
         };
         Assert.Equal("user@example.com", req.Email);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var req = new PasswordForgotRequest();
+        Assert.Null(req.ClientURI);
+        Assert.Null(req.Email);
+    }
+
+    #endregion Public Methods
 }

@@ -1,9 +1,35 @@
 using System.ComponentModel.DataAnnotations;
+using Craft.Identity.Models;
+using Craft.Identity.Sessions;
 
 namespace Craft.Identity.Tests;
 
 public class SessionTests
 {
+    #region Public Methods
+
+    [Fact]
+    public void AccountRequests_ValidateEmailAndRequiredFields()
+    {
+        var create = new CreateUserRequest { ClientURI = "https://example.test", Email = "a@example.test", FirstName = "A", LastName = "B", Password = "secret" };
+        Assert.Equal("https://example.test", create.ClientURI); Assert.Equal("A", create.FirstName); Assert.Equal("B", create.LastName); Assert.Equal("secret", create.Password);
+        Assert.True(Validator.TryValidateObject(create, new ValidationContext(create), [], true));
+        create.Email = "invalid"; Assert.False(Validator.TryValidateObject(create, new ValidationContext(create), [], true));
+        var confirmation = new EmailConfirmationRequest { Email = "a@example.test", Token = "token" };
+        Assert.Equal("token", confirmation.Token); Assert.True(Validator.TryValidateObject(confirmation, new ValidationContext(confirmation), [], true));
+        confirmation.Email = "invalid"; Assert.False(Validator.TryValidateObject(confirmation, new ValidationContext(confirmation), [], true));
+    }
+
+    [Fact]
+    public void LoginHistory_InitializesTheRecordedLogin()
+    {
+        var now = DateTime.UtcNow;
+        var history = new LoginHistory("127.0.0.1", now, default);
+        Assert.Equal("127.0.0.1", history.LastIpAddress);
+        Assert.Equal(now, history.LastLoginOn);
+        Assert.Equal(default, history.UserId);
+    }
+
     [Fact]
     public void RefreshSecrets_AreRandomAndOnlyHashesArePersisted()
     {
@@ -20,25 +46,5 @@ public class SessionTests
         Assert.Equal(RefreshRotationStatus.Rotated, result.Status); Assert.Equal("user", result.UserId);
     }
 
-    [Fact]
-    public void LoginHistory_InitializesTheRecordedLogin()
-    {
-        var now = DateTime.UtcNow;
-        var history = new LoginHistory("127.0.0.1", now, default);
-        Assert.Equal("127.0.0.1", history.LastIpAddress);
-        Assert.Equal(now, history.LastLoginOn);
-        Assert.Equal(default, history.UserId);
-    }
-
-    [Fact]
-    public void AccountRequests_ValidateEmailAndRequiredFields()
-    {
-        var create = new CreateUserRequest { ClientURI = "https://example.test", Email = "a@example.test", FirstName = "A", LastName = "B", Password = "secret" };
-        Assert.Equal("https://example.test", create.ClientURI); Assert.Equal("A", create.FirstName); Assert.Equal("B", create.LastName); Assert.Equal("secret", create.Password);
-        Assert.True(Validator.TryValidateObject(create, new ValidationContext(create), [], true));
-        create.Email = "invalid"; Assert.False(Validator.TryValidateObject(create, new ValidationContext(create), [], true));
-        var confirmation = new EmailConfirmationRequest { Email = "a@example.test", Token = "token" };
-        Assert.Equal("token", confirmation.Token); Assert.True(Validator.TryValidateObject(confirmation, new ValidationContext(confirmation), [], true));
-        confirmation.Email = "invalid"; Assert.False(Validator.TryValidateObject(confirmation, new ValidationContext(confirmation), [], true));
-    }
+    #endregion Public Methods
 }

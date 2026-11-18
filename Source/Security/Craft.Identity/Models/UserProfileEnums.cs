@@ -1,4 +1,4 @@
-namespace Craft.Identity;
+namespace Craft.Identity.Models;
 
 public enum GenderType
 {

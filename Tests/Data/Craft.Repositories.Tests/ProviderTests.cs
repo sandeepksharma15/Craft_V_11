@@ -5,11 +5,12 @@ namespace Craft.Repositories.Tests;
 
 public class ProviderTests
 {
-    public static IEnumerable<object[]> Providers()
+    public static TheoryData<string, string> Providers()
     {
-        yield return ["Sqlite", "Data Source=:memory:"];
+        TheoryData<string, string> providers = new() { { "Sqlite", "Data Source=:memory:" } };
         if (Environment.GetEnvironmentVariable("CRAFT_TEST_SQLSERVER") is { Length: > 0 } connection)
-            yield return ["SqlServer", connection];
+            providers.Add("SqlServer", connection);
+        return providers;
     }
 
     [Theory]

@@ -1,28 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class LoginHistoryTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var history = new LoginHistory<Guid>();
-        Assert.Equal(default, history.Id);
-        Assert.False(history.IsDeleted);
-        Assert.Null(history.LastIpAddress);
-        Assert.Null(history.LastLoginOn);
-        Assert.Null(history.Provider);
-        Assert.Equal(default, history.UserId);
-    }
-
-    [Fact]
-    public void ParameterizedConstructor_SetsProperties()
-    {
-        var dt = new DateTime(2024, 1, 1, 12, 0, 0);
-        var history = new LoginHistory<Guid>("1.2.3.4", dt, Guid.NewGuid());
-        Assert.Equal("1.2.3.4", history.LastIpAddress);
-        Assert.Equal(dt, history.LastLoginOn);
-        Assert.NotEqual(default, history.UserId);
-    }
+    #region Public Methods
 
     [Fact]
     public void CanSetAndGet_Id()
@@ -84,6 +66,18 @@ public class LoginHistoryTests
     }
 
     [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var history = new LoginHistory<Guid>();
+        Assert.Equal(default, history.Id);
+        Assert.False(history.IsDeleted);
+        Assert.Null(history.LastIpAddress);
+        Assert.Null(history.LastLoginOn);
+        Assert.Null(history.Provider);
+        Assert.Equal(default, history.UserId);
+    }
+
+    [Fact]
     public void NonGenericLoginHistory_Defaults()
     {
         var history = new LoginHistory();
@@ -94,4 +88,16 @@ public class LoginHistoryTests
         Assert.Null(history.Provider);
         Assert.Equal(default, history.UserId);
     }
+
+    [Fact]
+    public void ParameterizedConstructor_SetsProperties()
+    {
+        var dt = new DateTime(2024, 1, 1, 12, 0, 0);
+        var history = new LoginHistory<Guid>("1.2.3.4", dt, Guid.NewGuid());
+        Assert.Equal("1.2.3.4", history.LastIpAddress);
+        Assert.Equal(dt, history.LastLoginOn);
+        Assert.NotEqual(default, history.UserId);
+    }
+
+    #endregion Public Methods
 }

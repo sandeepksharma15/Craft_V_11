@@ -1,16 +1,10 @@
-namespace Craft.Identity.Tests.Models;
+using Craft.Identity.Models;
+
+namespace Craft.Identity.Tests;
 
 public class UserLoginRequestTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var req = new UserLoginRequest();
-        Assert.Null(req.Email);
-        Assert.Null(req.IpAddress);
-        Assert.Null(req.Password);
-        Assert.True(req.RememberMe);
-    }
+    #region Public Methods
 
     [Fact]
     public void CanSetAndGet_Email()
@@ -53,4 +47,16 @@ public class UserLoginRequestTests
         req.RememberMe = true;
         Assert.True(req.RememberMe);
     }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var req = new UserLoginRequest();
+        Assert.Null(req.Email);
+        Assert.Null(req.IpAddress);
+        Assert.Null(req.Password);
+        Assert.True(req.RememberMe);
+    }
+
+    #endregion Public Methods
 }

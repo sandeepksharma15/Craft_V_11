@@ -1,8 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using Craft.Identity.Abstractions;
 
-namespace Craft.Identity;
+namespace Craft.Identity.Models;
+
 public class CreateUserRequest : ICreateUserRequest
 {
+    #region Public Properties
+
     [Required]
     [Url]
     public string? ClientURI { get; set; }
@@ -20,4 +24,6 @@ public class CreateUserRequest : ICreateUserRequest
     [Required]
     [DataType(DataType.Password)]
     public string? Password { get; set; }
+
+    #endregion Public Properties
 }

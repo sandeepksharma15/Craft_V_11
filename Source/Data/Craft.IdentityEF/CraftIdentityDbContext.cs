@@ -1,6 +1,6 @@
 using Craft.Data;
 using Craft.Domain.Abstractions;
-using Craft.Identity;
+using Craft.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

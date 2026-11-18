@@ -10,11 +10,36 @@ namespace Craft.Repositories;
 public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, TKey>
     where TEntity : class, IEntity<TKey> where TKey : notnull where TContext : DbContext, ICraftDbContext
 {
-    private readonly int _maximumPageSize;
+    #region Private Fields
+
     private readonly int _maximumListSize;
-    protected int MaximumBatchSize { get; }
+    private readonly int _maximumPageSize;
+
+    #endregion Private Fields
+
+    #region Protected Properties
+
     protected TContext Context { get; }
     protected IQueryable<TEntity> EntityQuery => Context.Set<TEntity>().IgnoreAutoIncludes();
+    protected int MaximumBatchSize { get; }
+
+    #endregion Protected Properties
+
+    #region Protected Methods
+
+    protected static Expression<Func<TEntity, bool>> HasId(TKey id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return entity => entity.Id!.Equals(id);
+    }
+
+    protected virtual IQueryable<TEntity> ApplyDetails(IQueryable<TEntity> query) => query;
+
+    protected IQueryable<TEntity> WithDetails(IQueryable<TEntity> query, bool includeDetails) => includeDetails ? ApplyDetails(query) : query;
+
+    #endregion Protected Methods
+
+    #region Public Constructors
 
     public ReadRepository(TContext context, IOptions<RepositoryOptions> options)
     {
@@ -28,21 +53,16 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
         _maximumListSize = limits.MaximumListSize;
         MaximumBatchSize = limits.MaximumBatchSize;
         var key = context.Model.FindEntityType(typeof(TEntity))?.FindPrimaryKey();
-        if (key is null || key.Properties.Count != 1 || key.Properties[0].Name != nameof(IEntity<TKey>.Id) ||
+        if (key is null || key.Properties.Count != 1 || key.Properties[0].Name != nameof(IEntity<>.Id) ||
             key.Properties[0].IsShadowProperty() || key.Properties[0].ClrType != typeof(TKey))
             throw new NotSupportedException("Repositories require one mapped Id primary key matching TKey; composite/keyless entities need a custom query service.");
     }
 
-    protected virtual IQueryable<TEntity> ApplyDetails(IQueryable<TEntity> query) => query;
-    protected IQueryable<TEntity> WithDetails(IQueryable<TEntity> query, bool includeDetails) => includeDetails ? ApplyDetails(query) : query;
-    protected static Expression<Func<TEntity, bool>> HasId(TKey id)
-    {
-        ArgumentNullException.ThrowIfNull(id);
-        return entity => entity.Id!.Equals(id);
-    }
+    #endregion Public Constructors
 
-    public virtual Task<TEntity?> GetAsync(TKey id, bool includeDetails = false, CancellationToken cancellationToken = default)
-        => WithDetails(EntityQuery, includeDetails).AsNoTracking().SingleOrDefaultAsync(HasId(id), cancellationToken);
+    #region Public Methods
+
+    public virtual Task<bool> ExistsAsync(TKey id, CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(HasId(id), cancellationToken);
 
     public virtual async Task<IReadOnlyList<TEntity>> GetAllAsync(bool includeDetails = false, CancellationToken cancellationToken = default)
     {
@@ -51,6 +71,11 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
         if (items.Count > _maximumListSize) throw new InvalidOperationException("Result exceeds MaximumListSize. Use paging or a custom streaming query.");
         return items.AsReadOnly();
     }
+
+    public virtual Task<TEntity?> GetAsync(TKey id, bool includeDetails = false, CancellationToken cancellationToken = default)
+                => WithDetails(EntityQuery, includeDetails).AsNoTracking().SingleOrDefaultAsync(HasId(id), cancellationToken);
+
+    public virtual Task<long> GetCountAsync(CancellationToken cancellationToken = default) => EntityQuery.LongCountAsync(cancellationToken);
 
     public virtual async Task<Page<TEntity>> GetPagedListAsync(long currentPage, int pageSize, bool includeDetails = false, CancellationToken cancellationToken = default)
     {
@@ -66,9 +91,9 @@ public class ReadRepository<TEntity, TKey, TContext> : IReadRepository<TEntity, 
         return new Page<TEntity>(items, new PageInfo(currentPage, pageSize, total));
     }
 
-    public virtual Task<long> GetCountAsync(CancellationToken cancellationToken = default) => EntityQuery.LongCountAsync(cancellationToken);
-    public virtual Task<bool> ExistsAsync(TKey id, CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(HasId(id), cancellationToken);
     public virtual Task<bool> AnyAsync(CancellationToken cancellationToken = default) => EntityQuery.AnyAsync(cancellationToken);
+
+    #endregion Public Methods
 }
 
 public class ReadRepository<TEntity, TContext>(TContext context, IOptions<RepositoryOptions> options)

@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Craft.Domain;
+using Craft.Identity.Abstractions;
 
-namespace Craft.Identity;
+namespace Craft.Identity.Models;
 
 public class LoginHistory<TKey> : ILoginHistory<TKey> where TKey : IEquatable<TKey>
 {
+    #region Public Constructors
+
     public LoginHistory() { }
 
     public LoginHistory(string lastIpAddress, DateTime? lastLoginOn, TKey userId)
@@ -14,10 +16,14 @@ public class LoginHistory<TKey> : ILoginHistory<TKey> where TKey : IEquatable<TK
         UserId = userId;
     }
 
+    #endregion Public Constructors
+
+    #region Public Properties
+
     public TKey Id { get; set; } = default!;
 
-    // IsDeleted is not used in this class, but is required as there is a GlobalQueryFilter
-    // On CraftUser that requires it.
+    // IsDeleted is not used in this class, but is required as there is a GlobalQueryFilter On
+    // CraftUser that requires it.
     public bool IsDeleted { get; set; }
 
     public string? LastIpAddress { get; set; }
@@ -29,11 +35,14 @@ public class LoginHistory<TKey> : ILoginHistory<TKey> where TKey : IEquatable<TK
     [ForeignKey("UserId")]
     public TKey UserId { get; set; } = default!;
 
+    #endregion Public Properties
 }
 
 [Table("ID_LoginHistory")]
 public class LoginHistory : ILoginHistory<KeyType>, IEntity, IModel
 {
+    #region Public Constructors
+
     public LoginHistory() { }
 
     public LoginHistory(string lastIpAddress, DateTime? lastLoginOn, KeyType userId)
@@ -42,6 +51,10 @@ public class LoginHistory : ILoginHistory<KeyType>, IEntity, IModel
         LastLoginOn = lastLoginOn;
         UserId = userId;
     }
+
+    #endregion Public Constructors
+
+    #region Public Properties
 
     public KeyType Id { get; set; } = default!;
 
@@ -55,5 +68,6 @@ public class LoginHistory : ILoginHistory<KeyType>, IEntity, IModel
 
     [ForeignKey("UserId")]
     public KeyType UserId { get; set; } = default!;
-}
 
+    #endregion Public Properties
+}

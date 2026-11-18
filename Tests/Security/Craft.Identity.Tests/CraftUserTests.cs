@@ -1,70 +1,10 @@
-using Craft.Domain;
+using Craft.Identity.Models;
 
-namespace Craft.Identity.Tests.Models;
+namespace Craft.Identity.Tests;
 
 public class CraftUserTests
 {
-    [Fact]
-    public void DefaultConstructor_SetsDefaults()
-    {
-        var user = new CraftUser<Guid>();
-        Assert.True(user.IsActive);
-        Assert.False(user.IsDeleted);
-        Assert.Null(user.UserName);
-        Assert.Null(user.Email);
-        Assert.Null(user.FirstName);
-        Assert.Null(user.LastName);
-        Assert.Null(user.DialCode);
-        Assert.Null(user.PhoneNumber);
-        Assert.Null(user.PasswordHash);
-        Assert.NotNull(user.SecurityStamp);
-        Assert.True(Guid.TryParse(user.SecurityStamp, out _));
-    }
-
-    [Fact]
-    public void ParameterizedConstructor_SetsProperties()
-    {
-        var user = new CraftUser<Guid>("user1", "mail@x.com", "John", "Smith", "+1", "123456");
-        Assert.Equal("user1", user.UserName);
-        Assert.Equal("mail@x.com", user.Email);
-        Assert.Equal("John", user.FirstName);
-        Assert.Equal("Smith", user.LastName);
-        Assert.Equal("+1", user.DialCode);
-        Assert.Equal("123456", user.PhoneNumber);
-        Assert.Null(user.PasswordHash);
-        Assert.NotNull(user.SecurityStamp);
-    }
-
-    [Theory]
-    [InlineData("John", "Smith", "John Smith")]
-    [InlineData(null, "Smith", "Smith")]
-    [InlineData("John", null, "John")]
-    [InlineData(null, null, "")]
-    public void FullName_ReturnsExpected(string? first, string? last, string expected)
-    {
-        var user = new CraftUser<Guid> { FirstName = first, LastName = last };
-        Assert.Equal(expected, user.FullName);
-    }
-
-    [Fact]
-    public void CanSetAndGet_DialCode()
-    {
-        var user = new CraftUser<Guid>
-        {
-            DialCode = "+44"
-        };
-        Assert.Equal("+44", user.DialCode);
-    }
-
-    [Fact]
-    public void CanSetAndGet_ImageUrl()
-    {
-        var user = new CraftUser<Guid>
-        {
-            ImageUrl = "http://img.com/u.png"
-        };
-        Assert.Equal("http://img.com/u.png", user.ImageUrl);
-    }
+    #region Public Methods
 
     [Fact]
     public void Activate_SetsIsActiveToTrue()
@@ -77,78 +17,6 @@ public class CraftUserTests
 
         // Assert
         Assert.True(user.IsActive);
-    }
-
-    [Fact]
-    public void Deactivate_SetsIsActiveToFalse()
-    {
-        // Arrange
-        var user = new CraftUser<Guid> { IsActive = true };
-
-        // Act
-        user.Deactivate();
-
-        // Assert
-        Assert.False(user.IsActive);
-    }
-
-    [Fact]
-    public void Gender_CanBeSetAndRetrieved()
-    {
-        // Arrange
-        var user = new CraftUser<Guid>
-        {
-            // Act
-            Gender = GenderType.Male
-        };
-
-        // Assert
-        Assert.Equal(GenderType.Male, user.Gender);
-    }
-
-    [Fact]
-    public void Title_CanBeSetAndRetrieved()
-    {
-        // Arrange
-        var user = new CraftUser<Guid>
-        {
-            // Act
-            Title = HonorificType.Mr
-        };
-
-        // Assert
-        Assert.Equal(HonorificType.Mr, user.Title);
-    }
-
-    [Fact]
-    public void NonGenericCraftUser_WorksWithKeyType()
-    {
-        // Arrange & Act
-        var user = new CraftUser
-        {
-            Id = 123,
-            UserName = "testuser",
-            Email = "test@example.com"
-        };
-
-        // Assert
-        Assert.Equal((KeyType)123, user.Id);
-        Assert.Equal("testuser", user.UserName);
-        Assert.Equal("test@example.com", user.Email);
-    }
-
-    [Fact]
-    public void IsDeleted_CanBeSetAndRetrieved()
-    {
-        // Arrange
-        var user = new CraftUser<Guid>
-        {
-            // Act
-            IsDeleted = true
-        };
-
-        // Assert
-        Assert.True(user.IsDeleted);
     }
 
     [Fact]
@@ -184,4 +52,140 @@ public class CraftUserTests
         Assert.False(user.IsDeleted);
         Assert.Equal("John Doe", user.FullName);
     }
+
+    [Fact]
+    public void CanSetAndGet_DialCode()
+    {
+        var user = new CraftUser<Guid>
+        {
+            DialCode = "+44"
+        };
+        Assert.Equal("+44", user.DialCode);
+    }
+
+    [Fact]
+    public void CanSetAndGet_ImageUrl()
+    {
+        var user = new CraftUser<Guid>
+        {
+            ImageUrl = "http://img.com/u.png"
+        };
+        Assert.Equal("http://img.com/u.png", user.ImageUrl);
+    }
+
+    [Fact]
+    public void Deactivate_SetsIsActiveToFalse()
+    {
+        // Arrange
+        var user = new CraftUser<Guid> { IsActive = true };
+
+        // Act
+        user.Deactivate();
+
+        // Assert
+        Assert.False(user.IsActive);
+    }
+
+    [Fact]
+    public void DefaultConstructor_SetsDefaults()
+    {
+        var user = new CraftUser<Guid>();
+        Assert.True(user.IsActive);
+        Assert.False(user.IsDeleted);
+        Assert.Null(user.UserName);
+        Assert.Null(user.Email);
+        Assert.Null(user.FirstName);
+        Assert.Null(user.LastName);
+        Assert.Null(user.DialCode);
+        Assert.Null(user.PhoneNumber);
+        Assert.Null(user.PasswordHash);
+        Assert.NotNull(user.SecurityStamp);
+        Assert.True(Guid.TryParse(user.SecurityStamp, out _));
+    }
+
+    [Theory]
+    [InlineData("John", "Smith", "John Smith")]
+    [InlineData(null, "Smith", "Smith")]
+    [InlineData("John", null, "John")]
+    [InlineData(null, null, "")]
+    public void FullName_ReturnsExpected(string? first, string? last, string expected)
+    {
+        var user = new CraftUser<Guid> { FirstName = first, LastName = last };
+        Assert.Equal(expected, user.FullName);
+    }
+
+    [Fact]
+    public void Gender_CanBeSetAndRetrieved()
+    {
+        // Arrange
+        var user = new CraftUser<Guid>
+        {
+            // Act
+            Gender = GenderType.Male
+        };
+
+        // Assert
+        Assert.Equal(GenderType.Male, user.Gender);
+    }
+
+    [Fact]
+    public void IsDeleted_CanBeSetAndRetrieved()
+    {
+        // Arrange
+        var user = new CraftUser<Guid>
+        {
+            // Act
+            IsDeleted = true
+        };
+
+        // Assert
+        Assert.True(user.IsDeleted);
+    }
+
+    [Fact]
+    public void NonGenericCraftUser_WorksWithKeyType()
+    {
+        // Arrange & Act
+        var user = new CraftUser
+        {
+            Id = 123,
+            UserName = "testuser",
+            Email = "test@example.com"
+        };
+
+        // Assert
+        Assert.Equal((KeyType)123, user.Id);
+        Assert.Equal("testuser", user.UserName);
+        Assert.Equal("test@example.com", user.Email);
+    }
+
+    [Fact]
+    public void ParameterizedConstructor_SetsProperties()
+    {
+        var user = new CraftUser<Guid>("user1", "mail@x.com", "John", "Smith", "+1", "123456");
+        Assert.Equal("user1", user.UserName);
+        Assert.Equal("mail@x.com", user.Email);
+        Assert.Equal("John", user.FirstName);
+        Assert.Equal("Smith", user.LastName);
+        Assert.Equal("+1", user.DialCode);
+        Assert.Equal("123456", user.PhoneNumber);
+        Assert.Null(user.PasswordHash);
+        Assert.NotNull(user.SecurityStamp);
+    }
+
+    [Fact]
+    public void Title_CanBeSetAndRetrieved()
+    {
+        // Arrange
+        var user = new CraftUser<Guid>
+        {
+            // Act
+            Title = HonorificType.Mr
+        };
+
+        // Assert
+        Assert.Equal(HonorificType.Mr, user.Title);
+    }
+
+    #endregion Public Methods
 }

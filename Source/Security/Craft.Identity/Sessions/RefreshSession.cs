@@ -1,6 +1,8 @@
-namespace Craft.Identity;
+namespace Craft.Identity.Sessions;
 
-/// <summary>Persistence contract. Store only the token hash; the secret is returned to the caller once.</summary>
+/// <summary>
+/// Persistence contract. Store only the token hash; the secret is returned to the caller once.
+/// </summary>
 public sealed record RefreshSession<TKey>(Guid Id, Guid FamilyId, TKey UserId, string TokenHash,
     DateTimeOffset ExpiresAt, DateTimeOffset? ConsumedAt = null, DateTimeOffset? RevokedAt = null) where TKey : notnull;
 
@@ -10,13 +12,19 @@ public sealed record RefreshRotationResult<TKey>(RefreshRotationStatus Status, T
 
 public interface IRefreshSessionStore<TKey> where TKey : notnull
 {
+    #region Public Methods
+
     Task CreateAsync(RefreshSession<TKey> session, CancellationToken cancellationToken = default);
+
+    Task RevokeFamilyAsync(Guid familyId, DateTimeOffset now, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Atomically consume the presented hash and create its replacement for the same user/family.
-    /// Reject expired/revoked sessions; reuse revokes the entire family. Return a user only when rotated.
-    /// Persist expiry checks using now; replacement expiry must not extend the family's absolute lifetime.
+    /// Reject expired/revoked sessions; reuse revokes the entire family. Return a user only when
+    /// rotated. Persist expiry checks using now; replacement expiry must not extend the family's
+    /// absolute lifetime.
     /// </summary>
     Task<RefreshRotationResult<TKey>> RotateAsync(string presentedHash, string replacementHash, DateTimeOffset now, CancellationToken cancellationToken = default);
-    Task RevokeFamilyAsync(Guid familyId, DateTimeOffset now, CancellationToken cancellationToken = default);
+
+    #endregion Public Methods
 }

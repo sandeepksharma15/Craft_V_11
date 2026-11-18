@@ -29,8 +29,10 @@ public class StubTests
             () => stub.SaveChangesAsync()
         ];
         foreach (var operation in operations) Assert.Throws<NotSupportedException>(() => { _ = operation(); });
-        Assert.IsAssignableFrom<IRepository<Note>>(new DefaultStub());
+        Assert.IsType<IRepository<Note>>(new DefaultStub(), exactMatch: false);
     }
+
     private sealed class EmptyStub : RepositoryStub<Product, int>;
+
     private sealed class DefaultStub : RepositoryStub<Note>;
 }

@@ -3,47 +3,22 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Craft.Data;
 
-/// <summary>One save coordinator shared by regular and Identity contexts. Failed units require a fresh context.</summary>
+/// <summary>
+/// One save coordinator shared by regular and Identity contexts. Failed units require a fresh context.
+/// </summary>
 public sealed class CraftPersistence
 {
+    #region Private Fields
+
     private readonly DbContext _context;
     private readonly IReadOnlyList<PersistenceFeature> _features;
-    private readonly HashSet<object> _permanentDeletes = new(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<object> _permanentDeletes = [with(ReferenceEqualityComparer.Instance)];
     private bool _failed;
     private bool _saving;
 
-    public CraftPersistence(DbContext context, DbContextOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(options);
-        _context = context;
-        _features = options.FindExtension<CraftDataOptionsExtension>()?.Features ?? [];
-        ModelKey = string.Join(";", _features.Select(f => f.GetType().AssemblyQualifiedName));
-    }
+    #endregion Private Fields
 
-    public string ModelKey { get; }
-
-    internal bool IsPermanentDelete(object entity) => _permanentDeletes.Contains(entity);
-
-    public void PermanentlyDelete<TEntity>(TEntity entity) where TEntity : class, Craft.Domain.Abstractions.ISoftDelete
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-        var entry = _context.Entry(entity);
-        if (entry.State is EntityState.Detached or EntityState.Added || !entity.IsDeleted)
-            throw new InvalidOperationException("Load a soft-deleted entity with IncludeDeleted before permanently deleting it.");
-        _permanentDeletes.Add(entity);
-        entry.State = EntityState.Deleted;
-    }
-    public TFeature? FindFeature<TFeature>() where TFeature : PersistenceFeature => _features.OfType<TFeature>().SingleOrDefault();
-
-    public void ConfigureModel(ModelBuilder modelBuilder)
-    {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
-        if (!_features.Any(f => f is ITenantPersistenceFeature) && modelBuilder.Model.GetEntityTypes().Any(e =>
-            e.ClrType.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Craft.Domain.Abstractions.IHasTenant<>))))
-            throw new InvalidOperationException("Tenant entities require UseMultiTenancy; unscoped access is not implicit.");
-        foreach (var feature in _features) feature.ConfigureModel(_context, modelBuilder);
-    }
+    #region Private Methods
 
     private void EnsureCanSave(bool acceptAllChangesOnSuccess)
     {
@@ -62,7 +37,57 @@ public sealed class CraftPersistence
         _context.ChangeTracker.DetectChanges();
         foreach (var feature in _features) feature.ValidateChanges(_context);
         foreach (var feature in _features.OrderBy(f => f.Stage)) feature.PrepareChanges(_context);
-        return _features.Select(f => f.CaptureChanges(_context)).OfType<Action>().ToArray();
+        return [.. _features.Select(f => f.CaptureChanges(_context)).OfType<Action>()];
+    }
+
+    #endregion Private Methods
+
+    #region Internal Methods
+
+    internal bool IsPermanentDelete(object entity) => _permanentDeletes.Contains(entity);
+
+    #endregion Internal Methods
+
+    #region Public Constructors
+
+    public CraftPersistence(DbContext context, DbContextOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(options);
+        _context = context;
+        _features = options.FindExtension<CraftDataOptionsExtension>()?.Features ?? [];
+        ModelKey = string.Join(";", _features.Select(f => f.GetType().AssemblyQualifiedName));
+    }
+
+    #endregion Public Constructors
+
+    #region Public Properties
+
+    public string ModelKey { get; }
+
+    #endregion Public Properties
+
+    #region Public Methods
+
+    public void ConfigureModel(ModelBuilder modelBuilder)
+    {
+        ArgumentNullException.ThrowIfNull(modelBuilder);
+        if (!_features.Any(f => f is ITenantPersistenceFeature) && modelBuilder.Model.GetEntityTypes().Any(e =>
+            e.ClrType.GetInterfaces().Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Craft.Domain.Abstractions.IHasTenant<>))))
+            throw new InvalidOperationException("Tenant entities require UseMultiTenancy; unscoped access is not implicit.");
+        foreach (var feature in _features) feature.ConfigureModel(_context, modelBuilder);
+    }
+
+    public TFeature? FindFeature<TFeature>() where TFeature : PersistenceFeature => _features.OfType<TFeature>().SingleOrDefault();
+
+    public void PermanentlyDelete<TEntity>(TEntity entity) where TEntity : class, Craft.Domain.Abstractions.ISoftDelete
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        var entry = _context.Entry(entity);
+        if (entry.State is EntityState.Detached or EntityState.Added || !entity.IsDeleted)
+            throw new InvalidOperationException("Load a soft-deleted entity with IncludeDeleted before permanently deleting it.");
+        _permanentDeletes.Add(entity);
+        entry.State = EntityState.Deleted;
     }
 
     public int SaveChanges(bool acceptAllChangesOnSuccess, Func<int> save)
@@ -152,4 +177,6 @@ public sealed class CraftPersistence
             if (owned && transaction is not null) await transaction.DisposeAsync().ConfigureAwait(false);
         }
     }
+
+    #endregion Public Methods
 }

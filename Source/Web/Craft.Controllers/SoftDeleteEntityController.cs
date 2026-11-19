@@ -1,12 +1,13 @@
 using Craft.Domain.Abstractions;
 using Craft.Repositories;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Craft.Controllers;
 
-public abstract class SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(IRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options)
-    : EntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(repository, options)
+public abstract class SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(IRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : EntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(repository, options, mapper)
     where TEntity : class, IEntity<TKey>, ISoftDelete where TCreate : class where TUpdate : class where TKey : notnull
 {
     [HttpGet("items/{id}/deleted")]
@@ -41,6 +42,6 @@ public abstract class SoftDeleteEntityController<TEntity, TResponse, TCreate, TU
     }
 }
 
-public abstract class SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate>(IRepository<TEntity> repository, IOptions<RepositoryOptions> options)
-    : SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate, KeyType>(repository, options)
+public abstract class SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate>(IRepository<TEntity> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : SoftDeleteEntityController<TEntity, TResponse, TCreate, TUpdate, KeyType>(repository, options, mapper)
     where TEntity : class, IEntity, ISoftDelete where TCreate : class where TUpdate : class;

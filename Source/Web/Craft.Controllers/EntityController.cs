@@ -1,12 +1,13 @@
 using Craft.Domain.Abstractions;
 using Craft.Repositories;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace Craft.Controllers;
 
-public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(IRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options)
-    : EntityReadController<TEntity, TResponse, TKey>(repository, options)
+public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate, TKey>(IRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : EntityReadController<TEntity, TResponse, TKey>(repository, options, mapper)
     where TEntity : class, IEntity<TKey> where TCreate : class where TUpdate : class where TKey : notnull
 {
     #region Protected Properties
@@ -17,12 +18,14 @@ public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate, TKe
 
     #region Protected Methods
 
+    /// <summary>Map only editable fields onto the tracked entity; preserve identity, ownership and concurrency fields.</summary>
     protected abstract void ApplyUpdate(TUpdate model, TEntity entity);
 
     protected ActionResult? CheckBatch(int count) => count < 1 || count > MaximumBatchSize
         ? Problem(statusCode: 400, title: "The batch size is outside the configured limits.") : null;
 
-    protected abstract TEntity CreateEntity(TCreate model);
+    protected virtual TEntity CreateEntity(TCreate model)
+        => Mapper.Map<TCreate, TEntity>(model);
 
     protected async Task<(List<TEntity> Entities, ActionResult? Error)> LoadBatchAsync(IReadOnlyList<EntityReference<TKey>> references,
         EntityOperation operation, CancellationToken cancellationToken)
@@ -116,6 +119,6 @@ public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate, TKe
     #endregion Public Methods
 }
 
-public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate>(IRepository<TEntity> repository, IOptions<RepositoryOptions> options)
-    : EntityController<TEntity, TResponse, TCreate, TUpdate, KeyType>(repository, options)
+public abstract class EntityController<TEntity, TResponse, TCreate, TUpdate>(IRepository<TEntity> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : EntityController<TEntity, TResponse, TCreate, TUpdate, KeyType>(repository, options, mapper)
     where TEntity : class, IEntity where TCreate : class where TUpdate : class;

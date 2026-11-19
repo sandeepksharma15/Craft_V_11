@@ -32,6 +32,7 @@
     <Project Path="Source/Security/Craft.Authentication/Craft.Authentication.csproj" />
   </Folder>
   <Folder Name="/Source/Web/">
+    <Project Path="Source/Web/Craft.HttpServices/Craft.HttpServices.csproj" />
     <Project Path="Source/Web/Craft.Controllers/Craft.Controllers.csproj" />
   </Folder>
   <Folder Name="/Tests/" />
@@ -53,6 +54,7 @@
     <Project Path="Tests/Security/Craft.Authentication.Tests/Craft.Authentication.Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Web/">
+    <Project Path="Tests/Web/Craft.HttpServices.Tests/Craft.HttpServices.Tests.csproj" />
     <Project Path="Tests/Web/Craft.Controllers.Tests/Craft.Controllers.Tests.csproj" />
   </Folder>
   <Folder Name="/Tests/Support/">

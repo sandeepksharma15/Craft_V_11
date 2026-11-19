@@ -1,6 +1,7 @@
 using Craft.Core.Pagination;
 using Craft.Domain.Abstractions;
 using Craft.Repositories;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -23,10 +24,12 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
 
     #region Protected Constructors
 
-    protected EntityReadController(IReadRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options)
+    protected EntityReadController(IReadRepository<TEntity, TKey> repository, IOptions<RepositoryOptions> options, IMapper mapper)
     {
         ArgumentNullException.ThrowIfNull(repository);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(mapper);
+        Mapper = mapper;
         ReadRepository = repository;
         _maximumPageSize = options.Value.MaximumPageSize;
         MaximumBatchSize = options.Value.MaximumBatchSize;
@@ -37,6 +40,8 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
     #endregion Protected Constructors
 
     #region Protected Properties
+
+    protected IMapper Mapper { get; }
 
     protected int MaximumBatchSize { get; }
     protected IReadRepository<TEntity, TKey> ReadRepository { get; }
@@ -52,7 +57,8 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
         => ConcurrencyTags.Validate(entity, supplied) is { } status
             ? Problem(statusCode: status, title: status == 428 ? "An original entity ETag is required." : "The entity precondition was not satisfied.") : null;
 
-    protected abstract TResponse MapResponse(TEntity entity);
+    protected virtual TResponse MapResponse(TEntity entity)
+        => Mapper.Map<TEntity, TResponse>(entity);
 
     protected void SetETag(TEntity entity)
     {
@@ -106,5 +112,5 @@ public abstract class EntityReadController<TEntity, TResponse, TKey> : Controlle
     #endregion Public Methods
 }
 
-public abstract class EntityReadController<TEntity, TResponse>(IReadRepository<TEntity> repository, IOptions<RepositoryOptions> options)
-    : EntityReadController<TEntity, TResponse, KeyType>(repository, options) where TEntity : class, IEntity;
+public abstract class EntityReadController<TEntity, TResponse>(IReadRepository<TEntity> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : EntityReadController<TEntity, TResponse, KeyType>(repository, options, mapper) where TEntity : class, IEntity;

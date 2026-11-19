@@ -38,6 +38,22 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify HTTP service coverage
+        run: |
+          dotnet test --project Tests/Web/Craft.HttpServices.Tests/Craft.HttpServices.Tests.csproj --configuration Release --no-build \
+            --coverlet --results-directory artifacts/http-service-coverage --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.HttpServices]*"
+          python3 .github/scripts/verify-http-service-coverage.py artifacts/http-service-coverage
+
+      - name: Upload HTTP service coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: http-service-coverage-${{ matrix.os }}
+          path: artifacts/http-service-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify controller coverage
         run: |
           dotnet test --project Tests/Web/Craft.Controllers.Tests/Craft.Controllers.Tests.csproj --configuration Release --no-build \

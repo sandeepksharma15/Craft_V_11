@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Craft.Core.Results;
 
@@ -71,7 +70,11 @@ public abstract class HttpServiceBase
             request.Headers.IfMatch.Add(tag);
         }
         if (body is not null)
-            request.Content = JsonContent.Create(body, body.GetType(), options: _jsonOptions);
+        {
+            byte[] payload = JsonSerializer.SerializeToUtf8Bytes(body, body.GetType(), _jsonOptions);
+            request.Content = new ByteArrayContent(payload);
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" };
+        }
 
         using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(_timeout);

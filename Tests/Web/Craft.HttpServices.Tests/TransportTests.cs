@@ -226,6 +226,10 @@ public sealed class TransportTests
     {
         using HttpClient client = Client((_, _) => throw new InvalidOperationException("bug"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => new Probe(client).Get<int>(TestContext.Current.CancellationToken));
+
+        CyclicInput input = new();
+        input.Next = input;
+        await Assert.ThrowsAsync<JsonException>(() => new Probe(client).Post<int>(input, null));
     }
 
     [Theory]
@@ -270,6 +274,11 @@ public sealed class TransportTests
         => new((HttpStatusCode)status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
 
     public sealed record Payload(int Value);
+
+    public sealed class CyclicInput
+    {
+        public CyclicInput? Next { get; set; }
+    }
 
     private sealed class Probe(HttpClient client, HttpServiceOptions? options = null) : HttpServiceBase(client, options)
     {

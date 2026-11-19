@@ -5,6 +5,7 @@ using Craft.Core.Results;
 using Mapster;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Craft.HttpServices.Tests;
@@ -126,7 +127,17 @@ public sealed class IntegrationTests
         TypeAdapterConfig config = new();
         config.NewConfig<Editor, Input>().Map(destination => destination.Name, source => source.DisplayName);
         config.NewConfig<Output, Editor>().Map(destination => destination.DisplayName, source => source.Name);
-        EditorService service = new(api.Client, new Mapper(config));
+        ServiceCollection services = new();
+        services.AddSingleton(config);
+        services.AddScoped<IMapper, Mapper>();
+        services.AddHttpClient<EditorService>(client =>
+        {
+            client.BaseAddress = new Uri("http://localhost/");
+            client.DefaultRequestHeaders.Add("Test-User", "test");
+        }).ConfigurePrimaryHttpMessageHandler(() => api.Host.GetTestServer().CreateHandler());
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        EditorService service = scope.ServiceProvider.GetRequiredService<EditorService>();
 
         HttpResult<Editor> result = await service.SaveAsync(new Editor("mapped"), TestContext.Current.CancellationToken);
 

@@ -12,6 +12,8 @@ using Craft.Core.Abstractions;
 using Craft.Data;
 using Craft.Domain.Abstractions;
 using Craft.Repositories;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -36,20 +38,27 @@ public sealed class Item : IEntity<int>, ISoftDelete, IHasConcurrency, IHasTenan
     public string? ConcurrencyStamp { get; set; }
     public bool IsDeleted { get; set; }
 }
-public sealed record Input([Required, MaxLength(20)] string Name);
-public sealed record Output(int Id, string Name, string? ETag);
-public sealed class ItemsController(IRepository<Item, int> repository, IOptions<RepositoryOptions> options)
-    : SoftDeleteEntityController<Item, Output, Input, Input, int>(repository, options)
+public sealed record Input([Required, MaxLength(20)] string Name)
 {
-    protected override Item CreateEntity(Input model) => new() { Name = model.Name };
-    protected override void ApplyUpdate(Input model, Item entity) => entity.Name = model.Name;
-    protected override Output MapResponse(Item entity) => new(entity.Id, entity.Name, ConcurrencyTags.Get(entity));
+    public int Id { get; init; }
+
+    public string? TenantId { get; init; }
+
+    public string? ConcurrencyStamp { get; init; }
+
+    public bool IsDeleted { get; init; }
+}
+public sealed record Output(int Id, string Name, string? ETag);
+public sealed class ItemsController(IRepository<Item, int> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : SoftDeleteEntityController<Item, Output, Input, Input, int>(repository, options, mapper)
+{
+    protected override void ApplyUpdate(Input model, Item entity) => Mapper.Map(model, entity);
     protected override ValueTask<bool> AuthorizeEntityAsync(Item entity, EntityOperation operation, CancellationToken cancellationToken)
         => ValueTask.FromResult(entity.Name != "denied");
 }
 public sealed class Plain : IEntity<string> { public string Id { get; set; } = ""; }
-public sealed class PlainController(IRepository<Plain, string> repository, IOptions<RepositoryOptions> options)
-    : EntityController<Plain, string, Input, Input, string>(repository, options)
+public sealed class PlainController(IRepository<Plain, string> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : EntityController<Plain, string, Input, Input, string>(repository, options, mapper)
 {
     protected override Plain CreateEntity(Input model) => new() { Id = model.Name };
     protected override void ApplyUpdate(Input model, Plain entity) { }
@@ -110,6 +119,11 @@ public sealed class Api : IAsyncDisposable
             services.AddCraftDbContext<Store>(o => o.UseSqlite(connection), f => f.UseSoftDelete().UseConcurrency().UseMultiTenancy<string>()
                 .AddFeature(_ => new AuditingFeature(new AuditTrailFactory(new Actor(), Options.Create(new AuditOptions()), TimeProvider.System))));
             services.AddCraftRepositories<Store>(r => r.AddCustom<Item, int, FaultRepository>().Add<Plain, string>(), o => { o.MaximumPageSize = maximumPageSize; o.MaximumBatchSize = 3; });
+            TypeAdapterConfig mapping = new();
+            mapping.NewConfig<Input, Item>().IgnoreNonMapped(true).Map(destination => destination.Name, source => source.Name);
+            mapping.NewConfig<Item, Output>().Map(destination => destination.ETag, source => ConcurrencyTags.Get(source));
+            services.AddSingleton(mapping);
+            services.AddScoped<IMapper, Mapper>();
             services.AddCraftControllers().AddApplicationPart(typeof(ItemsController).Assembly);
         }).Configure(app =>
         {

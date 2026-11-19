@@ -1,5 +1,7 @@
 using Craft.Domain.Abstractions;
 using Craft.Repositories;
+using Mapster;
+using MapsterMapper;
 using Craft.Testing.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,7 @@ public class ContractTests
         Assert.Throws<ArgumentNullException>(() => new Read(repository, null!));
         Assert.Throws<ArgumentException>(() => new Read(repository, Options.Create(new RepositoryOptions { MaximumPageSize = 0 })));
         Assert.Throws<ArgumentException>(() => new Read(repository, Options.Create(new RepositoryOptions { MaximumBatchSize = 0 })));
+        Assert.Throws<ArgumentNullException>(() => new NullMapper(repository, options));
         Assert.NotNull(new Read(repository, options)); Assert.NotNull(new Change(repository, options)); Assert.NotNull(new Soft(repository, options));
         Assert.Throws<ArgumentNullException>(() => ControllerRegistration.AddCraftControllers(null!));
         Assert.Throws<ArgumentNullException>(() => ConcurrencyTags.Get(null!));
@@ -47,21 +50,25 @@ public class ContractTests
         Assert.Throws<InvalidOperationException>(() => ConcurrencyTags.Get(entity));
     }
 
+    [NonController]
+    private sealed class NullMapper(IReadRepository<Row> repository, IOptions<RepositoryOptions> options)
+        : EntityReadController<Row, string>(repository, options, null!);
+
     private sealed class VersionRow : IHasVersion { public long Version { get; set; } }
     private sealed class Row : IEntity, ISoftDelete { public KeyType Id { get; set; } public bool IsDeleted { get; set; } }
     private sealed class Stub : RepositoryStub<Row>;
     [NonController]
-    private sealed class Read(IReadRepository<Row> repository, IOptions<RepositoryOptions> options) : EntityReadController<Row, string>(repository, options)
+    private sealed class Read(IReadRepository<Row> repository, IOptions<RepositoryOptions> options) : EntityReadController<Row, string>(repository, options, new Mapper(new TypeAdapterConfig()))
     { protected override string MapResponse(Row entity) => "row"; }
     [NonController]
-    private sealed class Change(IRepository<Row> repository, IOptions<RepositoryOptions> options) : EntityController<Row, string, Input, Input>(repository, options)
+    private sealed class Change(IRepository<Row> repository, IOptions<RepositoryOptions> options) : EntityController<Row, string, Input, Input>(repository, options, new Mapper(new TypeAdapterConfig()))
     {
         protected override string MapResponse(Row entity) => "row";
         protected override Row CreateEntity(Input model) => new();
         protected override void ApplyUpdate(Input model, Row entity) { }
     }
     [NonController]
-    private sealed class Soft(IRepository<Row> repository, IOptions<RepositoryOptions> options) : SoftDeleteEntityController<Row, string, Input, Input>(repository, options)
+    private sealed class Soft(IRepository<Row> repository, IOptions<RepositoryOptions> options) : SoftDeleteEntityController<Row, string, Input, Input>(repository, options, new Mapper(new TypeAdapterConfig()))
     {
         protected override string MapResponse(Row entity) => "row";
         protected override Row CreateEntity(Input model) => new();

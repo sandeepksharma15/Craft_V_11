@@ -17,7 +17,7 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Define one explicit ErrorKind-to-HTTP policy, including mixed error kinds, field-targeted validation errors and stable application error codes. Do not infer severity from enum ordinal or map every timeout to 408.
 - [ ] Handle unexpected exceptions centrally, log diagnostic details with correlation, return safe messages, and preserve cancellation semantics. Do not reintroduce FromException helpers that expose exception messages.
 - [ ] Integrate existing Domain exception error information deliberately; avoid duplicating error catalogs or making Core depend on Domain.
-- [ ] Add typed client support for success/page payloads and ProblemDetails, including unknown application error codes and non-JSON/network failures.
+- [x] Add typed client support for success/page payloads and ProblemDetails, preserving unknown problem extensions and handling non-JSON/network failures.
 - [ ] Add request pagination validation, configured page-size limits and source-generated JSON/OpenAPI coverage for actual endpoint DTOs. No custom pagination converter should be necessary.
 
 ## Security / MultiTenant
@@ -76,3 +76,11 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Add projection-backed collection controllers with Craft.QuerySpec; preserve query-level authorization and bounded page semantics. Entity ETags do not version independent related collections automatically.
 - [ ] Permanent deletion, mixed-operation transactions, JSON Patch, idempotency keys and bulk APIs require explicit application contracts; do not expose them automatically from the generic controller base.
 - [ ] Add grouped, bounded tracked ID loading alongside the QuerySpec migration to reduce batch-controller read round trips without bypassing tenant/application filters.
+
+## Craft.HttpServices migration (19 November 2026)
+
+- [x] Add inheritable read/CRUD/soft-delete clients and a small custom-endpoint base, Core Result composition, explicit ETags and bounded/cancellable HTTP operations.
+- [x] Use injected Mapster IMapper consistently in clients/controllers; keep repositories entity-based and update mappings explicitly allowlisted.
+- [ ] Add shared application error-code conventions with the planned Result-to-ProblemDetails integration; preserve unknown remote extensions meanwhile.
+- [ ] Add optional Blazor authentication/antiforgery handlers and CORS examples in the future hosting/UI projects; do not couple generic clients to token storage or navigation.
+- [ ] Add streaming uploads/downloads, conditional-read caching, idempotent write retries and generated JSON/AOT support only with explicit endpoint contracts and dedicated tests. Current clients buffer bounded JSON and never retry writes.

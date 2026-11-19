@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <Authors>Sandeep SHARMA</Authors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Mapster" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0" />
+    <ProjectReference Include="../../Core/Craft.Core/Craft.Core.csproj" />
+  </ItemGroup>
+</Project>

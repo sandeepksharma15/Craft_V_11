@@ -74,3 +74,5 @@
 - Tenant IDs participating in EF keys use context-based client value generation before tracking, so nullable/default keys work in tenant-safe relationship graphs. Non-key tenant values still use the save pipeline; explicit cross-tenant ownership remains rejected.
 
 - Craft.Controllers: authenticated abstract DTO-based read/CRUD/soft-delete bases; original ETag required for IHasConcurrency updates/deletes/restores (428 missing, 400 malformed/wildcard/list, 412 stale/race). Batch tokens are per-item. Explicit mapping; one shared-context save; query-level visibility for collections. Host owns antiforgery, body limits and policies.
+
+- Craft.HttpServices composes Core Result/Result<T> with HTTP metadata; controllers still return typed payloads/ProblemDetails. Caller cancellation propagates; transport failures are sanitized outcomes. No implicit write retry or ETag refresh. Inject MapsterMapper.IMapper with host-owned TypeAdapterConfig in clients/controllers; tracked updates remain explicit allowlisted mappings, and entity repositories have no mapper dependency.

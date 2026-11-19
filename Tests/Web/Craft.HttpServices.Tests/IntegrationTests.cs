@@ -18,7 +18,13 @@ public sealed class IntegrationTests
         HttpSoftDeleteService<Output, Input, Input, int> service = new(api.Client, "api/items", new Mapper(new TypeAdapterConfig()));
         CancellationToken token = TestContext.Current.CancellationToken;
 
-        HttpResult<Output> created = await service.CreateAsync(new Input("first"), token);
+        HttpResult<Output> created = await service.CreateAsync(new Input("first")
+        {
+            Id = 999,
+            TenantId = "untrusted",
+            ConcurrencyStamp = "untrusted",
+            IsDeleted = true
+        }, token);
         Assert.True(created.Outcome.IsSuccess);
         Assert.Equal(HttpStatusCode.Created, created.Response.StatusCode);
         Assert.NotNull(created.Response.Location);
@@ -37,7 +43,13 @@ public sealed class IntegrationTests
         Assert.Single((await service.GetPageAsync(1, 1, true, token)).Outcome.Value.Items);
 
         Assert.Equal((HttpStatusCode)428, (await service.UpdateAsync(id, new Input("next"), cancellationToken: token)).Response.StatusCode);
-        HttpResult<Output> updated = await service.UpdateAsync(id, new Input("next"), read.Response.ETag, token);
+        HttpResult<Output> updated = await service.UpdateAsync(id, new Input("next")
+        {
+            Id = 999,
+            TenantId = "untrusted",
+            ConcurrencyStamp = "untrusted",
+            IsDeleted = true
+        }, read.Response.ETag, token);
         Assert.Equal("next", updated.Outcome.Value.Name);
         Assert.NotEqual(read.Response.ETag, updated.Response.ETag);
         Assert.Equal(HttpStatusCode.PreconditionFailed, (await service.DeleteAsync(id, read.Response.ETag, token)).Response.StatusCode);
@@ -57,6 +69,9 @@ public sealed class IntegrationTests
         Item entity = await store.Items.SingleAsync(token);
         Assert.Equal("a", entity.TenantId);
         Assert.Equal(id, entity.Id);
+        Assert.NotEqual(999, entity.Id);
+        Assert.False(entity.IsDeleted);
+        Assert.NotEqual("untrusted", entity.ConcurrencyStamp);
     }
 
     [Fact]

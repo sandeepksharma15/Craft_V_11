@@ -38,7 +38,16 @@ public sealed class Item : IEntity<int>, ISoftDelete, IHasConcurrency, IHasTenan
     public string? ConcurrencyStamp { get; set; }
     public bool IsDeleted { get; set; }
 }
-public sealed record Input([Required, MaxLength(20)] string Name);
+public sealed record Input([Required, MaxLength(20)] string Name)
+{
+    public int Id { get; init; }
+
+    public string? TenantId { get; init; }
+
+    public string? ConcurrencyStamp { get; init; }
+
+    public bool IsDeleted { get; init; }
+}
 public sealed record Output(int Id, string Name, string? ETag);
 public sealed class ItemsController(IRepository<Item, int> repository, IOptions<RepositoryOptions> options, IMapper mapper)
     : SoftDeleteEntityController<Item, Output, Input, Input, int>(repository, options, mapper)

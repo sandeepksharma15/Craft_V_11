@@ -1,8 +1,17 @@
 # Craft.Controllers
 
-ASP.NET Core 11 controller bases over Craft.Repositories. Explicit request/response DTO mapping, authenticated access, bounded atomic batches, and optimistic concurrency. No entity serialization, automatic mapping, database-error text, or client-controlled commits.
+ASP.NET Core 11 controller bases over Craft.Repositories. Explicit request/response DTO mapping, authenticated access, bounded atomic batches, and optimistic concurrency. Mapster handles configured DTO mappings; tracked updates remain an explicit allowlist. No database-error text or client-controlled commits.
 
 ```csharp
+TypeAdapterConfig mapping = new();
+mapping.NewConfig<CreateCustomer, Customer>()
+    .IgnoreNonMapped(true).Map(destination => destination.Name, source => source.Name);
+mapping.NewConfig<UpdateCustomer, Customer>()
+    .IgnoreNonMapped(true).Map(destination => destination.Name, source => source.Name);
+mapping.NewConfig<Customer, CustomerDto>()
+    .Map(destination => destination.ETag, source => ConcurrencyTags.Get(source));
+services.AddSingleton(mapping);
+services.AddScoped<IMapper, Mapper>();
 services.AddCraftRepositories<AppDbContext>(r => r.Add<Customer>());
 services.AddCraftControllers();
 // Configure authentication and authorization using the application's scheme/policies.
@@ -11,15 +20,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-public sealed class CustomersController(IRepository<Customer> repository, IOptions<RepositoryOptions> options)
-    : SoftDeleteEntityController<Customer, CustomerDto, CreateCustomer, UpdateCustomer>(repository, options)
+public sealed class CustomersController(IRepository<Customer> repository, IOptions<RepositoryOptions> options, IMapper mapper)
+    : SoftDeleteEntityController<Customer, CustomerDto, CreateCustomer, UpdateCustomer>(repository, options, mapper)
 {
-    protected override Customer CreateEntity(CreateCustomer model) => new() { Name = model.Name };
-    protected override void ApplyUpdate(UpdateCustomer model, Customer entity) => entity.Name = model.Name;
-    protected override CustomerDto MapResponse(Customer entity)
-        => new(entity.Id, entity.Name, ConcurrencyTags.Get(entity));
+    protected override void ApplyUpdate(UpdateCustomer model, Customer entity)
+        => Mapper.Map(model, entity);
 }
 ```
+
+`IMapper` is MapsterMapper's interface. Register a local TypeAdapterConfig; never mutate global configuration. CreateEntity and MapResponse use the injected mapper by default and remain overridable. ApplyUpdate is deliberately abstract: use an explicitly configured IgnoreNonMapped mapping onto the supplied tracked entity, or assign allowed fields directly. Do not replace the tracked entity.
 
 Use `EntityReadController<TEntity,TResponse>` for reads, `EntityController<TEntity,TResponse,TCreate,TUpdate>` for CRUD, and `SoftDeleteEntityController` to additionally expose restoration. Append `TKey` for an explicit key type. DTOs need no Craft interfaces. Apply DataAnnotations or application validators to request DTOs. Mapping must assign only allowed business fields; never map IDs, tenant IDs, deletion flags, or concurrency stamps from input. Configure Craft.Data's concurrency/versioning and soft-delete features for the corresponding entity interfaces.
 

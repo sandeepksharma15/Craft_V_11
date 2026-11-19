@@ -49,28 +49,28 @@ public sealed class ContractTests
     }
 
     [Fact]
-    public void Guards_RejectInvalidArgumentsWithoutSending()
+    public async Task Guards_RejectInvalidArgumentsWithoutSending()
     {
         using HttpClient client = new();
         HttpSoftDeleteService<string, Input, Input, string> service = new(client, "api/items", CreateMapper());
-        Assert.Throws<ArgumentNullException>(() => service.GetAsync(null!));
-        Assert.Throws<ArgumentException>(() => service.GetAsync(""));
-        Assert.Throws<ArgumentException>(() => service.GetAsync("."));
-        Assert.Throws<ArgumentException>(() => service.GetAsync(".."));
-        Assert.Throws<ArgumentException>(() => service.GetAsync("a/b"));
-        Assert.Throws<ArgumentException>(() => service.GetAsync("a\\b"));
-        Assert.Throws<ArgumentOutOfRangeException>(() => service.GetPageAsync(0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => service.GetPageAsync(1, 0));
-        Assert.Throws<ArgumentNullException>(() => service.CreateAsync(null!));
-        Assert.Throws<ArgumentNullException>(() => service.UpdateAsync("1", null!));
-        Assert.Throws<ArgumentNullException>(() => service.CreateBatchAsync(null!));
-        Assert.Throws<ArgumentException>(() => service.CreateBatchAsync([]));
-        Assert.Throws<ArgumentException>(() => service.CreateBatchAsync([null!]));
-        Assert.Throws<ArgumentException>(() => service.UpdateBatchAsync([]));
-        Assert.Throws<ArgumentException>(() => service.DeleteBatchAsync([]));
-        Assert.Throws<ArgumentException>(() => service.RestoreBatchAsync([]));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.GetAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetAsync("", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetAsync(".", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetAsync("..", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetAsync("a/b", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.GetAsync("a\\b", cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GetPageAsync(0, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.GetPageAsync(1, 0, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.CreateAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.UpdateAsync("1", null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => service.CreateBatchAsync(null!, cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateBatchAsync([], cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.CreateBatchAsync([null!], cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateBatchAsync([], cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteBatchAsync([], cancellationToken: TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.RestoreBatchAsync([], cancellationToken: TestContext.Current.CancellationToken));
         HttpReadService<string, NullKey> nullKey = new(client, "api/items", CreateMapper());
-        Assert.Throws<ArgumentException>(() => nullKey.GetAsync(new NullKey()));
+        await Assert.ThrowsAsync<ArgumentException>(() => nullKey.GetAsync(new NullKey(), cancellationToken: TestContext.Current.CancellationToken));
     }
 
     public sealed record Input(string Name);

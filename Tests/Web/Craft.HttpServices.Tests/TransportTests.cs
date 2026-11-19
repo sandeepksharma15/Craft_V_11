@@ -30,7 +30,7 @@ public sealed class TransportTests
         using HttpClient client = Client((_, _) => Task.FromResult(Response(status, json)));
         Probe service = new(client);
 
-        HttpResult<int> result = await service.Get<int>();
+        HttpResult<int> result = await service.Get<int>(TestContext.Current.CancellationToken);
 
         Assert.Equal((HttpStatusCode)status, result.Response.StatusCode);
         Error error = Assert.Single(result.Outcome.Errors);
@@ -56,7 +56,7 @@ public sealed class TransportTests
     public async Task ErrorBodies_AreOptionalAndValidationTargetsArePreserved(string payload, int count)
     {
         using HttpClient client = Client((_, _) => Task.FromResult(Response(422, payload)));
-        HttpResult<int> result = await new Probe(client).Get<int>();
+        HttpResult<int> result = await new Probe(client).Get<int>(TestContext.Current.CancellationToken);
 
         Assert.Equal(count, result.Outcome.Errors.Count);
         Assert.All(result.Outcome.Errors, error => Assert.Equal(ErrorKind.Validation, error.Kind));
@@ -74,7 +74,7 @@ public sealed class TransportTests
     public async Task InvalidSuccessBody_IsTypedFailure(int status, string payload)
     {
         using HttpClient client = Client((_, _) => Task.FromResult(Response(status, payload)));
-        HttpResult<string> result = await new Probe(client).Get<string>();
+        HttpResult<string> result = await new Probe(client).Get<string>(TestContext.Current.CancellationToken);
 
         Assert.Equal("http.invalid_response", Assert.Single(result.Outcome.Errors).Code);
         Assert.Equal((HttpStatusCode)status, result.Response.StatusCode);
@@ -110,7 +110,7 @@ public sealed class TransportTests
         Assert.Equal("items/7", result.Response.Location?.OriginalString);
         Assert.True(content.Disposed);
         Assert.Empty(client.DefaultRequestHeaders.IfMatch);
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => captured!.Content!.ReadAsStringAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => captured!.Content!.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -122,7 +122,7 @@ public sealed class TransportTests
         using HttpClient client = Client((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content }));
         Probe service = new(client, new HttpServiceOptions { MaximumResponseBytes = 5 });
 
-        HttpResult<int> result = await service.Get<int>();
+        HttpResult<int> result = await service.Get<int>(TestContext.Current.CancellationToken);
 
         Assert.Equal("http.invalid_response", Assert.Single(result.Outcome.Errors).Code);
         Assert.True(content.Disposed);
@@ -133,7 +133,7 @@ public sealed class TransportTests
     [InlineData(true)]
     public async Task NetworkFailure_IsSanitizedUnlessCallerCancelled(bool cancel)
     {
-        using CancellationTokenSource source = new();
+        using CancellationTokenSource source = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         using HttpClient client = Client((_, _) =>
         {
             if (cancel)
@@ -158,7 +158,7 @@ public sealed class TransportTests
     [InlineData(true)]
     public async Task StreamFailure_IsSanitizedUnlessCallerCancelled(bool cancel)
     {
-        using CancellationTokenSource source = new();
+        using CancellationTokenSource source = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         using HttpClient client = Client((_, _) =>
         {
             if (cancel)
@@ -186,10 +186,10 @@ public sealed class TransportTests
             throw new InvalidOperationException();
         });
         Probe service = new(client, new HttpServiceOptions { Timeout = TimeSpan.FromMilliseconds(20) });
-        HttpResult<int> timedOut = await service.Get<int>();
+        HttpResult<int> timedOut = await service.Get<int>(TestContext.Current.CancellationToken);
         Assert.Equal(ErrorKind.Timeout, Assert.Single(timedOut.Outcome.Errors).Kind);
 
-        using CancellationTokenSource source = new();
+        using CancellationTokenSource source = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         source.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => service.Get<int>(source.Token));
     }
@@ -203,7 +203,7 @@ public sealed class TransportTests
         }));
         Probe service = new(client, new HttpServiceOptions { Timeout = TimeSpan.FromMilliseconds(100) });
 
-        HttpResult<int> result = await service.Get<int>();
+        HttpResult<int> result = await service.Get<int>(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, result.Response.StatusCode);
         Assert.Equal(ErrorKind.Timeout, Assert.Single(result.Outcome.Errors).Kind);
@@ -225,7 +225,7 @@ public sealed class TransportTests
     public async Task ProgrammingErrors_AreNotConvertedToRemoteFailures()
     {
         using HttpClient client = Client((_, _) => throw new InvalidOperationException("bug"));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => new Probe(client).Get<int>());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new Probe(client).Get<int>(TestContext.Current.CancellationToken));
     }
 
     [Theory]

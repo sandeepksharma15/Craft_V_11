@@ -7,7 +7,7 @@ namespace Craft.Repositories;
 
 public sealed class RepositoryBuilder<TContext>(IServiceCollection services) where TContext : DbContext, ICraftDbContext
 {
-    private readonly IServiceCollection _services = services ?? throw new ArgumentNullException(nameof(services));
+    internal readonly IServiceCollection Services = services ?? throw new ArgumentNullException(nameof(services));
 
     public RepositoryBuilder<TContext> Add<TEntity, TKey>() where TEntity : class, IEntity<TKey> where TKey : notnull
         => AddCustom<TEntity, TKey, Repository<TEntity, TKey, TContext>>();
@@ -18,11 +18,11 @@ public sealed class RepositoryBuilder<TContext>(IServiceCollection services) whe
     public RepositoryBuilder<TContext> AddCustom<TEntity, TKey, TRepository>()
         where TEntity : class, IEntity<TKey> where TKey : notnull where TRepository : Repository<TEntity, TKey, TContext>
     {
-        if (_services.Any(d => d.ServiceType == typeof(IRepository<TEntity, TKey>) || d.ServiceType == typeof(IReadRepository<TEntity, TKey>)))
+        if (Services.Any(d => d.ServiceType == typeof(IRepository<TEntity, TKey>) || d.ServiceType == typeof(IReadRepository<TEntity, TKey>)))
             throw new InvalidOperationException("The entity/key pair already has a repository registration. Use a custom interface for multiple context bindings.");
-        _services.AddScoped<TRepository>();
-        _services.AddScoped<IRepository<TEntity, TKey>>(provider => provider.GetRequiredService<TRepository>());
-        _services.AddScoped<IReadRepository<TEntity, TKey>>(provider => provider.GetRequiredService<TRepository>());
+        Services.AddScoped<TRepository>();
+        Services.AddScoped<IRepository<TEntity, TKey>>(provider => provider.GetRequiredService<TRepository>());
+        Services.AddScoped<IReadRepository<TEntity, TKey>>(provider => provider.GetRequiredService<TRepository>());
         return this;
     }
 
@@ -30,8 +30,8 @@ public sealed class RepositoryBuilder<TContext>(IServiceCollection services) whe
         where TEntity : class, IEntity where TRepository : Repository<TEntity, TContext>
     {
         AddCustom<TEntity, KeyType, TRepository>();
-        _services.AddScoped<IRepository<TEntity>>(provider => provider.GetRequiredService<TRepository>());
-        _services.AddScoped<IReadRepository<TEntity>>(provider => provider.GetRequiredService<TRepository>());
+        Services.AddScoped<IRepository<TEntity>>(provider => provider.GetRequiredService<TRepository>());
+        Services.AddScoped<IReadRepository<TEntity>>(provider => provider.GetRequiredService<TRepository>());
         return this;
     }
 }

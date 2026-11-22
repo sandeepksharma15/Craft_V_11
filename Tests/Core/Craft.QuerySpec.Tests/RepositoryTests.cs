@@ -96,13 +96,13 @@ public sealed class RepositoryTests
         using Fixture fixture = new();
         ServiceCollection services = new();
         services.AddScoped(_ => fixture.Open());
-        services.AddCraftRepositories<ShopContext>(builder => builder.AddQuery<Product, int>().AddQuery<Note>());
+        services.AddCraftRepositories<ShopContext>(builder => builder.AddQuery<ShopContext, Product, int>().AddQuery<ShopContext, Note>());
         using ServiceProvider provider = services.BuildServiceProvider();
         using IServiceScope scope = provider.CreateScope();
         Assert.Same(scope.ServiceProvider.GetRequiredService<IRepository<Product, int>>(), scope.ServiceProvider.GetRequiredService<IQueryReadRepository<Product, int>>());
         Assert.Same(scope.ServiceProvider.GetRequiredService<IRepository<Note>>(), scope.ServiceProvider.GetRequiredService<IQueryReadRepository<Note>>());
         Assert.Same(scope.ServiceProvider.GetRequiredService<IReadRepository<Note>>(), scope.ServiceProvider.GetRequiredService<IQueryReadRepository<Note>>());
         RepositoryBuilder<ShopContext> missing = null!;
-        Assert.Throws<ArgumentNullException>(() => missing.AddQuery<Product, int>());
+        Assert.Throws<ArgumentNullException>(() => missing.AddQuery<ShopContext, Product, int>());
     }
 }

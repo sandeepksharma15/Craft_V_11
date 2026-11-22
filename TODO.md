@@ -8,7 +8,8 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [x] Coordinate tenant validation, soft delete and stamps before audit capture; save business changes and finalized audit rows in one database transaction. Integrate the current auditing implementation through an optional adapter and remove competing context save coordinators.
 - [x] Define restore/permanent-delete APIs, cascades/orphans, filter composition and bulk-operation policies. Restoring deleted rows must not bypass tenant isolation.
 - [x] Define transaction/retry and concurrency contracts; repositories share the context transaction and expose optional deferred saves.
-- [ ] Translate PageInfo's long offset explicitly for provider APIs (e.g. int-limited Skip); reject unsupported ranges rather than truncate. Enforce application query limits and decide count/items consistency. Add cursor pagination only when needed.
+- [x] Reject offsets outside EF's Int32 range rather than truncate. Enforce page-size limits in repositories and on HTTP query requests.
+- [ ] Add cursor pagination or snapshot-consistent totals only when needed. QuerySpec pages use separate count and item reads.
 - [ ] Validate relational behavior against supported real providers, including generated keys, rollback, cancellation, filtering and tenant isolation.
 
 ## Web / ASP.NET integration
@@ -51,7 +52,8 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Implement the existing refresh-session persistence contract atomically in the Identity EF adapter, including replay/family revocation and concurrent rotation tests. No legacy raw-token entity or refresh endpoint is reinstated.
 - [ ] Put provider-specific tuning, connection validation, materialized views and provider health checks in optional provider/hosting integrations. Do not install SQL Server, PostgreSQL, MySQL or Aspire packages in base Craft.Data.
 - [ ] Keep deployment migrations, distributed migration coordination and seed orchestration in hosting/deployment tooling. Prefer EF native seeding/factories over competing Craft abstractions.
-- [ ] Migrate specifications into their planned library; repositories now support default autoSave=true and optional deferred saves. Bulk APIs must explicitly define tenant predicates, audit behavior and soft-delete semantics.
+- [x] Keep query specifications in Craft.QuerySpec and EF execution in Craft.Repositories.
+- [ ] Define tenant predicates, audit behavior and soft-delete semantics before introducing bulk APIs.
 - [ ] Add outbox/domain-event delivery separately: callbacks in the save pipeline must never publish externally before commit.
 - [ ] Add provider execution-strategy helpers only with fresh-context replay and application idempotency/ambiguous-commit contracts. Context pooling requires a separately designed resettable tenant/feature lifetime model and is currently unsupported.
 
@@ -62,7 +64,7 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [x] Add materialized read interfaces, explicit tracked editing, default autoSave=true with optional deferred commits, configured default includes, bounded collections/batches and checked Page<T> execution.
 - [x] Keep soft deletion, tenant enforcement, versions, concurrency and auditing in the context pipeline. Repository saves commit the entire shared context; no independent per-repository transactions or automatic detachment.
 - [x] Keep fail-fast repository stubs in Craft.Testing.Repositories; relational tests remain authoritative.
-- [ ] Migrate Craft.QuerySpec separately with explicit projections/includes/filtering, cancellation, deterministic sorting and enforced limits. Do not restore unrestricted client-controlled filter bypasses or automatic graph traversal.
+- [x] Migrate Craft.QuerySpec separately with explicit projections/includes/filtering, cancellation, deterministic sorting and enforced limits. Do not restore unrestricted client-controlled filter bypasses or automatic graph traversal.
 - [ ] Add cursor pagination and composite/keyless query services only with explicit contracts; current generic repositories require a single mapped Id key.
 - [ ] Design explicit DTO patch/disconnected editing APIs with allowed fields and original concurrency tokens before offering detached replacement updates. Do not lose original audit values or silently mark entire graphs modified.
 - [ ] Put bulk update/delete APIs in a dedicated opt-in integration with tenant/audit/soft-delete semantics. SQL bulk operations must not masquerade as tracked repository operations.
@@ -73,14 +75,15 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [x] Safe centralized unexpected-error handling, cancellation propagation and real HTTP/SQLite tests for routing, validation, audit rollback and concurrency.
 - [ ] Add reusable Result<T>/Domain-exception HTTP translation to a future shared ASP.NET integration (usable by MVC and minimal APIs); keep Core independent. Provider-specific constraint classification belongs in optional persistence/provider adapters, never raw-message parsing or provider packages in controllers.
 - [ ] Move V10 API versioning, rate limiting, request-body limits, antiforgery, CORS ETag exposure, authentication policies and OpenAPI setup into optional hosting/web integrations. Configure framework services directly; do not restore reflection-based registration.
-- [ ] Add projection-backed collection controllers with Craft.QuerySpec; preserve query-level authorization and bounded page semantics. Entity ETags do not version independent related collections automatically.
+- [x] Add projection-backed QuerySpec collection endpoints with bounded pages and existing EF filters. Applications must scope any additional row-level visibility before querying. Entity ETags do not version independent related collections automatically.
 - [ ] Permanent deletion, mixed-operation transactions, JSON Patch, idempotency keys and bulk APIs require explicit application contracts; do not expose them automatically from the generic controller base.
-- [ ] Add grouped, bounded tracked ID loading alongside the QuerySpec migration to reduce batch-controller read round trips without bypassing tenant/application filters.
+- [ ] Add grouped, bounded tracked ID loading to reduce batch-controller read round trips without bypassing tenant/application filters.
 
 ## Craft.HttpServices migration (19 November 2026)
 
 - [x] Add inheritable read/CRUD/soft-delete clients and a small custom-endpoint base, Core Result composition, explicit ETags and bounded/cancellable HTTP operations.
 - [x] Use injected Mapster IMapper consistently in clients/controllers; keep repositories entity-based and update mappings explicitly allowlisted.
+- [x] Add typed QuerySpec search, count and existence methods to read-only, CRUD and soft-delete HTTP clients.
 - [ ] Add shared application error-code conventions with the planned Result-to-ProblemDetails integration; preserve unknown remote extensions meanwhile.
 - [ ] Add optional Blazor authentication/antiforgery handlers and CORS examples in the future hosting/UI projects; do not couple generic clients to token storage or navigation.
 - [ ] Add streaming uploads/downloads, conditional-read caching, idempotent write retries and generated JSON/AOT support only with explicit endpoint contracts and dedicated tests. Current clients buffer bounded JSON and never retry writes.

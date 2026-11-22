@@ -12,7 +12,7 @@ public static class QueryRegistration
         public RepositoryBuilder<TContext> AddQuery<TEntity, TKey>()
             where TEntity : class, IEntity<TKey>
             where TKey : notnull
-            => builder.AddQueryCustom<TEntity, TKey, QueryRepository<TEntity, TKey, TContext>>();
+            => builder.AddQueryCustom<TContext, TEntity, TKey, QueryRepository<TEntity, TKey, TContext>>();
 
         public RepositoryBuilder<TContext> AddQueryCustom<TEntity, TKey, TRepository>()
             where TEntity : class, IEntity<TKey>
@@ -28,7 +28,7 @@ public static class QueryRegistration
         public RepositoryBuilder<TContext> AddQuery<TEntity>()
             where TEntity : class, IEntity
         {
-            builder.AddQueryCustom<TEntity, KeyType, QueryRepository<TEntity, TContext>>();
+            builder.AddQueryCustom<TContext, TEntity, KeyType, QueryRepository<TEntity, TContext>>();
             builder.Services.AddScoped<IQueryReadRepository<TEntity>>(provider => provider.GetRequiredService<QueryRepository<TEntity, TContext>>());
             builder.Services.AddScoped<IRepository<TEntity>>(provider => provider.GetRequiredService<QueryRepository<TEntity, TContext>>());
             builder.Services.AddScoped<IReadRepository<TEntity>>(provider => provider.GetRequiredService<QueryRepository<TEntity, TContext>>());

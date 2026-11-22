@@ -38,11 +38,29 @@ jobs:
       - name: Test
         run: dotnet test --solution Craft_V_11.slnx --configuration Release --no-build
 
+      - name: Verify query coverage
+        run: |
+          dotnet test --project Tests/Core/Craft.QuerySpec.Tests/Craft.QuerySpec.Tests.csproj --configuration Release --no-build \
+            --coverlet --results-directory artifacts/query-coverage --coverlet-output-format cobertura \
+            --coverlet-include "[Craft.QuerySpec]*" --coverlet-include "[Craft.Repositories]Craft.Repositories.Query*" \
+            --coverlet-include "[Craft.Controllers]Craft.Controllers.Query*" --coverlet-include "[Craft.HttpServices]Craft.HttpServices.HttpQuery*" \
+            --coverlet-include "[Craft.Testing.Repositories]Craft.Testing.Repositories.Query*"
+          python3 .github/scripts/verify-query-coverage.py artifacts/query-coverage
+
+      - name: Upload query coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: query-coverage-${{ matrix.os }}
+          path: artifacts/query-coverage/**/coverage.*.xml
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Verify HTTP service coverage
         run: |
           dotnet test --project Tests/Web/Craft.HttpServices.Tests/Craft.HttpServices.Tests.csproj --configuration Release --no-build \
             --coverlet --results-directory artifacts/http-service-coverage --coverlet-output-format cobertura \
-            --coverlet-include "[Craft.HttpServices]*"
+            --coverlet-include "[Craft.HttpServices]*" --coverlet-exclude "[Craft.HttpServices]Craft.HttpServices.HttpQuery*"
           python3 .github/scripts/verify-http-service-coverage.py artifacts/http-service-coverage
 
       - name: Upload HTTP service coverage
@@ -58,7 +76,7 @@ jobs:
         run: |
           dotnet test --project Tests/Web/Craft.Controllers.Tests/Craft.Controllers.Tests.csproj --configuration Release --no-build \
             --coverlet --results-directory artifacts/controller-coverage --coverlet-output-format cobertura \
-            --coverlet-include "[Craft.Controllers]*"
+            --coverlet-include "[Craft.Controllers]*" --coverlet-exclude "[Craft.Controllers]Craft.Controllers.Query*"
           python3 .github/scripts/verify-controller-coverage.py artifacts/controller-coverage
 
       - name: Upload controller coverage
@@ -74,7 +92,7 @@ jobs:
         run: |
           dotnet test --project Tests/Data/Craft.Repositories.Tests/Craft.Repositories.Tests.csproj --configuration Release --no-build \
             --coverlet --results-directory artifacts/repository-coverage --coverlet-output-format cobertura \
-            --coverlet-include "[Craft.Repositories]*" --coverlet-include "[Craft.Testing.Repositories]*"
+            --coverlet-include "[Craft.Repositories]*" --coverlet-exclude "[Craft.Repositories]Craft.Repositories.Query*" --coverlet-include "[Craft.Testing.Repositories]*" --coverlet-exclude "[Craft.Testing.Repositories]Craft.Testing.Repositories.Query*"
           python3 .github/scripts/verify-repository-coverage.py artifacts/repository-coverage
 
       - name: Upload repository coverage

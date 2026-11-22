@@ -105,7 +105,7 @@ public sealed class Api : IAsyncDisposable
     {
         Host = host; _connection = connection; Client = host.GetTestClient(); Client.DefaultRequestHeaders.Add("Test-User", "test");
     }
-    public static async Task<Api> Start(int maximumPageSize = 50)
+    public static async Task<Api> Start(int maximumPageSize = 50, Action<IServiceCollection>? configure = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -125,6 +125,7 @@ public sealed class Api : IAsyncDisposable
             services.AddSingleton(mapping);
             services.AddScoped<IMapper, Mapper>();
             services.AddCraftControllers().AddApplicationPart(typeof(ItemsController).Assembly);
+            configure?.Invoke(services);
         }).Configure(app =>
         {
             app.UseExceptionHandler(); app.UseRouting(); app.UseAuthentication(); app.UseAuthorization(); app.UseEndpoints(e => e.MapControllers());

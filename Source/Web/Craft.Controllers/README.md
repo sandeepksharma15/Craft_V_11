@@ -52,3 +52,7 @@ The bases require authentication; hosts choose schemes and endpoint policies. Ov
 Call `AddCraftControllers` and `UseExceptionHandler` for safe ProblemDetails. Unexpected failures return 500 with a trace ID; diagnostic exceptions are logged through ILogger (compatible with host Serilog). Request cancellation is not converted into a client validation error. Applications own domain-error translation and business validation; register specialized IExceptionHandler implementations before AddCraftControllers so they run before the fallback. Default DTO 400s use ASP.NET validation ProblemDetails. Keep MVC's normal routing setup; the GET action name is explicit so CreatedAtAction works even when Async suffix conventions change.
 
 No unbounded get-all, permanent-delete endpoint, arbitrary query/filter bypass, database-specific exception parsing, API versioning policy or reflection-based rate-limit registration is shipped here. These belong to application policy or the integrations recorded in TODO.md. Tests exercise actual HTTP routing/model binding/authentication against SQLite with the Craft.Data/audit pipeline.
+
+## Query specifications
+
+See [Craft.QuerySpec](../../Core/Craft.QuerySpec/README.md) for repository registration, server projections and bounded HTTP search, count and existence.

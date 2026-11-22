@@ -4,6 +4,8 @@
 
 [Architecture review and proposed V11 direction](docs/Craft-V10-Architecture-Review.md)
 
+[Craft.QuerySpec: server specifications and HTTP queries](Source/Core/Craft.QuerySpec/README.md)
+
 ## Build before pushing
 
 Install the repository's Git hooks once in each clone:
@@ -14,7 +16,7 @@ git config --local core.hooksPath .githooks
 
 After that, `git push` builds the full solution in Release configuration and stops if the build fails or the .NET SDK is missing. Run `dotnet build Craft_V_11.slnx --configuration Release` at any time to check the build before pushing.
 
-Git hooks are local to each clone and can be bypassed with `git push --no-verify`. The existing CI workflow provides an additional check for Craft.Extensions.
+Git hooks are local to each clone and can be bypassed with `git push --no-verify`. Solution CI restores, builds and tests on Linux and Windows for pull requests targeting `master`.
 
 ## Default key type
 
@@ -44,3 +46,5 @@ dotnet test --project Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj --
 ```
 
 `coverlet.MTP` provides Cobertura and OpenCover reports. Each test application copies the shared `Tests/testconfig.json` beside its executable. Coverage includes Craft libraries, auto-properties, async methods and iterators; test infrastructure and explicitly generated or excluded code are omitted. Report filenames include timestamps. CI enforces the existing exception, extension and cross-platform utility coverage gates.
+
+The QuerySpec gate includes the core library and its repository, controller, HTTP client and test-stub integrations. See the [focused QuerySpec tests](Source/Core/Craft.QuerySpec/README.md#verification).

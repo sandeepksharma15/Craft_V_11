@@ -62,3 +62,7 @@ Only a single mapped `Id` primary key matching TKey is supported. Composite/keyl
 SQLite and SQL Server integration tests cover default/deferred commits, shared units, filters, restore, concurrency, audit rollback, pagination and includes. `Craft.Testing.Repositories.RepositoryStub<TEntity, TKey>` is a separate fail-fast test helper: override configured operations; all others throw. It is not an EF simulator. Use relational tests for persistence behavior.
 
 V10's no-op fakes, async wrappers around context/set getters, recursive include discovery, blanket graph updates and independent repository transactions are removed. `Craft.Data` and `Craft.QuerySpec` follow-up work is recorded in root TODO.md. PostgreSQL awaits the compatible stable EF 11 provider already tracked there.
+
+## Query specifications
+
+See [Craft.QuerySpec](../../Core/Craft.QuerySpec/README.md) for repository registration, server projections and bounded HTTP search, count and existence.

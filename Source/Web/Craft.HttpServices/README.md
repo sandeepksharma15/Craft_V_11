@@ -59,3 +59,7 @@ public sealed class HealthService(HttpClient client) : HttpServiceBase(client)
 Protected `SendAsync<T>` reads a non-null JSON value; non-generic `SendAsync` expects no payload. Both accept method, relative path, optional body, ETag and cancellation. Pass `HttpServiceOptions` to a base constructor to customize JSON, the whole-operation timeout (30 seconds by default) and the buffered response limit (4 MiB by default). Options are snapshotted. Use host `IOptions<HttpServiceOptions>` when external configuration is needed. Large downloads/streaming belong in a dedicated service.
 
 Hosts configure credentials, trusted origins, cookies/antiforgery, redirect policy and any safe-read resilience through HttpClient handlers. Cross-origin browser clients must expose `ETag` and `Location` via CORS and allow `If-Match`. Blazor authentication integration is deferred in TODO.md. This library does not own or dispose injected HttpClient instances; each operation disposes its request, response and streams.
+
+## Query specifications
+
+See [Craft.QuerySpec](../../Core/Craft.QuerySpec/README.md) for repository registration, server projections and bounded HTTP search, count and existence.

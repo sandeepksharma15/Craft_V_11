@@ -14,6 +14,7 @@
   </Folder>
   <Folder Name="/Source/" />
   <Folder Name="/Source/Core/">
+    <Project Path="Source/Core/Craft.QuerySpec/Craft.QuerySpec.csproj" />
     <Project Path="Source/Core/Craft.Core/Craft.Core.csproj" />
     <Project Path="Source/Core/Craft.Domain/Craft.Domain.csproj" />
     <Project Path="Source/Core/Craft.Expressions/Craft.Expressions.csproj" />
@@ -37,6 +38,7 @@
   </Folder>
   <Folder Name="/Tests/" />
   <Folder Name="/Tests/Core/">
+    <Project Path="Tests/Core/Craft.QuerySpec.Tests/Craft.QuerySpec.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Core.Tests/Craft.Core.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Domain.Tests/Craft.Domain.Tests.csproj" />
     <Project Path="Tests/Core/Craft.Expressions.Tests/Craft.Expressions.Tests.csproj" />

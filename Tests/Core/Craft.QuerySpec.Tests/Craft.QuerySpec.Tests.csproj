@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);ASP0023;ASP0026</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="11.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="11.0.0" />
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
+    <PackageReference Include="coverlet.MTP" Version="10.1.1" PrivateAssets="all" />
+    <ProjectReference Include="../../Support/Craft.Testing.Repositories/Craft.Testing.Repositories.csproj" />
+    <ProjectReference Include="../../../Source/Web/Craft.Controllers/Craft.Controllers.csproj" />
+    <ProjectReference Include="../../../Source/Web/Craft.HttpServices/Craft.HttpServices.csproj" />
+    <ProjectReference Include="../../../Source/Security/Craft.Auditing/Craft.Auditing.csproj" />
+    <Compile Include="../../Data/Craft.Repositories.Tests/Fixtures.cs" Link="Fixtures/Repositories.cs" />
+    <Compile Include="../../Web/Craft.Controllers.Tests/Fixtures.cs" Link="Fixtures/Http.cs" />
+    <None Include="../../testconfig.json" Link="$(AssemblyName).testconfig.json" CopyToOutputDirectory="PreserveNewest" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

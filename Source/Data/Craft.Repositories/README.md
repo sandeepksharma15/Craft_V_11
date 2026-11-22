@@ -61,7 +61,9 @@ Only a single mapped `Id` primary key matching TKey is supported. Composite/keyl
 
 SQLite and SQL Server integration tests cover default/deferred commits, shared units, filters, restore, concurrency, audit rollback, pagination and includes. `Craft.Testing.Repositories.RepositoryStub<TEntity, TKey>` is a separate fail-fast test helper: override configured operations; all others throw. It is not an EF simulator. Use relational tests for persistence behavior.
 
-V10's no-op fakes, async wrappers around context/set getters, recursive include discovery, blanket graph updates and independent repository transactions are removed. `Craft.Data` and `Craft.QuerySpec` follow-up work is recorded in root TODO.md. PostgreSQL awaits the compatible stable EF 11 provider already tracked there.
+V10's no-op fakes, async wrappers around context/set getters, recursive include discovery, blanket graph updates and independent repository transactions are removed. `Craft.Data` and `Craft.QuerySpec` follow-up work is recorded in root TODO.md. The provider smoke test also runs on PostgreSQL 17 with Npgsql 11.0.0, verifying generated IDs, includes, paging, soft delete and restore, and audit rollback. QuerySpec's separate relational suite is not run against PostgreSQL by this check.
+
+For a local run, point `CRAFT_TEST_POSTGRESQL` at a disposable database named `craft_test_repositories_postgresql` and set `CRAFT_REQUIRE_POSTGRESQL=1` to require the case. The test creates and drops that database. Never point it at application data.
 
 ## Query specifications
 

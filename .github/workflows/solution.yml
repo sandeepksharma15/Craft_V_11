@@ -374,3 +374,38 @@ jobs:
         run: dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release
       - name: Test SQL Server repositories
         run: dotnet test --project Tests/Data/Craft.Repositories.Tests/Craft.Repositories.Tests.csproj --configuration Release
+
+  data-providers-postgresql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '11.0'
+          dotnet-quality: preview
+      - name: Start disposable PostgreSQL
+        shell: bash
+        run: |
+          password="$(openssl rand -hex 24)"
+          echo "::add-mask::$password"
+          docker run -d --name craft-postgresql -e POSTGRES_USER=craft -e POSTGRES_PASSWORD="$password" -p 127.0.0.1:5432:5432 postgres:17
+          for i in $(seq 1 60); do
+            if docker exec craft-postgresql pg_isready -h 127.0.0.1 -U craft -d postgres; then break; fi
+            if [ "$i" = 60 ]; then exit 1; fi
+            sleep 2
+          done
+          echo "CRAFT_POSTGRESQL_TEST_PASSWORD=$password" >> "$GITHUB_ENV"
+      - name: Test PostgreSQL persistence
+        env:
+          CRAFT_REQUIRE_POSTGRESQL: '1'
+        shell: bash
+        run: |
+          export CRAFT_TEST_POSTGRESQL="Host=127.0.0.1;Port=5432;Database=craft_test_data_postgresql;Username=craft;Password=$CRAFT_POSTGRESQL_TEST_PASSWORD;SSL Mode=Disable"
+          dotnet test --project Tests/Data/Craft.Data.Tests/Craft.Data.Tests.csproj --configuration Release
+      - name: Test PostgreSQL repositories
+        env:
+          CRAFT_REQUIRE_POSTGRESQL: '1'
+        shell: bash
+        run: |
+          export CRAFT_TEST_POSTGRESQL="Host=127.0.0.1;Port=5432;Database=craft_test_repositories_postgresql;Username=craft;Password=$CRAFT_POSTGRESQL_TEST_PASSWORD;SSL Mode=Disable"
+          dotnet test --project Tests/Data/Craft.Repositories.Tests/Craft.Repositories.Tests.csproj --configuration Release

@@ -85,6 +85,16 @@ public sealed class PolicyTests
         Assert.True(nested.Build(Request("positive", FilterOperator.Equal, "true")).Value.ApplyFilters(rows.AsQueryable()).Any());
     }
 
+    [Fact]
+    public void Include_AppendsToExistingPathsWithoutChangingOriginal()
+    {
+        Query<Row> original = new Query<Row>().Include("Details");
+        Query<Row> expanded = original.Include("Owner");
+
+        Assert.Equal("Details", Assert.Single(original.Includes));
+        Assert.Equal(["Details", "Owner"], expanded.Includes);
+    }
+
     public static IEnumerable<object[]> InvalidRequests()
     {
         yield return [new QueryRequest { Page = 0 }];
@@ -124,6 +134,20 @@ public sealed class PolicyTests
         Assert.True(Policy(new QueryLimits { MaximumNodes = 5 }).Build(new QueryRequest { Filter = deeper }).IsFailure);
         Assert.True(Policy(new QueryLimits { MaximumValueBytes = 1 }).Build(Request("name", FilterOperator.Equal, "\"long\"")).IsFailure);
         Assert.True(Policy().Build(new QueryRequest()).IsSuccess);
+    }
+
+    [Fact]
+    public void ComplexityLimit_CountsSiblingGroupsAfterTheBudgetIsExhausted()
+    {
+        FilterGroup first = new()
+        {
+            Filters = [new("id", FilterOperator.Equal, JsonSerializer.SerializeToElement(1)),
+                new("id", FilterOperator.Equal, JsonSerializer.SerializeToElement(2))]
+        };
+        QueryRequest request = new() { Filter = new FilterGroup { Groups = [first, new FilterGroup()] } };
+
+        Assert.True(Policy(new QueryLimits { MaximumNodes = 5 }).Build(request).IsSuccess);
+        Assert.Equal(ErrorKind.Validation, Assert.Single(Policy(new QueryLimits { MaximumNodes = 4 }).Build(request).Errors).Kind);
     }
 
     public static IEnumerable<object[]> InvalidLimits()

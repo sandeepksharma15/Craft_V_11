@@ -57,7 +57,7 @@ Accepted direction, 30 October 2026: Craft.Core is independent of EF/ASP.NET. Ap
 - [ ] Add outbox/domain-event delivery separately: callbacks in the save pipeline must never publish externally before commit.
 - [ ] Add provider execution-strategy helpers only with fresh-context replay and application idempotency/ambiguous-commit contracts. Context pooling requires a separately designed resettable tenant/feature lifetime model and is currently unsupported.
 
-- [ ] PostgreSQL release gate: Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0-rc.3 pins EF 11.0.0-rc.3.26522.148. Once a stable EF 11-compatible provider is released, add it to provider tests and run the same suite against a disposable PostgreSQL database before claiming support. Do not suppress dependency-version warnings or downgrade production EF.
+- [x] Run the existing Data and Repositories provider smoke tests against disposable PostgreSQL 17 with stable Npgsql 11.0.0. Keep production packages provider-neutral and leave broader compatibility covered by the separate relational validation item.
 
 ## Craft.Repositories migration (17 November 2026)
 

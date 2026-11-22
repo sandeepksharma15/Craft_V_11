@@ -43,6 +43,8 @@ All saves require a relational provider and `acceptAllChangesOnSuccess=true`. An
 
 For migrations, supply the same feature configuration in the host or an `IDesignTimeDbContextFactory`. The registered tenant accessor may report no tenant during design time: model generation does not require an active tenant, while runtime tenant queries/writes reject missing identities. Tenant values are parameterized, never embedded in the model. Use `dotnet ef migrations add Initial --project <migrations-project> --startup-project <host>` and deploy migrations explicitly. No automatic production migration/seeding is performed.
 
-Tests use SQLite and SQL Server in Linux CI. PostgreSQL verification is blocked: the available Npgsql EF 11 provider is 11.0.0-rc.3 and pins prerelease EF, incompatible with this stable EF 11 dependency. Do not claim PostgreSQL production support until its compatible provider and relational tests pass. Provider integration connections must target disposable `craft_test_*` databases.
+The provider smoke tests run against SQLite, SQL Server and PostgreSQL 17 in CI. The PostgreSQL case uses Npgsql 11.0.0 and verifies generated keys, soft-delete filtering and restoration, audit persistence, and transaction rollback. This is not a full provider compatibility matrix. `Craft.Data` does not reference Npgsql; applications choose their own provider.
+
+For a local PostgreSQL run, set `CRAFT_TEST_POSTGRESQL` to a connection targeting a disposable database named `craft_test_data_postgresql` and set `CRAFT_REQUIRE_POSTGRESQL=1` to require the case. The test creates and drops that database. Never point it at application data.
 
 Soft-delete relationships use client no-action semantics: removing a loaded principal preserves tracked dependent FKs while the save pipeline sets IsDeleted. Permanent deletion still obeys database FK constraints; dependent deletion remains explicit.
